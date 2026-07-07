@@ -44,7 +44,7 @@ poe_project 最终目标在于整合游玩过程中的所有工具，玩家使�
   ```
 - [ ] **本地数据缓存**：全量数据存储到 SQLite，支持增量更新
 - [ ] **汉化翻译**：建立英文→中文映射词典，覆盖物品、技能、天赋等
-  - 数据来源：poedb.tw、社区编年史翻译包
+  - 数据来源：poedb.tw、PoeCharm2 子模块、社区编年史翻译包
 - [ ] **物品搜索**：支持中英文模糊搜索，Tooltip 展示详细属性
 
 ### Phase 2 — 核心功能
@@ -123,9 +123,10 @@ poe-project/
 │   ├── process/            # 进程管理
 │   └── protocol/           # JSON 通信协议
 │
-├── data-provider/          # Wiki / poedb 数据获取
+├── data-provider/          # Wiki / poedb / 汉化数据获取
 │   ├── wiki/               # PoE Wiki API 客户端
 │   ├── poedb/              # poedb.tw 爬虫
+│   ├── poecharm2/          # PoeCharm2 子模块（汉化词典来源）
 │   └── ninja/              # poe.ninja 经济数据
 │
 ├── data-cache/             # 本地缓存（SQLite / JSON）
@@ -217,7 +218,7 @@ app-ui ──▶ app-core ──▶ data-provider
 ### 前置要求
 - JDK 17+
 - Gradle 8.x
-- Git (用于拉取 POB 子模块)
+- Git (用于拉取 POB 与 PoeCharm2 子模块)
 
 ### 快速开始
 
@@ -272,6 +273,7 @@ git submodule update --init --recursive
 - [PoE Wiki CargoTables](https://www.poewiki.net/wiki/Special:CargoTables) — 核心数据源
 - [Path of Building Community](https://github.com/PathOfBuildingCommunity/PathOfBuilding) — POB 社区版
 - [poedb.tw](https://poedb.tw/) — 中文数据参考
+- [Rayforward/PoeCharm2](https://github.com/Rayforward/PoeCharm2) — 汉化数据子模块来源
 - [poe.ninja](https://poe.ninja/) — 经济数据
 - [GGG 官方](https://www.pathofexile.com/) — 游戏官网
 - [JavaFX 文档](https://openjfx.io/) — JavaFX 官方文档
