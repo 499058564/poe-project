@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+
+# Java / JVM
+out/
+*.class
+hs_err_pid*
+replay_pid*
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Editors
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
