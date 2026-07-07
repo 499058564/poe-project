@@ -8,6 +8,14 @@
 
 poe_project 最终目标在于整合游玩过程中的所有工具，玩家使用单一工具就能满足日常使用，同时无需依赖于游戏窗口，避免破坏玩家游玩体验。
 
+### 当前仓库状态
+
+- 已提交 **Gradle 多模块项目骨架**，可通过 Gradle Wrapper 执行 `projects`、`build`、`test` 等基础命令
+- 当前仍以 **规划驱动** 为主：大部分业务能力尚在 `doc/tasks/` 中分阶段设计，代码实现会按任务逐步落地
+- 仓库同时包含两个规划中的 Git 子模块：
+  - `pob-runtime`：POB 运行时来源
+  - `poecharm2`：中文翻译基础数据来源
+
 ### 核心理念
 
 - **一站式**：数据查询、BD 构筑、装备模拟、汉化翻译，一个工具全搞定
@@ -30,6 +38,8 @@ poe_project 最终目标在于整合游玩过程中的所有工具，玩家使�
 | 日志 | SLF4J + Logback | 标准化日志方案 |
 | 事件总线 | Guava EventBus | 模块间解耦通信 |
 | 打包分发 | jpackage / jlink | 生成原生安装包 |
+
+> 推荐始终使用仓库内置的 **Gradle Wrapper**（`gradlew` / `gradlew.bat`），而不是依赖本机全局 Gradle。
 
 ---
 
@@ -123,11 +133,12 @@ poe-project/
 │   ├── process/            # 进程管理
 │   └── protocol/           # JSON 通信协议
 │
-├── data-provider/          # Wiki / poedb / 汉化数据获取
+├── data-provider/          # Wiki / poedb / poe.ninja 数据获取与导入协调
 │   ├── wiki/               # PoE Wiki API 客户端
 │   ├── poedb/              # poedb.tw 爬虫
-│   ├── poecharm2/          # PoeCharm2 子模块（汉化词典来源）
 │   └── ninja/              # poe.ninja 经济数据
+│
+├── poecharm2/              # PoeCharm2 独立模块（Git Submodule，只读汉化来源）
 │
 ├── data-cache/             # 本地缓存（SQLite / JSON）
 │   ├── dao/                # 数据访问层
@@ -143,7 +154,7 @@ poe-project/
 ### 模块依赖关系
 
 ```
-app-ui ──▶ app-core ──▶ data-provider
+app-ui ──▶ app-core ──▶ data-provider ──▶ poecharm2
               │              │
               │              └──▶ data-cache ──▶ common
               │
@@ -151,6 +162,13 @@ app-ui ──▶ app-core ──▶ data-provider
               │
               └──▶ pob-ipc ──▶ pob-runtime ──▶ common
 ```
+
+### 子模块职责
+
+| 子模块 | 位置 | 用途 | 管理方式 |
+|------|------|------|------|
+| POB Runtime | `pob-runtime/` | 提供 Path of Building 运行时能力 | 作为独立子模块接入，业务侧通过 `pob-ipc` / `pob-adapter` 使用 |
+| PoeCharm2 | `poecharm2/` | 提供基础汉化词典/资源 | 作为独立子模块接入，由 `data-provider` 负责导入与标准化 |
 
 ---
 
@@ -169,6 +187,22 @@ app-ui ──▶ app-core ──▶ data-provider
               ┌──────────┐     ┌──────────┐
               │ app-core │ ──▶ │ app-ui   │
               │ (搜索/翻译)│     │ (展示)    │
+              └──────────┘     └──────────┘
+```
+
+### 汉化数据导入流程
+
+```
+┌────────────┐     ┌──────────────┐     ┌──────────┐
+│ PoeCharm2  │ ──▶ │ data-provider │ ──▶ │ SQLite   │
+│ (Submodule)│     │ (导入/转换)    │     │ translations │
+└────────────┘     └──────────────┘     └──────────┘
+                                              │
+                    ┌─────────────────────────┘
+                    ▼
+              ┌──────────┐     ┌──────────┐
+              │ app-core │ ──▶ │ app-ui   │
+              │ (翻译服务)│     │ (展示)    │
               └──────────┘     └──────────┘
 ```
 
@@ -217,8 +251,9 @@ app-ui ──▶ app-core ──▶ data-provider
 
 ### 前置要求
 - JDK 17+
-- Gradle 8.x
 - Git (用于拉取 POB 与 PoeCharm2 子模块)
+
+> 已提交 Gradle Wrapper，因此**不要求本机预装 Gradle**。
 
 ### 快速开始
 
@@ -236,6 +271,26 @@ git submodule update --init --recursive
 # 4. 运行
 ./gradlew :app-ui:run
 ```
+
+Windows PowerShell 可使用：
+
+```powershell
+.\gradlew.bat build
+.\gradlew.bat :app-ui:run
+```
+
+### 常用命令
+
+| 目的 | 命令 |
+|------|------|
+| 查看模块 | `.\gradlew.bat projects` |
+| 构建全部模块 | `.\gradlew.bat build` |
+| 运行测试 | `.\gradlew.bat test` |
+| 运行单个测试 | `.\gradlew.bat test --tests "com.poe.SomeTest"` |
+| 运行指定模块测试 | `.\gradlew.bat :common:test --tests "com.poe.SomeTest"` |
+| 初始化子模块 | `git submodule update --init --recursive` |
+
+> `jpackage` 为规划中的打包命令，待对应任务落地后启用。
 
 ### IDE 配置
 - IntelliJ IDEA: 直接导入 Gradle 项目

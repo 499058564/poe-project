@@ -26,7 +26,8 @@
   - `common`: shared utilities, constants, and exceptions
   - `app-ui`: JavaFX UI, FXML/controllers, reusable components, theme resources
   - `app-core`: orchestration layer for config, services, and event-driven coordination
-  - `data-provider`: upstream data fetchers/importers for PoE Wiki / poedb / PoeCharm2 / poe.ninja
+  - `data-provider`: upstream data fetchers/importers for PoE Wiki / poedb / poe.ninja
+  - `poecharm2`: standalone Git submodule used as the upstream source for baseline Chinese translation data
   - `data-cache`: local SQLite cache, migrations, DAO layer, FTS5 search indexes
   - `pob-runtime`: Path of Building Community submodule/runtime
   - `pob-adapter`: Java models and XML mapping for POB data
@@ -50,7 +51,7 @@
 - Search is designed around **SQLite FTS5**, not a database-agnostic abstraction. Keep search logic close to `data-cache`/DAO concerns and preserve the documented `items_fts` + `base_items` join pattern.
 - Name matching should use the shared normalization helper (`StringUtils.normalizeName`) instead of ad hoc lowercasing or whitespace stripping.
 - Translation flow is intentionally layered: user custom translations -> SQLite translation table -> original source text fallback.
-- PoeCharm2 is the planned Git submodule source for baseline Chinese translation data; prefer importing and normalizing it instead of hand-maintaining a parallel built-in dictionary.
+- PoeCharm2 is a standalone top-level module/submodule for baseline Chinese translation data; keep it isolated from `data-provider` implementation code and import/normalize its contents instead of hand-maintaining a parallel built-in dictionary.
 - Wiki ingestion has explicit throughput rules from the task docs:
   - rate limit to **5 req/s**
   - retry up to **3 times** with exponential backoff

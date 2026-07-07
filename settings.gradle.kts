@@ -6,6 +6,7 @@ include(
     "app-core",
     "data-cache",
     "data-provider",
+    "poecharm2",
     "pob-runtime",
     "pob-adapter",
     "pob-ipc"

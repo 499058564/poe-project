@@ -1,3 +1,3 @@
-[submodule "data-provider/src/main/poecharm2"]
-	path = data-provider/src/main/poecharm2
+[submodule "poecharm2"]
+	path = poecharm2
 	url = https://github.com/Rayforward/PoeCharm2.git
