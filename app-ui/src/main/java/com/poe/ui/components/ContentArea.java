@@ -1,6 +1,10 @@
 package com.poe.ui.components;
 
+import com.poe.ui.constants.PageDef;
+import com.poe.ui.constants.PageIds;
+import com.poe.ui.constants.StyleClasses;
 import com.poe.ui.i18n.Messages;
+import com.poe.ui.i18n.keys.PlaceholderKeys;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -13,23 +17,19 @@ import java.util.Map;
  * 多标签内容区。
  * 管理功能页面的打开、切换、关闭。
  * 同一功能不可重复打开；设置页不可关闭。
+ * 页面定义由外部通过构造参数注入（{@link PageDef}）。
  */
 public class ContentArea extends TabPane {
 
-    private static final String SETTINGS_PAGE = "settings";
+    /** 页面定义（外部注入） */
+    private final PageDef[] pageDefs;
 
-    private static final String[][] PAGE_DEFS = {
-        { "item-search", "nav.item-search" },
-        { "skill-gems",  "nav.skill-gems" },
-        { "passive-tree","nav.passive-tree" },
-        { "gear-sim",    "nav.gear-sim" },
-        { "settings",    "nav.settings" },
-    };
-
+    /** 已打开的标签页（保持插入顺序） */
     private final Map<String, Tab> tabMap = new LinkedHashMap<>();
 
-    public ContentArea() {
-        getStyleClass().add("content-area");
+    public ContentArea(PageDef[] pageDefs) {
+        this.pageDefs = pageDefs;
+        getStyleClass().add(StyleClasses.CONTENT_AREA);
         setTabClosingPolicy(TabClosingPolicy.ALL_TABS);
     }
 
@@ -46,7 +46,7 @@ public class ContentArea extends TabPane {
         String title = resolveTitle(pageId);
         Tab tab = new Tab(title, createPlaceholder(pageId));
 
-        if (SETTINGS_PAGE.equals(pageId)) {
+        if (PageIds.SETTINGS.equals(pageId)) {
             tab.setClosable(false);
         }
 
@@ -58,9 +58,9 @@ public class ContentArea extends TabPane {
     }
 
     private String resolveTitle(String pageId) {
-        for (String[] def : PAGE_DEFS) {
-            if (def[0].equals(pageId)) {
-                return Messages.get(def[1]);
+        for (PageDef def : pageDefs) {
+            if (def.pageId().equals(pageId)) {
+                return Messages.get(def.i18nKey());
             }
         }
         return pageId;
@@ -68,10 +68,10 @@ public class ContentArea extends TabPane {
 
     private StackPane createPlaceholder(String pageId) {
         StackPane pane = new StackPane();
-        pane.getStyleClass().add("page-placeholder");
+        pane.getStyleClass().add(StyleClasses.PAGE_PLACEHOLDER);
 
-        Label label = new Label(Messages.fmt("placeholder.coming-soon", resolveTitle(pageId)));
-        label.getStyleClass().add("placeholder-label");
+        Label label = new Label(Messages.fmt(PlaceholderKeys.COMING_SOON, resolveTitle(pageId)));
+        label.getStyleClass().add(StyleClasses.PLACEHOLDER_LABEL);
         pane.getChildren().add(label);
         return pane;
     }

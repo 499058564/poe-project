@@ -3,7 +3,11 @@ package com.poe.ui.window;
 import com.poe.ui.components.ContentArea;
 import com.poe.ui.components.Sidebar;
 import com.poe.ui.components.StatusBar;
+import com.poe.ui.constants.LayoutConstants;
+import com.poe.ui.constants.PageDef;
+import com.poe.ui.constants.PageIds;
 import com.poe.ui.i18n.Messages;
+import com.poe.ui.i18n.keys.AppKeys;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
@@ -21,28 +25,28 @@ import javafx.stage.Stage;
  */
 public class MainWindow {
 
-    private static final int DEFAULT_WIDTH = 1280;
-    private static final int DEFAULT_HEIGHT = 800;
-    private static final int MIN_WIDTH = 1024;
-    private static final int MIN_HEIGHT = 600;
-
+    /** 顶层 Stage 引用 */
     private final Stage stage;
+    /** 主 Scene（用于外部注入样式表） */
     private final Scene scene;
+    /** 左侧导航侧边栏 */
     private final Sidebar sidebar;
+    /** 中央多标签内容区 */
     private final ContentArea contentArea;
+    /** 底部状态栏 */
     private final StatusBar statusBar;
 
     public MainWindow(Stage stage) {
         this.stage = stage;
-        stage.setTitle(Messages.get("app.title"));
-        stage.setWidth(DEFAULT_WIDTH);
-        stage.setHeight(DEFAULT_HEIGHT);
-        stage.setMinWidth(MIN_WIDTH);
-        stage.setMinHeight(MIN_HEIGHT);
+        stage.setTitle(Messages.get(AppKeys.TITLE));
+        stage.setWidth(LayoutConstants.WINDOW_DEFAULT_WIDTH);
+        stage.setHeight(LayoutConstants.WINDOW_DEFAULT_HEIGHT);
+        stage.setMinWidth(LayoutConstants.WINDOW_MIN_WIDTH);
+        stage.setMinHeight(LayoutConstants.WINDOW_MIN_HEIGHT);
         stage.centerOnScreen();
 
-        sidebar = new Sidebar();
-        contentArea = new ContentArea();
+        sidebar = new Sidebar(PageDef.values());
+        contentArea = new ContentArea(PageDef.values());
         statusBar = new StatusBar();
 
         // 导航回调：侧边栏点击 → 内容区打开对应 Tab
@@ -52,8 +56,8 @@ public class MainWindow {
         });
 
         // 默认打开物品搜索页
-        sidebar.selectPage("item-search");
-        contentArea.openPage("item-search");
+        sidebar.selectPage(PageIds.DEFAULT_PAGE);
+        contentArea.openPage(PageIds.DEFAULT_PAGE);
 
         BorderPane root = new BorderPane();
         root.setLeft(sidebar);

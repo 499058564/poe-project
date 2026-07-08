@@ -13,8 +13,10 @@ import java.util.ResourceBundle;
  */
 public final class Messages {
 
+    /** 当前语言环境（后续可改为运行时切换） */
     private static final Locale LOCALE = Locale.SIMPLIFIED_CHINESE;
 
+    /** 按领域拆分的 ResourceBundle 文件名列表 */
     private static final String[] BUNDLE_NAMES = {
         "i18n/app",
         "i18n/nav",
@@ -22,6 +24,7 @@ public final class Messages {
         "i18n/placeholder",
     };
 
+    /** 对应 BUNDLE_NAMES 加载的 ResourceBundle 实例 */
     private static final ResourceBundle[] BUNDLES;
 
     static {
