@@ -4,8 +4,8 @@ import com.poe.ui.components.ContentArea;
 import com.poe.ui.components.Sidebar;
 import com.poe.ui.components.StatusBar;
 import com.poe.ui.constants.LayoutConstants;
-import com.poe.ui.constants.PageDef;
 import com.poe.ui.constants.PageIds;
+import com.poe.ui.enums.PageDefEnum;
 import com.poe.ui.i18n.Messages;
 import com.poe.ui.i18n.keys.AppKeys;
 import javafx.scene.Scene;
@@ -14,20 +14,14 @@ import javafx.stage.Stage;
 
 /**
  * 应用主窗口。
- * <pre>
- * ┌──────────────────────────────────────────┐
- * │         Sidebar  │  TabPane             │
- * │         (导航菜单)  │  (多标签内容区)        │
- * ├──────────────────┴──────────────────────┤
- * │  状态栏: 数据版本 | 同步时间 | 状态        │
- * └──────────────────────────────────────────┘
- * </pre>
+ * 组合 Sidebar + ContentArea + StatusBar 三大区域，
+ * 负责导航回调、默认页面打开与场景创建。
  */
 public class MainWindow {
 
     /** 顶层 Stage 引用 */
     private final Stage stage;
-    /** 主 Scene（用于外部注入样式表） */
+    /** 顶层 Scene（用于外部注入样式表） */
     private final Scene scene;
     /** 左侧导航侧边栏 */
     private final Sidebar sidebar;
@@ -45,8 +39,8 @@ public class MainWindow {
         stage.setMinHeight(LayoutConstants.WINDOW_MIN_HEIGHT);
         stage.centerOnScreen();
 
-        sidebar = new Sidebar(PageDef.values());
-        contentArea = new ContentArea(PageDef.values());
+        sidebar = new Sidebar(PageDefEnum.values());
+        contentArea = new ContentArea(PageDefEnum.values());
         statusBar = new StatusBar();
 
         // 导航回调：侧边栏点击 → 内容区打开对应 Tab

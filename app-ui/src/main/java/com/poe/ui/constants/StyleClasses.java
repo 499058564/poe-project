@@ -16,6 +16,8 @@ public final class StyleClasses {
     public static final String COLLAPSE_BTN = "collapse-btn";
     /** 导航按钮（ToggleButton 子类） */
     public static final String NAV_BUTTON = "nav-button";
+    /** 二级菜单子项按钮 */
+    public static final String NAV_SUB_ITEM = "nav-sub-item";
 
     // ---- ContentArea 组件 ----
     /** 多标签内容区容器 */

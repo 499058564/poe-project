@@ -1,8 +1,8 @@
 package com.poe.ui.components;
 
-import com.poe.ui.constants.PageDef;
 import com.poe.ui.constants.PageIds;
 import com.poe.ui.constants.StyleClasses;
+import com.poe.ui.enums.PageDefEnum;
 import com.poe.ui.i18n.Messages;
 import com.poe.ui.i18n.keys.PlaceholderKeys;
 import javafx.scene.control.Label;
@@ -17,17 +17,17 @@ import java.util.Map;
  * 多标签内容区。
  * 管理功能页面的打开、切换、关闭。
  * 同一功能不可重复打开；设置页不可关闭。
- * 页面定义由外部通过构造参数注入（{@link PageDef}）。
+ * 页面定义由外部通过构造参数注入（{@link PageDefEnum}）。
  */
 public class ContentArea extends TabPane {
 
     /** 页面定义（外部注入） */
-    private final PageDef[] pageDefs;
+    private final PageDefEnum[] pageDefs;
 
     /** 已打开的标签页（保持插入顺序） */
     private final Map<String, Tab> tabMap = new LinkedHashMap<>();
 
-    public ContentArea(PageDef[] pageDefs) {
+    public ContentArea(PageDefEnum[] pageDefs) {
         this.pageDefs = pageDefs;
         getStyleClass().add(StyleClasses.CONTENT_AREA);
         setTabClosingPolicy(TabClosingPolicy.ALL_TABS);
@@ -58,7 +58,7 @@ public class ContentArea extends TabPane {
     }
 
     private String resolveTitle(String pageId) {
-        for (PageDef def : pageDefs) {
+        for (PageDefEnum def : pageDefs) {
             if (def.pageId().equals(pageId)) {
                 return Messages.get(def.i18nKey());
             }
