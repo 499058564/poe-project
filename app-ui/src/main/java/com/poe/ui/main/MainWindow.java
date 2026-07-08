@@ -1,5 +1,7 @@
 package com.poe.ui.main;
 
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 /**
@@ -14,6 +16,7 @@ public class MainWindow {
     private static final int MIN_HEIGHT = 600;
 
     private final Stage stage;
+    private final Scene scene;
 
     public MainWindow(Stage stage) {
         this.stage = stage;
@@ -23,6 +26,15 @@ public class MainWindow {
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
         stage.centerOnScreen();
+
+        // 占位根容器，后续由布局任务替换
+        StackPane root = new StackPane();
+        this.scene = new Scene(root);
+        stage.setScene(scene);
+    }
+
+    public Scene getScene() {
+        return scene;
     }
 
     public void show() {
