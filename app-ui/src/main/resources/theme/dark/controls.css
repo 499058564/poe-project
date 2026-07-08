@@ -1,24 +1,25 @@
 /* ============================================================
  * PoE Tool – Dark Theme – Standard Controls
  * JavaFX built-in control overrides.
+ * ALL COLOURS ARE LITERAL — no -fx-* variable references.
  * ============================================================ */
 
 /* ---- ScrollBar ---- */
 .scroll-bar {
-    -fx-background-color: -fx-base-background;
+    -fx-background-color: #1a1a2e;
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: -fx-base-bg-brighter-30;
+    -fx-background-color: #404062;
     -fx-background-radius: 4;
 }
 
 .scroll-bar .thumb:hover {
-    -fx-background-color: -fx-base-bg-brighter-55;
+    -fx-background-color: #5a5a82;
 }
 
 .scroll-bar .track {
-    -fx-background-color: -fx-base-background;
+    -fx-background-color: #1a1a2e;
 }
 
 .scroll-bar .increment-button,
@@ -28,129 +29,106 @@
 
 /* ---- TabPane ---- */
 .tab-pane {
-    -fx-background-color: -fx-panel-background;
+    -fx-background-color: #16213e;
 }
 
 .tab-pane .tab-header-area .tab-header-background {
-    -fx-background-color: -fx-base-background;
+    -fx-background-color: #1a1a2e;
 }
 
 .tab-pane .tab {
-    -fx-background-color: -fx-base-bg-brighter-10;
-    -fx-text-fill: -fx-text-muted;
+    -fx-background-color: #2b2b43;
     -fx-padding: 6 16 6 16;
 }
 
 .tab-pane .tab.selected {
-    -fx-background-color: -fx-panel-background;
-    -fx-text-fill: -fx-accent-color;
-    -fx-border-color: -fx-accent-color;
+    -fx-background-color: #16213e;
+    -fx-border-color: #d4a853;
     -fx-border-width: 0 0 2 0;
 }
 
 .tab-pane .tab:hover {
-    -fx-background-color: -fx-base-bg-brighter-20;
-}
-
-.tab-pane .tab .tab-label {
-    -fx-text-fill: -fx-text-muted;
-}
-
-.tab-pane .tab.selected .tab-label {
-    -fx-text-fill: -fx-accent-color;
+    -fx-background-color: #353550;
 }
 
 /* ---- TableView ---- */
 .table-view {
-    -fx-background-color: -fx-panel-background;
-    -fx-border-color: -fx-border-color;
+    -fx-background-color: #16213e;
+    -fx-border-color: #2a2a4a;
     -fx-table-cell-border-color: transparent;
 }
 
 .table-view .column-header-background {
-    -fx-background-color: -fx-base-background;
+    -fx-background-color: #1a1a2e;
 }
 
 .table-view .column-header {
-    -fx-background-color: -fx-base-background;
-    -fx-border-color: -fx-border-color;
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2a2a4a;
     -fx-border-width: 0 1 1 0;
 }
 
-.table-view .column-header .label {
-    -fx-text-fill: -fx-accent-color;
-}
-
 .table-view .table-row-cell {
-    -fx-background-color: -fx-panel-background;
-    -fx-text-fill: -fx-text-color;
+    -fx-background-color: #16213e;
     -fx-border-color: transparent;
     -fx-table-cell-border-color: transparent;
 }
 
 .table-view .table-row-cell.selected {
-    -fx-background-color: -fx-selection-color;
+    -fx-background-color: #3a3a5c;
 }
 
 .table-view .table-row-cell:hover {
-    -fx-background-color: -fx-selection-brighter-20;
-}
-
-.table-view .table-cell {
-    -fx-text-fill: -fx-text-color;
+    -fx-background-color: #565674;
 }
 
 /* ---- TextField / TextArea ---- */
 .text-field,
 .text-area {
-    -fx-background-color: -fx-base-bg-brighter-15;
-    -fx-text-fill: -fx-text-color;
-    -fx-prompt-text-fill: -fx-text-muted;
-    -fx-border-color: -fx-border-color;
+    -fx-background-color: #30304b;
+    -fx-prompt-text-fill: #888888;
+    -fx-border-color: #2a2a4a;
     -fx-border-radius: 3;
     -fx-background-radius: 3;
 }
 
 .text-field.focused,
 .text-area.focused {
-    -fx-border-color: -fx-accent-color;
+    -fx-border-color: #d4a853;
     -fx-border-width: 1.5;
 }
 
 .text-area .content {
-    -fx-background-color: -fx-base-bg-brighter-15;
+    -fx-background-color: #30304b;
 }
 
 /* ---- Button ---- */
 .button {
-    -fx-background-color: -fx-base-bg-brighter-20;
-    -fx-text-fill: -fx-text-color;
-    -fx-border-color: -fx-border-color;
+    -fx-background-color: #353550;
+    -fx-border-color: #2a2a4a;
     -fx-border-radius: 3;
     -fx-background-radius: 3;
     -fx-padding: 6 14 6 14;
 }
 
 .button:hover {
-    -fx-background-color: -fx-accent-color;
-    -fx-text-fill: #1a1a2e;
-    -fx-border-color: -fx-accent-darker-10;
+    -fx-background-color: #d4a853;
+    -fx-border-color: #bf974b;
 }
 
 .button.pressed {
-    -fx-background-color: -fx-accent-darker-15;
+    -fx-background-color: #b48f47;
 }
 
 .button:default {
-    -fx-border-color: -fx-accent-color;
+    -fx-border-color: #d4a853;
     -fx-border-width: 1.5;
 }
 
 /* ---- Tooltip ---- */
 .tooltip {
     -fx-background-color: #0f0f23;
-    -fx-text-fill: -fx-text-color;
-    -fx-border-color: -fx-accent-color;
+    -fx-border-color: #d4a853;
     -fx-border-width: 1;
     -fx-border-radius: 3;
     -fx-background-radius: 3;
@@ -158,17 +136,12 @@
     -fx-padding: 6 10 6 10;
 }
 
-/* ---- Label ---- */
-.label {
-    -fx-text-fill: -fx-text-color;
-}
-
 /* ---- SplitPane ---- */
 .split-pane {
-    -fx-background-color: -fx-base-background;
+    -fx-background-color: #1a1a2e;
 }
 
 .split-pane-divider {
-    -fx-background-color: -fx-border-color;
+    -fx-background-color: #2a2a4a;
     -fx-padding: 0 1 0 1;
 }

@@ -1,12 +1,13 @@
 /* ============================================================
  * PoE Tool – Dark Theme – Layout Components
  * Application-specific component styles.
+ * ALL COLOURS ARE LITERAL — no -fx-* variable references.
  * ============================================================ */
 
 /* ---- Sidebar ---- */
 .sidebar {
     -fx-background-color: #0f0f23;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: #2a2a4a;
     -fx-border-width: 0 1 0 0;
     -fx-spacing: 2;
     -fx-padding: 0;
@@ -15,25 +16,21 @@
 /* Collapse toggle */
 .collapse-btn {
     -fx-background-color: transparent;
-    -fx-text-fill: -fx-text-muted;
     -fx-font-size: 14px;
     -fx-padding: 8 0 8 0;
-    -fx-border-color: transparent transparent -fx-border-color transparent;
+    -fx-border-color: transparent transparent #2a2a4a transparent;
     -fx-border-width: 0 0 1 0;
 }
 
 .collapse-btn:hover {
-    -fx-text-fill: -fx-accent-color;
 }
 
 .collapse-btn.selected {
-    -fx-text-fill: -fx-accent-color;
 }
 
 /* NavButton */
 .nav-button {
     -fx-background-color: transparent;
-    -fx-text-fill: -fx-text-color;
     -fx-font-size: 13px;
     -fx-padding: 10 16 10 16;
     -fx-border-color: transparent;
@@ -42,14 +39,12 @@
 }
 
 .nav-button:hover {
-    -fx-background-color: -fx-base-bg-brighter-15;
-    -fx-text-fill: -fx-accent-color;
+    -fx-background-color: #30304b;
 }
 
 .nav-button.selected {
-    -fx-background-color: -fx-selection-color;
-    -fx-text-fill: -fx-accent-color;
-    -fx-border-color: -fx-accent-color;
+    -fx-background-color: #3a3a5c;
+    -fx-border-color: #d4a853;
     -fx-border-width: 0 0 0 3;
 }
 
@@ -59,22 +54,21 @@
 
 /* ---- ContentArea ---- */
 .content-area {
-    -fx-background-color: -fx-panel-background;
+    -fx-background-color: #16213e;
 }
 
 .page-placeholder {
-    -fx-background-color: -fx-panel-background;
+    -fx-background-color: #16213e;
 }
 
 .placeholder-label {
     -fx-font-size: 16px;
-    -fx-text-fill: -fx-text-muted;
 }
 
 /* ---- StatusBar ---- */
 .status-bar {
     -fx-background-color: #0f0f23;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: #2a2a4a;
     -fx-border-width: 1 0 0 0;
     -fx-padding: 4 12 4 12;
     -fx-alignment: CENTER_LEFT;
@@ -82,7 +76,6 @@
 
 .status-label {
     -fx-font-size: 11px;
-    -fx-text-fill: -fx-text-muted;
 }
 
 .status-bar .progress-bar {
@@ -90,9 +83,9 @@
 }
 
 .status-bar .progress-bar .bar {
-    -fx-background-color: -fx-accent-color;
+    -fx-background-color: #d4a853;
 }
 
 .status-bar .progress-bar .track {
-    -fx-background-color: -fx-border-color;
+    -fx-background-color: #2a2a4a;
 }

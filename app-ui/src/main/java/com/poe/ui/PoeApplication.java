@@ -16,7 +16,7 @@ public class PoeApplication extends Application {
     @Override
     public void start(Stage primaryStage) {
         // 集成 AtlantaFX 暗黑主题
-        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+        // Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
         MainWindow mainWindow = new MainWindow(primaryStage);
 
