@@ -26,7 +26,7 @@
     -fx-text-fill: -fx-accent-color;
 }
 
-.collapse-btn:selected {
+.collapse-btn.selected {
     -fx-text-fill: -fx-accent-color;
 }
 
@@ -46,7 +46,7 @@
     -fx-text-fill: -fx-accent-color;
 }
 
-.nav-button:selected {
+.nav-button.selected {
     -fx-background-color: -fx-selection-color;
     -fx-text-fill: -fx-accent-color;
     -fx-border-color: -fx-accent-color;
