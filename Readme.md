@@ -250,10 +250,32 @@ app-ui ──▶ app-core ──▶ data-provider ──▶ poecharm2
 ## 八、开发环境搭建
 
 ### 前置要求
-- JDK 17+
+- JDK 17+（推荐 [Amazon Corretto 17](https://aws.amazon.com/corretto/) 或 [Eclipse Temurin 17](https://adoptium.net/)）
 - Git (用于拉取 POB 与 PoeCharm2 子模块)
 
 > 已提交 Gradle Wrapper，因此**不要求本机预装 Gradle**。
+
+#### 配置 JAVA_HOME
+
+项目构建依赖 `JAVA_HOME` 环境变量。若未配置，Gradle 会报错退出。
+
+**Windows（用户级永久配置）：**
+
+```powershell
+# PowerShell（管理员）
+[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "E:\JDKs\openJdk_17", "User")
+# 同时将 JDK bin 目录加入 Path
+$path = [System.Environment]::GetEnvironmentVariable("Path", "User")
+[System.Environment]::SetEnvironmentVariable("Path", "$path;E:\JDKs\openJdk_17\bin", "User")
+```
+
+**验证配置：**
+
+```powershell
+# 新开终端后执行
+java -version
+# 应输出：openjdk version "17.0.x" ...
+```
 
 ### 快速开始
 
@@ -285,17 +307,43 @@ Windows PowerShell 可使用：
 |------|------|
 | 查看模块 | `.\gradlew.bat projects` |
 | 构建全部模块 | `.\gradlew.bat build` |
+| 运行应用 | `.\gradlew.bat :app-ui:run` |
 | 运行测试 | `.\gradlew.bat test` |
 | 运行单个测试 | `.\gradlew.bat test --tests "com.poe.SomeTest"` |
 | 运行指定模块测试 | `.\gradlew.bat :common:test --tests "com.poe.SomeTest"` |
+| 查看依赖树 | `.\gradlew.bat :app-ui:dependencies --configuration runtimeClasspath` |
+| 详细构建日志 | `.\gradlew.bat build --info` |
+| 完整堆栈跟踪 | `.\gradlew.bat build --stacktrace` |
 | 初始化子模块 | `git submodule update --init --recursive` |
 
 > `jpackage` 为规划中的打包命令，待对应任务落地后启用。
 
 ### IDE 配置
-- IntelliJ IDEA: 直接导入 Gradle 项目
-- 安装 JavaFX 插件 (如需要)
-- 设置 Project SDK 为 JDK 17+
+
+#### IntelliJ IDEA
+
+1. **导入项目**：`File` → `Open` → 选择 `build.gradle.kts`，以 Gradle 项目方式导入
+2. **设置 JDK**：`File` → `Project Structure` → `SDK` → 选择 JDK 17+
+3. **委托构建给 Gradle**（推荐）：
+   `File` → `Settings` → `Build, Execution, Deployment` → `Build Tools` → `Gradle`
+   - `Build and run using:` 选 `Gradle`
+   - `Run tests using:` 选 `Gradle`
+
+#### 正确运行方式
+
+> ⚠️ **不能直接点击 `PoeApplication.main()` 运行！** JavaFX 应用需要 JavaFX 模块参数，直接以 `java.exe` 启动会报 `exit value 1`。
+
+**方式一：Gradle 面板（推荐）**
+
+右侧 `Gradle` 面板 → `app-ui` → `Tasks` → `application` → 双击 `run`
+
+**方式二：创建 Gradle 运行配置**
+
+`Run` → `Edit Configurations` → `+` → `Gradle`：
+- Gradle project: `poe-project:app-ui`
+- Tasks: `run`
+
+配置后即可通过右上角运行按钮直接启动。
 
 ---
 
@@ -333,3 +381,28 @@ Windows PowerShell 可使用：
 - [GGG 官方](https://www.pathofexile.com/) — 游戏官网
 - [JavaFX 文档](https://openjfx.io/) — JavaFX 官方文档
 - [AtlantaFX](https://github.com/mkpaz/atlantafx) — JavaFX 现代主题库
+
+---
+
+## 十二、故障排查
+
+### `JAVA_HOME is not set`
+
+Gradle 找不到 JDK。请参照 [配置 JAVA_HOME](#配置-java_home) 设置环境变量，并重启终端。
+
+### `Process 'java.exe' finished with non-zero exit value 1`
+
+在 IDEA 中直接运行 `PoeApplication.main()` 导致的 JavaFX 模块缺失错误。请改用 [Gradle 运行方式](#正确运行方式)。
+
+### Gradle 下载依赖缓慢
+
+项目默认使用阿里云 Maven 镜像。若仍缓慢，检查 `build.gradle.kts` 中 `repositories` 配置。
+
+### 端口被占用 / Gradle Daemon 异常
+
+```powershell
+# 停止所有 Gradle Daemon
+.\gradlew.bat --stop
+# 重新构建
+.\gradlew.bat build
+```
