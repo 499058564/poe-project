@@ -3,7 +3,7 @@ package com.poe.ui;
 import atlantafx.base.theme.PrimerDark;
 import javafx.application.Application;
 import javafx.stage.Stage;
-import com.poe.ui.main.MainWindow;
+import com.poe.ui.window.MainWindow;
 import com.poe.ui.theme.ThemeConstants;
 
 import java.util.Objects;

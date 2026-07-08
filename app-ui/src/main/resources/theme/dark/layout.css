@@ -1,0 +1,98 @@
+/* ============================================================
+ * PoE Tool – Dark Theme – Layout Components
+ * Application-specific component styles.
+ * ============================================================ */
+
+/* ---- Sidebar ---- */
+.sidebar {
+    -fx-background-color: #0f0f23;
+    -fx-border-color: -fx-border-color;
+    -fx-border-width: 0 1 0 0;
+    -fx-spacing: 2;
+    -fx-padding: 0;
+}
+
+/* Collapse toggle */
+.collapse-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 14px;
+    -fx-padding: 8 0 8 0;
+    -fx-border-color: transparent transparent -fx-border-color transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.collapse-btn:hover {
+    -fx-text-fill: -fx-accent-color;
+}
+
+.collapse-btn:selected {
+    -fx-text-fill: -fx-accent-color;
+}
+
+/* NavButton */
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-text-color;
+    -fx-font-size: 13px;
+    -fx-padding: 10 16 10 16;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 0;
+    -fx-background-radius: 0;
+}
+
+.nav-button:hover {
+    -fx-background-color: -fx-base-bg-brighter-15;
+    -fx-text-fill: -fx-accent-color;
+}
+
+.nav-button:selected {
+    -fx-background-color: -fx-selection-color;
+    -fx-text-fill: -fx-accent-color;
+    -fx-border-color: -fx-accent-color;
+    -fx-border-width: 0 0 0 3;
+}
+
+.nav-button:disabled {
+    -fx-opacity: 0.4;
+}
+
+/* ---- ContentArea ---- */
+.content-area {
+    -fx-background-color: -fx-panel-background;
+}
+
+.page-placeholder {
+    -fx-background-color: -fx-panel-background;
+}
+
+.placeholder-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+/* ---- StatusBar ---- */
+.status-bar {
+    -fx-background-color: #0f0f23;
+    -fx-border-color: -fx-border-color;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 4 12 4 12;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.status-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+.status-bar .progress-bar {
+    -fx-max-height: 8px;
+}
+
+.status-bar .progress-bar .bar {
+    -fx-background-color: -fx-accent-color;
+}
+
+.status-bar .progress-bar .track {
+    -fx-background-color: -fx-border-color;
+}

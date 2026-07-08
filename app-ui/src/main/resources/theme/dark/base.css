@@ -1,0 +1,38 @@
+/* ============================================================
+ * PoE Tool – Dark Theme – Base Variables
+ * Must be loaded first; all other theme files depend on
+ * these CSS custom properties.
+ * ============================================================ */
+
+.root {
+    /* ---- Primary palette ---- */
+    -fx-base-background: #1a1a2e;
+    -fx-panel-background: #16213e;
+    -fx-accent-color: #d4a853;
+    -fx-text-color: #c8c8c8;
+    -fx-text-muted: #888888;
+    -fx-selection-color: #3a3a5c;
+    -fx-border-color: #2a2a4a;
+
+    /* ---- PoE rarity colours ---- */
+    -fx-rarity-normal: #c8c8c8;
+    -fx-rarity-magic: #8888ff;
+    -fx-rarity-rare: #ffff77;
+    -fx-rarity-unique: #af6025;
+    -fx-rarity-currency: #aa9e82;
+    -fx-rarity-gem: #1aa29b;
+
+    /* ---- Derived colours (pre-computed from palette for compatibility) ---- */
+    -fx-base-bg-brighter-10: #2b2b43;
+    -fx-base-bg-brighter-15: #30304b;
+    -fx-base-bg-brighter-20: #353550;
+    -fx-base-bg-brighter-30: #404062;
+    -fx-base-bg-brighter-55: #5a5a82;
+    -fx-panel-bg-brighter-5:  #1d2950;
+    -fx-selection-brighter-20: #565674;
+    -fx-accent-darker-10:      #bf974b;
+    -fx-accent-darker-15:      #b48f47;
+
+    -fx-background-color: -fx-base-background;
+    -fx-text-fill: -fx-text-color;
+}

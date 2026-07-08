@@ -1,44 +1,20 @@
 /* ============================================================
- * PoE Tool – Dark Theme
- * Inspired by Path of Exile's visual identity.
+ * PoE Tool – Dark Theme – Standard Controls
+ * JavaFX built-in control overrides.
  * ============================================================ */
 
-.root {
-    /* ---- Primary palette ---- */
-    -fx-base-background: #1a1a2e;
-    -fx-panel-background: #16213e;
-    -fx-accent-color: #d4a853;
-    -fx-text-color: #c8c8c8;
-    -fx-text-muted: #888888;
-    -fx-selection-color: #3a3a5c;
-    -fx-border-color: #2a2a4a;
-
-    /* ---- PoE rarity colours ---- */
-    -fx-rarity-normal: #c8c8c8;
-    -fx-rarity-magic: #8888ff;
-    -fx-rarity-rare: #ffff77;
-    -fx-rarity-unique: #af6025;
-    -fx-rarity-currency: #aa9e82;
-    -fx-rarity-gem: #1aa29b;
-
-    -fx-background-color: -fx-base-background;
-    -fx-text-fill: -fx-text-color;
-}
-
-/* ============================================================
-   ScrollBar
-   ============================================================ */
+/* ---- ScrollBar ---- */
 .scroll-bar {
     -fx-background-color: -fx-base-background;
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: derive(-fx-base-background, 30%);
+    -fx-background-color: -fx-base-bg-brighter-30;
     -fx-background-radius: 4;
 }
 
 .scroll-bar .thumb:hover {
-    -fx-background-color: derive(-fx-base-background, 55%);
+    -fx-background-color: -fx-base-bg-brighter-55;
 }
 
 .scroll-bar .track {
@@ -50,9 +26,7 @@
     -fx-background-color: transparent;
 }
 
-/* ============================================================
-   TabPane
-   ============================================================ */
+/* ---- TabPane ---- */
 .tab-pane {
     -fx-background-color: -fx-panel-background;
 }
@@ -62,7 +36,7 @@
 }
 
 .tab-pane .tab {
-    -fx-background-color: derive(-fx-base-background, 10%);
+    -fx-background-color: -fx-base-bg-brighter-10;
     -fx-text-fill: -fx-text-muted;
     -fx-padding: 6 16 6 16;
 }
@@ -72,11 +46,10 @@
     -fx-text-fill: -fx-accent-color;
     -fx-border-color: -fx-accent-color;
     -fx-border-width: 0 0 2 0;
-    -fx-border-style: solid;
 }
 
 .tab-pane .tab:hover {
-    -fx-background-color: derive(-fx-base-background, 20%);
+    -fx-background-color: -fx-base-bg-brighter-20;
 }
 
 .tab-pane .tab .tab-label {
@@ -87,9 +60,7 @@
     -fx-text-fill: -fx-accent-color;
 }
 
-/* ============================================================
-   TableView
-   ============================================================ */
+/* ---- TableView ---- */
 .table-view {
     -fx-background-color: -fx-panel-background;
     -fx-border-color: -fx-border-color;
@@ -118,7 +89,7 @@
 }
 
 .table-view .table-row-cell:odd {
-    -fx-background-color: derive(-fx-panel-background, 5%);
+    -fx-background-color: -fx-panel-bg-brighter-5;
 }
 
 .table-view .table-row-cell:selected {
@@ -126,19 +97,17 @@
 }
 
 .table-view .table-row-cell:hover {
-    -fx-background-color: derive(-fx-selection-color, 20%);
+    -fx-background-color: -fx-selection-brighter-20;
 }
 
 .table-view .table-cell {
     -fx-text-fill: -fx-text-color;
 }
 
-/* ============================================================
-   TextField / TextArea
-   ============================================================ */
+/* ---- TextField / TextArea ---- */
 .text-field,
 .text-area {
-    -fx-background-color: derive(-fx-base-background, 15%);
+    -fx-background-color: -fx-base-bg-brighter-15;
     -fx-text-fill: -fx-text-color;
     -fx-prompt-text-fill: -fx-text-muted;
     -fx-border-color: -fx-border-color;
@@ -153,14 +122,12 @@
 }
 
 .text-area .content {
-    -fx-background-color: derive(-fx-base-background, 15%);
+    -fx-background-color: -fx-base-bg-brighter-15;
 }
 
-/* ============================================================
-   Button
-   ============================================================ */
+/* ---- Button ---- */
 .button {
-    -fx-background-color: derive(-fx-base-background, 20%);
+    -fx-background-color: -fx-base-bg-brighter-20;
     -fx-text-fill: -fx-text-color;
     -fx-border-color: -fx-border-color;
     -fx-border-radius: 3;
@@ -171,11 +138,11 @@
 .button:hover {
     -fx-background-color: -fx-accent-color;
     -fx-text-fill: #1a1a2e;
-    -fx-border-color: derive(-fx-accent-color, -10%);
+    -fx-border-color: -fx-accent-darker-10;
 }
 
 .button:pressed {
-    -fx-background-color: derive(-fx-accent-color, -15%);
+    -fx-background-color: -fx-accent-darker-15;
 }
 
 .button:default {
@@ -183,9 +150,7 @@
     -fx-border-width: 1.5;
 }
 
-/* ============================================================
-   Tooltip
-   ============================================================ */
+/* ---- Tooltip ---- */
 .tooltip {
     -fx-background-color: #0f0f23;
     -fx-text-fill: -fx-text-color;
@@ -197,16 +162,12 @@
     -fx-padding: 6 10 6 10;
 }
 
-/* ============================================================
-   Label
-   ============================================================ */
+/* ---- Label ---- */
 .label {
     -fx-text-fill: -fx-text-color;
 }
 
-/* ============================================================
-   SplitPane / general dividers
-   ============================================================ */
+/* ---- SplitPane ---- */
 .split-pane {
     -fx-background-color: -fx-base-background;
 }
