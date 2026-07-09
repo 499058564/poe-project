@@ -9,6 +9,8 @@ import javafx.geometry.Pos;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.VBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -45,6 +47,8 @@ public class Sidebar extends VBox {
 
     /** 当前是否处于折叠态 */
     private boolean collapsed = false;
+
+    private static final Logger log = LoggerFactory.getLogger(Sidebar.class);
 
     public Sidebar(PageDefEnum[] pageDefs) {
         this.pageDefs = pageDefs;
@@ -161,6 +165,7 @@ public class Sidebar extends VBox {
 
         boolean expanded = childBox.isVisible();
         if (expanded) {
+            log.debug("Collapse submenu: {}", parentPageId);
             childBox.setVisible(false);
             childBox.setManaged(false);
             parentBtn.setText("\u25B6 " + getOriginalText(parentPageId)); // ▶
@@ -168,6 +173,7 @@ public class Sidebar extends VBox {
         } else {
             childBox.setVisible(true);
             childBox.setManaged(true);
+            log.debug("Expand submenu: {}", parentPageId);
             parentBtn.setText("\u25BC " + getOriginalText(parentPageId)); // ▼
         }
     }
@@ -216,6 +222,7 @@ public class Sidebar extends VBox {
      */
     private void toggleCollapse() {
         collapsed = !collapsed;
+        log.debug("Sidebar collapsed: {}", collapsed);
         double targetWidth = collapsed ? LayoutConstants.SIDEBAR_COLLAPSED_WIDTH
                                        : LayoutConstants.SIDEBAR_EXPANDED_WIDTH;
         setPrefWidth(targetWidth);

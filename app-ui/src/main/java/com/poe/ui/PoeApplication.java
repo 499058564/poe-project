@@ -5,6 +5,8 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import com.poe.ui.window.MainWindow;
 import com.poe.ui.theme.ThemeConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
@@ -19,6 +21,15 @@ import java.util.Objects;
  * </ol>
  */
 public class PoeApplication extends Application {
+
+    private static final Logger log = LoggerFactory.getLogger(PoeApplication.class);
+
+    @Override
+    public void init() {
+        log.info("PoE Tool 正在启动...");
+        log.info("Java 版本: {}", System.getProperty("java.version"));
+        log.info("JavaFX 版本: {}", System.getProperty("javafx.version"));
+    }
 
     @Override
     public void start(Stage primaryStage) {
