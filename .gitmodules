@@ -1,0 +1,3 @@
+[submodule "poecharm2"]
+	path = poecharm2
+	url = https://github.com/Rayforward/PoeCharm2.git

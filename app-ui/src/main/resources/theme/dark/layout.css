@@ -1,0 +1,125 @@
+/* ============================================================
+ * PoE Tool – Dark Theme – Layout Components
+ * Application-specific component styles.
+ * ALL COLOURS ARE LITERAL — no -fx-* variable references.
+ * ============================================================ */
+
+/* ---- Sidebar ---- */
+.sidebar {
+    -fx-background-color: #0f0f23;
+    -fx-border-color: #2a2a4a;
+    -fx-border-width: 0 1 0 0;
+    -fx-spacing: 2;
+    -fx-padding: 0;
+}
+
+/* Collapse toggle */
+.collapse-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #c0c0c0;
+    -fx-font-size: 14px;
+    -fx-padding: 8 0 8 0;
+    -fx-border-color: transparent transparent #2a2a4a transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.collapse-btn:hover {
+    -fx-text-fill: #d4a853;
+}
+
+.collapse-btn.selected {
+}
+
+/* NavButton */
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #c0c0c0;
+    -fx-font-size: 13px;
+    -fx-padding: 10 16 10 16;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 0;
+    -fx-background-radius: 0;
+}
+
+.nav-button:hover {
+    -fx-background-color: #30304b;
+    -fx-text-fill: #e0e0e0;
+}
+
+.nav-button.selected {
+    -fx-background-color: #3a3a5c;
+    -fx-text-fill: #d4a853;
+    -fx-border-color: #d4a853;
+    -fx-border-width: 0 0 0 3;
+}
+
+.nav-button:disabled {
+    -fx-opacity: 0.4;
+}
+
+/* 二级菜单子项 */
+.nav-sub-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: #c0c0c0;
+    -fx-font-size: 13px;
+    -fx-padding: 8 16 8 28;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 0;
+    -fx-background-radius: 0;
+}
+
+.nav-sub-item:hover {
+    -fx-background-color: #30304b;
+    -fx-text-fill: #e0e0e0;
+}
+
+.nav-sub-item.selected {
+    -fx-background-color: #3a3a5c;
+    -fx-text-fill: #d4a853;
+    -fx-border-color: #d4a853;
+    -fx-border-width: 0 0 0 3;
+}
+
+.nav-sub-item:disabled {
+    -fx-opacity: 0.4;
+}
+
+/* ---- ContentArea ---- */
+.content-area {
+    -fx-background-color: #16213e;
+}
+
+.page-placeholder {
+    -fx-background-color: #16213e;
+}
+
+.placeholder-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: #808080;
+}
+
+/* ---- StatusBar ---- */
+.status-bar {
+    -fx-background-color: #0f0f23;
+    -fx-border-color: #2a2a4a;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 4 12 4 12;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.status-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #a0a0a0;
+}
+
+.status-bar .progress-bar {
+    -fx-max-height: 8px;
+}
+
+.status-bar .progress-bar .bar {
+    -fx-background-color: #d4a853;
+}
+
+.status-bar .progress-bar .track {
+    -fx-background-color: #2a2a4a;
+}
