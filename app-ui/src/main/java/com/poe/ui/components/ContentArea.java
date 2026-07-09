@@ -14,8 +14,11 @@ import java.util.Map;
 
 /**
  * 多标签内容区。
- * 管理功能页面的打开、切换、关闭。
- * 同一功能不可重复打开；设置页不可关闭。
+ * <ul>
+ *   <li>同一功能不可重复打开（Tab 去重）；</li>
+ *   <li>父菜单页面（有子页的一级菜单）不能作为 Tab 打开；</li>
+ *   <li>关闭 Tab 时自动清理缓存。</li>
+ * </ul>
  * 页面定义由外部通过构造参数注入（{@link PageDefEnum}）。
  */
 public class ContentArea extends TabPane {

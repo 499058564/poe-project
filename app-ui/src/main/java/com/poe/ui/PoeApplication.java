@@ -10,6 +10,13 @@ import java.util.Objects;
 
 /**
  * PoE Tool 应用主入口。
+ *
+ * <p>继承 JavaFX {@link Application}，在 {@link #start(Stage)} 中：
+ * <ol>
+ *   <li>创建 {@link MainWindow}（组合 Sidebar + ContentArea + StatusBar）</li>
+ *   <li>加载自定义 PoE 暗黑主题 CSS（AtlantaFX 保留备用）</li>
+ *   <li>显示主窗口</li>
+ * </ol>
  */
 public class PoeApplication extends Application {
 
