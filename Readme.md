@@ -10,8 +10,9 @@ poe_project 最终目标在于整合游玩过程中的所有工具，玩家使�
 
 ### 当前仓库状态
 
-- 已提交 **Gradle 多模块项目骨架**，可通过 Gradle Wrapper 执行 `projects`、`build`、`test` 等基础命令
-- 当前仍以 **规划驱动** 为主：大部分业务能力尚在 `doc/tasks/` 中分阶段设计，代码实现会按任务逐步落地
+- 已提交 **Gradle 多模块项目骨架**，可通过 Gradle Wrapper 执行 `build`、`test`、`run` 等命令
+- **v0.1.0 进度**：T-001~T-007 已完成——项目骨架、主窗口布局、配置管理、事件总线，详见 `doc/tasks/v0.1.0/`
+- 大部分业务能力尚在 `doc/tasks/` 中分阶段设计，代码实现按任务逐步落地
 - 仓库同时包含两个规划中的 Git 子模块：
   - `pob-runtime`：POB 运行时来源
   - `poecharm2`：中文翻译基础数据来源
@@ -119,9 +120,9 @@ poe-project/
 │   └── theme/              # CSS 暗黑主题
 │
 ├── app-core/               # 业务协调层（粘合 UI / PoB / Data）
-│   ├── event/              # 事件总线定义
-│   ├── service/            # 业务服务 (搜索、翻译、BD管理等)
-│   └── config/             # 应用配置管理
+│   ├── config/             # 应用配置管理（JSON 加载/保存/恢复）
+│   ├── constant/           # 配置常量
+│   └── event/              # 事件总线定义（导航、同步、配置变更）
 │
 ├── pob-runtime/            # PoB 运行时抽象（Submodule + Headless）
 │
