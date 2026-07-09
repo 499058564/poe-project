@@ -8,6 +8,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.StackPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,6 +31,8 @@ public class ContentArea extends TabPane {
     /** 已打开的标签页（保持插入顺序） */
     private final Map<String, Tab> tabMap = new LinkedHashMap<>();
 
+    private static final Logger log = LoggerFactory.getLogger(ContentArea.class);
+
     public ContentArea(PageDefEnum[] pageDefs) {
         this.pageDefs = pageDefs;
         getStyleClass().add(StyleClasses.CONTENT_AREA);
@@ -43,18 +47,24 @@ public class ContentArea extends TabPane {
     public void openPage(String pageId) {
         // 父菜单页面不可作为 Tab 打开
         if (isParentPage(pageId)) {
+            log.debug("Skip parent page: {}", pageId);
             return;
         }
 
         if (tabMap.containsKey(pageId)) {
+            log.debug("Switch to existing tab: {}", pageId);
             getSelectionModel().select(tabMap.get(pageId));
             return;
         }
 
+        log.debug("Open new tab: {}", pageId);
         String title = resolveTitle(pageId);
         Tab tab = new Tab(title, createPlaceholder(pageId));
 
-        tab.setOnCloseRequest(e -> tabMap.remove(pageId));
+        tab.setOnCloseRequest(e -> {
+            log.debug("Close tab: {}", pageId);
+            tabMap.remove(pageId);
+        });
 
         tabMap.put(pageId, tab);
         getTabs().add(tab);

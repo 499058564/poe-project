@@ -11,6 +11,8 @@ import com.poe.ui.i18n.keys.AppKeys;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 应用主窗口。
@@ -30,8 +32,12 @@ public class MainWindow {
     /** 底部状态栏 */
     private final StatusBar statusBar;
 
+    private static final Logger log = LoggerFactory.getLogger(MainWindow.class);
+
     public MainWindow(Stage stage) {
         this.stage = stage;
+        log.info("Creating main window: {}x{}", LayoutConstants.WINDOW_DEFAULT_WIDTH,
+            LayoutConstants.WINDOW_DEFAULT_HEIGHT);
         stage.setTitle(Messages.get(AppKeys.TITLE));
         stage.setWidth(LayoutConstants.WINDOW_DEFAULT_WIDTH);
         stage.setHeight(LayoutConstants.WINDOW_DEFAULT_HEIGHT);
@@ -45,11 +51,13 @@ public class MainWindow {
 
         // 导航回调：侧边栏点击 → 内容区打开对应 Tab
         sidebar.setOnNavigate(pageId -> {
+            log.debug("Navigate to page: {}", pageId);
             contentArea.openPage(pageId);
             sidebar.selectPage(pageId);
         });
 
         // 默认打开物品搜索页
+        log.info("Opening default page: {}", PageIds.DEFAULT_PAGE);
         sidebar.selectPage(PageIds.DEFAULT_PAGE);
         contentArea.openPage(PageIds.DEFAULT_PAGE);
 
@@ -60,6 +68,7 @@ public class MainWindow {
 
         this.scene = new Scene(root);
         stage.setScene(scene);
+        log.debug("Main window scene initialized");
     }
 
     public Scene getScene() {
