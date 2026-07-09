@@ -36,8 +36,14 @@ public class ContentArea extends TabPane {
     /**
      * 打开或切换到指定功能页面。
      * 如果页面已存在则选中，否则创建新 Tab。
+     * 父菜单页面（有子页的一级菜单）不能作为 Tab 打开。
      */
     public void openPage(String pageId) {
+        // 父菜单页面不可作为 Tab 打开
+        if (isParentPage(pageId)) {
+            return;
+        }
+
         if (tabMap.containsKey(pageId)) {
             getSelectionModel().select(tabMap.get(pageId));
             return;
@@ -55,6 +61,22 @@ public class ContentArea extends TabPane {
         tabMap.put(pageId, tab);
         getTabs().add(tab);
         getSelectionModel().select(tab);
+    }
+
+    /** 判断指定 pageId 是否为一父菜单（有子页但不能作为 Tab 打开） */
+    private boolean isParentPage(String pageId) {
+        for (PageDefEnum def : pageDefs) {
+            if (def.isTopLevel() && def.pageId().equals(pageId)) {
+                // 检查是否有子页
+                for (PageDefEnum child : pageDefs) {
+                    if (pageId.equals(child.parentPageId())) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        return false;
     }
 
     private String resolveTitle(String pageId) {

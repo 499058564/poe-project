@@ -20,9 +20,6 @@ public final class PageIds {
     /** 设置 */
     public static final String SETTINGS = "settings";
 
-    /** 应用启动时默认打开的页面 */
-    public static final String DEFAULT_PAGE = ITEM_SEARCH;
-
     // ---- 物品搜索子页 ---- */
     /** 基础物品 */
     public static final String ITEM_BASE = "item-search/base-items";
@@ -38,4 +35,7 @@ public final class PageIds {
     public static final String GEAR_JEWELS = "gear-sim/jewels";
     /** 药剂 */
     public static final String GEAR_FLASKS = "gear-sim/flasks";
+
+    /** 应用启动时默认打开的页面（必须是叶子页面，不能是一级父菜单） */
+    public static final String DEFAULT_PAGE = ITEM_BASE;
 }
