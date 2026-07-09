@@ -1,0 +1,9 @@
+/* PoE Tool – Dark Theme (master)
+ * Imports sub-files ordered by dependency:
+ *   base.css     — colour variables (must be first)
+ *   controls.css — standard JavaFX control overrides
+ *   layout.css   — application component styles
+ */
+@import "base.css";
+@import "controls.css";
+@import "layout.css";

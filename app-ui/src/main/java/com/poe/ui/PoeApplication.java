@@ -3,7 +3,7 @@ package com.poe.ui;
 import atlantafx.base.theme.PrimerDark;
 import javafx.application.Application;
 import javafx.stage.Stage;
-import com.poe.ui.main.MainWindow;
+import com.poe.ui.window.MainWindow;
 import com.poe.ui.theme.ThemeConstants;
 
 import java.util.Objects;
@@ -16,7 +16,7 @@ public class PoeApplication extends Application {
     @Override
     public void start(Stage primaryStage) {
         // 集成 AtlantaFX 暗黑主题
-        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+        // Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
         MainWindow mainWindow = new MainWindow(primaryStage);
 
