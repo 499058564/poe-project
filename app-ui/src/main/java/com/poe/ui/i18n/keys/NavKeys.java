@@ -17,6 +17,8 @@ public final class NavKeys {
     public static final String PASSIVE_TREE = "nav.passive-tree";
     /** 装备模拟 */
     public static final String GEAR_SIM = "nav.gear-sim";
+    /** 系统 */
+    public static final String SYSTEM = "nav.system";
     /** 设置 */
     public static final String SETTINGS = "nav.settings";
     /** 禁用按钮悬浮提示 */

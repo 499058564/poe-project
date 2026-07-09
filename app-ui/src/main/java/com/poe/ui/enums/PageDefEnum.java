@@ -26,7 +26,9 @@ public enum PageDefEnum {
     GEAR_JEWELS(PageIds.GEAR_JEWELS, NavKeys.GEAR_JEWELS, true, PageIds.GEAR_SIM),
     GEAR_FLASKS(PageIds.GEAR_FLASKS, NavKeys.GEAR_FLASKS, true, PageIds.GEAR_SIM),
     // ---- 一级菜单 ----
-    SETTINGS(PageIds.SETTINGS, NavKeys.SETTINGS, false, null);
+    SYSTEM(PageIds.SYSTEM, NavKeys.SYSTEM, false, null),
+    // ---- 系统子页 ----
+    SETTINGS(PageIds.SETTINGS, NavKeys.SETTINGS, false, PageIds.SYSTEM);
 
     private final String pageId;
     private final String i18nKey;

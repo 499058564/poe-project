@@ -17,6 +17,8 @@ public final class PageIds {
     public static final String PASSIVE_TREE = "passive-tree";
     /** 装备模拟 */
     public static final String GEAR_SIM = "gear-sim";
+    /** 系统 */
+    public static final String SYSTEM = "system";
     /** 设置 */
     public static final String SETTINGS = "settings";
 

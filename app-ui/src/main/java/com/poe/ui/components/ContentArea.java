@@ -1,6 +1,5 @@
 package com.poe.ui.components;
 
-import com.poe.ui.constants.PageIds;
 import com.poe.ui.constants.StyleClasses;
 import com.poe.ui.enums.PageDefEnum;
 import com.poe.ui.i18n.Messages;
@@ -51,10 +50,6 @@ public class ContentArea extends TabPane {
 
         String title = resolveTitle(pageId);
         Tab tab = new Tab(title, createPlaceholder(pageId));
-
-        if (PageIds.SETTINGS.equals(pageId)) {
-            tab.setClosable(false);
-        }
 
         tab.setOnCloseRequest(e -> tabMap.remove(pageId));
 
