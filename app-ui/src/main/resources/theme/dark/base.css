@@ -4,6 +4,11 @@
  * ============================================================ */
 
 .root {
+    /* 全局默认文字 / 背景颜色 */
+    -fx-text-fill: #d0d0d0;
+    -fx-text-background-color: #d0d0d0;
+    -fx-background: #16213e;
+
     /* PoE rarity colours (only custom variables kept) */
     -fx-rarity-normal: #c8c8c8;
     -fx-rarity-magic: #8888ff;

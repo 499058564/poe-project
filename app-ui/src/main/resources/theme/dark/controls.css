@@ -38,7 +38,12 @@
 
 .tab-pane .tab {
     -fx-background-color: #2b2b43;
+    -fx-text-fill: #b0b0b0;
     -fx-padding: 6 16 6 16;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #b0b0b0;
 }
 
 .tab-pane .tab.selected {
@@ -47,8 +52,16 @@
     -fx-border-width: 0 0 2 0;
 }
 
+.tab-pane .tab.selected .tab-label {
+    -fx-text-fill: #d4a853;
+}
+
 .tab-pane .tab:hover {
     -fx-background-color: #353550;
+}
+
+.tab-pane .tab:hover .tab-label {
+    -fx-text-fill: #e0e0e0;
 }
 
 /* ---- TableView ---- */
@@ -64,18 +77,32 @@
 
 .table-view .column-header {
     -fx-background-color: #1a1a2e;
+    -fx-text-fill: #c0c0c0;
     -fx-border-color: #2a2a4a;
     -fx-border-width: 0 1 1 0;
 }
 
+.table-view .column-header .label {
+    -fx-text-fill: #c0c0c0;
+}
+
 .table-view .table-row-cell {
     -fx-background-color: #16213e;
+    -fx-text-fill: #c8c8c8;
     -fx-border-color: transparent;
     -fx-table-cell-border-color: transparent;
 }
 
+.table-view .table-cell {
+    -fx-text-fill: #c8c8c8;
+}
+
 .table-view .table-row-cell.selected {
     -fx-background-color: #3a3a5c;
+}
+
+.table-view .table-row-cell.selected .table-cell {
+    -fx-text-fill: #e8e8e8;
 }
 
 .table-view .table-row-cell:hover {
@@ -86,6 +113,7 @@
 .text-field,
 .text-area {
     -fx-background-color: #30304b;
+    -fx-text-fill: #d0d0d0;
     -fx-prompt-text-fill: #888888;
     -fx-border-color: #2a2a4a;
     -fx-border-radius: 3;
@@ -105,6 +133,7 @@
 /* ---- Button ---- */
 .button {
     -fx-background-color: #353550;
+    -fx-text-fill: #d0d0d0;
     -fx-border-color: #2a2a4a;
     -fx-border-radius: 3;
     -fx-background-radius: 3;
@@ -113,11 +142,13 @@
 
 .button:hover {
     -fx-background-color: #d4a853;
+    -fx-text-fill: #0f0f23;
     -fx-border-color: #bf974b;
 }
 
 .button.pressed {
     -fx-background-color: #b48f47;
+    -fx-text-fill: #0f0f23;
 }
 
 .button:default {
@@ -128,6 +159,7 @@
 /* ---- Tooltip ---- */
 .tooltip {
     -fx-background-color: #0f0f23;
+    -fx-text-fill: #d0d0d0;
     -fx-border-color: #d4a853;
     -fx-border-width: 1;
     -fx-border-radius: 3;

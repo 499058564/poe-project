@@ -16,6 +16,7 @@
 /* Collapse toggle */
 .collapse-btn {
     -fx-background-color: transparent;
+    -fx-text-fill: #c0c0c0;
     -fx-font-size: 14px;
     -fx-padding: 8 0 8 0;
     -fx-border-color: transparent transparent #2a2a4a transparent;
@@ -23,6 +24,7 @@
 }
 
 .collapse-btn:hover {
+    -fx-text-fill: #d4a853;
 }
 
 .collapse-btn.selected {
@@ -31,6 +33,7 @@
 /* NavButton */
 .nav-button {
     -fx-background-color: transparent;
+    -fx-text-fill: #c0c0c0;
     -fx-font-size: 13px;
     -fx-padding: 10 16 10 16;
     -fx-border-color: transparent;
@@ -40,10 +43,12 @@
 
 .nav-button:hover {
     -fx-background-color: #30304b;
+    -fx-text-fill: #e0e0e0;
 }
 
 .nav-button.selected {
     -fx-background-color: #3a3a5c;
+    -fx-text-fill: #d4a853;
     -fx-border-color: #d4a853;
     -fx-border-width: 0 0 0 3;
 }
@@ -55,6 +60,7 @@
 /* 二级菜单子项 */
 .nav-sub-item {
     -fx-background-color: transparent;
+    -fx-text-fill: #c0c0c0;
     -fx-font-size: 13px;
     -fx-padding: 8 16 8 28;
     -fx-border-color: transparent;
@@ -64,10 +70,12 @@
 
 .nav-sub-item:hover {
     -fx-background-color: #30304b;
+    -fx-text-fill: #e0e0e0;
 }
 
 .nav-sub-item.selected {
     -fx-background-color: #3a3a5c;
+    -fx-text-fill: #d4a853;
     -fx-border-color: #d4a853;
     -fx-border-width: 0 0 0 3;
 }
@@ -87,6 +95,7 @@
 
 .placeholder-label {
     -fx-font-size: 16px;
+    -fx-text-fill: #808080;
 }
 
 /* ---- StatusBar ---- */
@@ -100,6 +109,7 @@
 
 .status-label {
     -fx-font-size: 11px;
+    -fx-text-fill: #a0a0a0;
 }
 
 .status-bar .progress-bar {
