@@ -96,30 +96,84 @@ public class MigrationManager {
                 .getResources(MIGRATION_DIR);
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
+                String protocol = url.getProtocol();
 
-                if ("file".equals(url.getProtocol())) {
-                    // 文件系统目录
-                    java.io.File dir = new java.io.File(url.toURI());
-                    java.io.File[] files = dir.listFiles();
-                    if (files != null) {
-                        for (java.io.File f : files) {
-                            String name = f.getName();
-                            Matcher m = VERSION_PATTERN.matcher(name);
-                            if (m.matches()) {
-                                int version = Integer.parseInt(m.group(1));
-                                all.add(new MigrationFile(version, name));
-                            }
-                        }
-                    }
+                if ("file".equals(protocol)) {
+                    scanFileDirectory(all, url);
+                } else if ("jar".equals(protocol)) {
+                    scanJarDirectory(all, url);
                 }
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to discover migration files", e);
         }
 
-        // 按版本排序，过滤已执行的
-        all.sort(Comparator.comparingInt(m -> m.version));
+        return pendingFilter(all, currentVersion);
+    }
 
+    private void scanFileDirectory(List<MigrationFile> all, URL url) {
+        try {
+            java.io.File dir = new java.io.File(url.toURI());
+            java.io.File[] files = dir.listFiles();
+            if (files != null) {
+                for (java.io.File f : files) {
+                    collectMigrationFile(all, f.getName());
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to scan migration directory: " + url, e);
+        }
+    }
+
+    private void scanJarDirectory(List<MigrationFile> all, URL url) {
+        // jar:file:/path/to.jar!/migration/
+        // url.getPath() = file:/path/to.jar!/migration/
+        String path = url.getPath();
+        int sep = path.lastIndexOf("!");
+        if (sep < 0) return;
+        String jarPath = path.substring(0, sep); // file:/path/to.jar
+        String dirInJar = path.substring(sep + 1); // /migration/
+
+        // 移除可能的 file: 前缀
+        if (jarPath.startsWith("file:")) {
+            jarPath = jarPath.substring("file:".length());
+        }
+
+        // 确保目录以 / 开头且不以 / 结尾
+        if (dirInJar.endsWith("/")) {
+            dirInJar = dirInJar.substring(0, dirInJar.length() - 1);
+        }
+        if (!dirInJar.startsWith("/")) {
+            dirInJar = "/" + dirInJar;
+        }
+
+        try (java.util.jar.JarFile jarFile = new java.util.jar.JarFile(
+                new java.io.File(jarPath))) {
+            java.util.Enumeration<java.util.jar.JarEntry> entries = jarFile.entries();
+            String prefix = dirInJar.substring(1) + "/"; // migration/
+            while (entries.hasMoreElements()) {
+                java.util.jar.JarEntry entry = entries.nextElement();
+                String name = entry.getName();
+                if (name.startsWith(prefix) && !name.endsWith("/")) {
+                    String fileName = name.substring(name.lastIndexOf('/') + 1);
+                    collectMigrationFile(all, fileName);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to scan JAR migration directory: " + url, e);
+        }
+    }
+
+    private void collectMigrationFile(List<MigrationFile> all, String fileName) {
+        Matcher m = VERSION_PATTERN.matcher(fileName);
+        if (m.matches()) {
+            int version = Integer.parseInt(m.group(1));
+            all.add(new MigrationFile(version, fileName));
+        }
+    }
+
+    private List<MigrationFile> pendingFilter(List<MigrationFile> all, int currentVersion) {
+        all.sort(Comparator.comparingInt(m -> m.version));
         List<MigrationFile> pending = new ArrayList<>();
         for (MigrationFile mf : all) {
             if (mf.version > currentVersion) {

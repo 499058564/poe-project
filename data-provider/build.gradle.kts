@@ -4,6 +4,8 @@ plugins {
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":data-cache"))
+    implementation(project(":app-core"))
 
     // OkHttp HTTP 客户端
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
