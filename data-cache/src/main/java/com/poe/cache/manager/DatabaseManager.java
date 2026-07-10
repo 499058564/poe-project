@@ -21,8 +21,8 @@ public class DatabaseManager {
     private Connection connection;
 
     // 测试模式：设为 true 后 getConnection() 使用 testDbPath 而非默认磁盘路径
-    static volatile boolean testMode = false;
-    static String testDbPath = null;
+    public static volatile boolean testMode = false;
+    public static String testDbPath = null;
 
     private DatabaseManager() {}
 
@@ -86,7 +86,7 @@ public class DatabaseManager {
     /**
      * 重置单例（仅用于测试清理）。
      */
-    static synchronized void reset() {
+    public static synchronized void reset() {
         if (instance != null) {
             instance.close();
             instance = null;

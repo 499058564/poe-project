@@ -73,7 +73,7 @@ public class WikiApiClient {
      * @param rateLimiter 自定义限流器
      * @param baseUrl     API 基础地址
      */
-    WikiApiClient(OkHttpClient httpClient, RateLimiter rateLimiter, String baseUrl) {
+    public WikiApiClient(OkHttpClient httpClient, RateLimiter rateLimiter, String baseUrl) {
         this.httpClient = httpClient;
         this.rateLimiter = rateLimiter;
         this.objectMapper = new ObjectMapper();
