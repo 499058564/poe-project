@@ -23,13 +23,13 @@ class PassiveSkillDaoTest {
     private PassiveSkillDao dao;
 
     private static final String[] MIGRATION_FILES = {
-        "001_base_items.sql",
-        "002_skill_gems.sql",
-        "003_passive_skills.sql",
-        "004_mods.sql",
-        "005_data_version.sql",
-        "006_translations.sql",
-        "007_items_fts.sql",
+        "v001_base_items.sql",
+        "v002_skill_gems.sql",
+        "v003_passive_skills.sql",
+        "v004_mods.sql",
+        "v005_data_version.sql",
+        "v006_translations.sql",
+        "v007_items_fts.sql",
     };
 
     @BeforeEach

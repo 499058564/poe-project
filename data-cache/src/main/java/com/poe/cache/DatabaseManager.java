@@ -1,14 +1,8 @@
 package com.poe.cache;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.stream.Collectors;
 
 /**
  * SQLite 数据库管理器（线程安全单例）。
@@ -62,41 +56,14 @@ public class DatabaseManager {
     }
 
     /**
-     * 按编号顺序执行所有迁移 SQL 文件。
-     * 每个文件的 CREATE 语句均包含 {@code IF NOT EXISTS}，支持幂等执行。
+     * 通过 {@link MigrationManager} 执行版本化迁移。
+     * 仅执行未运行过的脚本，支持幂等重复调用。
      */
     public void init() {
         try {
-            String[] migrationFiles = {
-                "001_base_items.sql",
-                "002_skill_gems.sql",
-                "003_passive_skills.sql",
-                "004_mods.sql",
-                "005_data_version.sql",
-                "006_translations.sql",
-                "007_items_fts.sql",
-            };
-
-            for (String file : migrationFiles) {
-                String sql = loadResource("migration/" + file);
-                try (Statement stmt = connection.createStatement()) {
-                    stmt.executeUpdate(sql);
-                }
-            }
-        } catch (Exception e) {
+            new MigrationManager(connection).migrate();
+        } catch (RuntimeException e) {
             throw new RuntimeException("Failed to run migrations", e);
-        }
-    }
-
-    private String loadResource(String path) throws Exception {
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
-            if (is == null) {
-                throw new RuntimeException("Migration file not found: " + path);
-            }
-            try (BufferedReader reader = new BufferedReader(
-                     new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                return reader.lines().collect(Collectors.joining("\n"));
-            }
         }
     }
 
