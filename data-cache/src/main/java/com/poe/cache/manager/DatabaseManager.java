@@ -1,4 +1,4 @@
-package com.poe.cache;
+package com.poe.cache.manager;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
