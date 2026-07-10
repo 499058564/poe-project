@@ -1,5 +1,6 @@
-package com.poe.cache;
+package com.poe.cache.manager;
 
+import com.poe.cache.manager.MigrationManager.MigrationFile;
 import org.junit.jupiter.api.*;
 
 import java.sql.*;

@@ -1,4 +1,4 @@
-package com.poe.cache;
+package com.poe.cache.manager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
