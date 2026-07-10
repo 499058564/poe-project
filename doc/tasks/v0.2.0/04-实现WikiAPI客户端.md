@@ -72,8 +72,8 @@ limiter.acquire();  // 请求前获取许可
 | 表名 | 用途 | 预估记录数 |
 |------|------|-----------|
 | `items` | 所有物品基础信息 | ~5000+ |
-| `skill_gems` | 技能和辅助宝石 | ~600+ |
-| `passive_skills` | 天赋树节点 | ~1500+ |
+| `skill_gems` | 技能宝石定义（16 字段） | 815 |
+| `passive_skills` | 天赋树节点 | 5,883 |
 | `mods` | 所有词缀 | ~10000+ |
 | `base_items` | 装备基底 | ~1500+ |
 | `crafting_bench_options` | 工艺台选项 | ~500+ |

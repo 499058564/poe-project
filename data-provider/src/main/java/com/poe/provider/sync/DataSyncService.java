@@ -48,17 +48,26 @@ public class DataSyncService {
     private static final Map<String, TableConfig> TABLE_CONFIGS = new LinkedHashMap<>();
     static {
         TABLE_CONFIGS.put("items", new TableConfig("base_items",
-            "name,class_id,inventory_width,inventory_height,requirements,"
-            + "implicits,properties,flavour_text,drop_level"));
+            "_pageName,name,class_id,class,size_x,size_y,"
+            + "drop_level,flavour_text,base_item,base_item_id,"
+            + "rarity,rarity_id,release_version,required_level,"
+            + "required_dexterity,required_intelligence,required_strength,"
+            + "description,tags,inventory_icon"));
         TABLE_CONFIGS.put("skill_gems", new TableConfig("skill_gems",
-            "name,gem_type,gem_tags,primary_attribute,description,"
-            + "quality_stats,level_stats,required_level"));
+            "skill_id,gem_tags,primary_attribute,max_level,"
+            + "is_vaal_skill_gem,support_gem_letter,support_gem_letter_html,"
+            + "requires_intelligence,requires_dexterity,requires_strength,"
+            + "awakened_variant_id,regular_variant_id,vaal_variant_id,"
+            + "secondary_skill_id,ruthless_skill_id,ruthless_secondary_skill_id"));
         TABLE_CONFIGS.put("passive_skills", new TableConfig("passive_skills",
-            "name,passive_class,ascendancy,stats,is_keystone,"
-            + "is_notable,is_jewel_socket,x,y,connections"));
+            "id,name,ascendancy_class,is_keystone,is_notable,"
+            + "is_jewel_socket,stat_text,connections,is_multiple_choice,"
+            + "is_multiple_choice_option,mastery_id,flavour_text,"
+            + "skill_points,buff_id"));
         TABLE_CONFIGS.put("mods", new TableConfig("mods",
-            "name,domain,generation_type,mod_group,stat_text,"
-            + "spawn_tags,spawn_weights,required_level"));
+            "id,name,domain,generation_type,mod_groups,stat_text,"
+            + "tags,required_level,mod_type,tier_text,"
+            + "granted_buff_id,granted_buff_value,granted_skill"));
     }
 
     private final WikiApiClient wikiClient;

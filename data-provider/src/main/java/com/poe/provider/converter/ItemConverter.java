@@ -22,13 +22,13 @@ public class ItemConverter implements DataConverter<Item> {
 
         item.setId(parseId(row.path("_pageID").asText()));
         item.setName(row.path("name").asText());
-        item.setNameZh(null); // 后续由翻译层填充
+        item.setNameZh(null);
         item.setItemClass(row.path("class_id").asText());
-        item.setInventoryWidth(parseIntSafe(row, "inventory_width"));
-        item.setInventoryHeight(parseIntSafe(row, "inventory_height"));
-        item.setRequirements(toJsonOrNull(row.path("requirements")));
-        item.setImplicits(toJsonOrNull(row.path("implicits")));
-        item.setProperties(toJsonOrNull(row.path("properties")));
+        item.setInventoryWidth(parseIntSafe(row, "size_x"));
+        item.setInventoryHeight(parseIntSafe(row, "size_y"));
+        item.setRequirements(null); // Cargo 无对应字段，来自其他表
+        item.setImplicits(null);     // Cargo implicit_stat_text 字段存在但格式不同
+        item.setProperties(null);    // Cargo 无直接对应
         item.setFlavourText(nullToNull(row.path("flavour_text").asText()));
         item.setDropLevel(parseIntSafe(row, "drop_level"));
         item.setWikiUrl("https://www.poewiki.net/wiki/" + escapeWikiPath(row.path("_pageName").asText()));
@@ -60,6 +60,16 @@ public class ItemConverter implements DataConverter<Item> {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    static boolean parseBooleanSafe(JsonNode node, String field) {
+        String text = node.path(field).asText();
+        return "1".equals(text) || "true".equalsIgnoreCase(text);
+    }
+
+    static String nullableText(JsonNode node, String field) {
+        String text = node.path(field).asText();
+        return (text == null || text.isEmpty()) ? null : text;
     }
 
     static String toJsonOrNull(JsonNode node) {

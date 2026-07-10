@@ -6,8 +6,10 @@ import com.poe.cache.model.Mod;
 /**
  * 将 Wiki Cargo {@code mods} 表行转换为 {@link Mod} 模型。
  * <p>
- * Cargo 字段映射：{@code generation_type} 区分前缀/后缀/基底/附魔，
- * {@code spawn_weights}、{@code spawn_tags}、{@code stats} 以 JSON 字符串存储。
+ * Cargo 字段：{@code id}, {@code name}, {@code domain}, {@code generation_type},
+ * {@code mod_groups}→modGroup, {@code stat_text}→stats, {@code tags}→spawnTags,
+ * {@code required_level}, {@code mod_type}, {@code tier_text}, {@code granted_buff_id}。
+ * 注意：spawn_weights 不在 Cargo mods 表。
  */
 public class ModConverter implements DataConverter<Mod> {
 
@@ -18,13 +20,13 @@ public class ModConverter implements DataConverter<Mod> {
         mod.setId(ItemConverter.parseIntSafe(row, "_pageID"));
         mod.setName(row.path("name").asText());
         mod.setNameZh(null);
-        mod.setModType(row.path("generation_type").asText());
+        mod.setModType(ItemConverter.nullableText(row, "mod_type"));
         mod.setDomain(row.path("domain").asText());
         mod.setGenerationType(row.path("generation_type").asText());
-        mod.setModGroup(ItemConverter.nullToNull(row.path("mod_group").asText()));
+        mod.setModGroup(ItemConverter.nullableText(row, "mod_groups"));
         mod.setStats(ItemConverter.toJsonOrNull(row.path("stat_text")));
-        mod.setSpawnTags(ItemConverter.toJsonOrNull(row.path("spawn_tags")));
-        mod.setSpawnWeights(ItemConverter.toJsonOrNull(row.path("spawn_weights")));
+        mod.setSpawnTags(ItemConverter.nullableText(row, "tags"));
+        mod.setSpawnWeights(null); // Cargo 无 spawn_weights
         mod.setRequiredLevel(ItemConverter.parseIntSafe(row, "required_level"));
         mod.setVersion("");
 
