@@ -33,6 +33,11 @@ public class ContentArea extends TabPane {
 
     private static final Logger log = LoggerFactory.getLogger(ContentArea.class);
 
+    /**
+     * 构造多标签内容区。
+     *
+     * @param pageDefs 页面定义数组，包含所有可能打开的页面的元数据
+     */
     public ContentArea(PageDefEnum[] pageDefs) {
         this.pageDefs = pageDefs;
         getStyleClass().add(StyleClasses.CONTENT_AREA);
@@ -43,6 +48,8 @@ public class ContentArea extends TabPane {
      * 打开或切换到指定功能页面。
      * 如果页面已存在则选中，否则创建新 Tab。
      * 父菜单页面（有子页的一级菜单）不能作为 Tab 打开。
+     *
+     * @param pageId 页面标识符，对应 {@link PageIds} 中的常量
      */
     public void openPage(String pageId) {
         // 父菜单页面不可作为 Tab 打开

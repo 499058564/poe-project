@@ -17,6 +17,13 @@ public class NavButton extends ToggleButton {
     /** 关联的功能页面标识 */
     private final String pageId;
 
+    /**
+     * 构造导航按钮。
+     *
+     * @param text     按钮文本（i18n 翻译后的文字）
+     * @param pageId   关联的功能页面标识
+     * @param disabled 是否默认禁用
+     */
     public NavButton(String text, String pageId, boolean disabled) {
         super(text);
         this.pageId = pageId;
@@ -31,10 +38,21 @@ public class NavButton extends ToggleButton {
         }
     }
 
+    /**
+     * 构造非禁用的导航按钮。
+     *
+     * @param text   按钮文本
+     * @param pageId 功能页面标识
+     */
     public NavButton(String text, String pageId) {
         this(text, pageId, false);
     }
 
+    /**
+     * 获取按钮关联的页面 ID。
+     *
+     * @return 页面标识符
+     */
     public String getPageId() {
         return pageId;
     }
