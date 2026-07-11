@@ -279,11 +279,92 @@ class TranslationServiceTest {
     // ── importFromPoeCharm2 ──
 
     @Test
-    @DisplayName("importFromPoeCharm2 returns 0 when no resources found")
+    @DisplayName("importFromPoeCharm2 with real data imports items")
+    void shouldImportFromPoeCharm2() {
+        // 根据运行环境自动查找 PoeCharm2 翻译目录
+        java.nio.file.Path translateDir = findPoeCharm2TranslateDir();
+
+        if (translateDir == null) {
+            System.out.println("PoeCharm2 translate dir not found, skipping test");
+            return;
+        }
+
+        int count = service.importFromPoeCharm2(translateDir);
+        assertTrue(count > 0, "Should import at least some translations, got " + count);
+
+        // 验证已知翻译
+        String mageblood = service.translate("Mageblood", "item");
+        System.out.println("Imported " + count + " translations. Mageblood → " + mageblood);
+        if (!"Mageblood".equals(mageblood)) {
+            assertEquals("法师之血", mageblood);
+        }
+    }
+
+    /** 查找 PoeCharm2 翻译目录，先查当前目录，再查父目录 */
+    private java.nio.file.Path findPoeCharm2TranslateDir() {
+        // Gradle 执行测试时 cwd 可能是模块目录或项目根目录，尝试多个相对路径
+        String[] roots = {".", ".."};
+        for (String relative : roots) {
+            java.nio.file.Path dir = java.nio.file.Paths.get(relative, "poecharm2", "Data", "Translate", "zh-rCN");
+            if (java.nio.file.Files.exists(dir)) {
+                return dir.toAbsolutePath().normalize();
+            }
+        }
+        return null;
+    }
+
+    @Test
+    @DisplayName("importFromPoeCharm2 returns 0 when directory missing")
     void shouldHandleMissingPoeCharm2Resources() {
-        int count = service.importFromPoeCharm2();
-        // poecharm2/src/main/resources may not exist yet → returns 0
-        assertTrue(count >= 0);
+        int count = service.importFromPoeCharm2(java.nio.file.Paths.get("nonexistent_dir_xyz"));
+        assertEquals(0, count);
+    }
+
+    @Test
+    @DisplayName("parsePoeCharm2Csv handles quoted and unquoted lines")
+    void shouldParsePoeCharm2CsvLines() {
+        java.nio.file.Path csvFile = null;
+        try {
+            // 写临时 CSV 文件测试解析
+            csvFile = java.nio.file.Files.createTempFile("poecharm2_test_", ".csv");
+            java.nio.file.Files.writeString(csvFile,
+                """
+                "Blue Pearl Amulet",碧珠护身符
+                "Marble Amulet",大理石护身符
+                Andvarius,贪欲之记
+                "Cospri's Malice",卡斯普里怨恨
+                """
+            );
+
+            java.util.Map<String, String> result = TranslationService.parsePoeCharm2Csv(csvFile);
+            assertEquals(4, result.size());
+            assertEquals("碧珠护身符", result.get("Blue Pearl Amulet"));
+            assertEquals("大理石护身符", result.get("Marble Amulet"));
+            assertEquals("贪欲之记", result.get("Andvarius"));
+            assertEquals("卡斯普里怨恨", result.get("Cospri's Malice"));
+        } catch (Exception e) {
+            fail("Failed to create temp CSV: " + e.getMessage());
+        } finally {
+            if (csvFile != null) {
+                try { java.nio.file.Files.deleteIfExists(csvFile); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("mapFilenameToDomain maps correctly")
+    void shouldMapFilenameToDomain() {
+        assertEquals("item", TranslationService.mapFilenameToDomain("Items_Accessories.txt.csv"));
+        assertEquals("item", TranslationService.mapFilenameToDomain("Items_Armour.txt.csv"));
+        assertEquals("item", TranslationService.mapFilenameToDomain("Uniques.txt.csv"));
+        assertEquals("item", TranslationService.mapFilenameToDomain("Items_Flasks.txt.csv"));
+        assertEquals("skill", TranslationService.mapFilenameToDomain("Items_Gems.csv"));
+        assertEquals("skill", TranslationService.mapFilenameToDomain("Gems_data.csv"));
+        assertEquals("passive", TranslationService.mapFilenameToDomain("passiveTree.csv"));
+        assertEquals("passive", TranslationService.mapFilenameToDomain("tree_dn.csv"));
+        assertEquals("mod", TranslationService.mapFilenameToDomain("statDescriptions.csv"));
+        assertEquals("mod", TranslationService.mapFilenameToDomain("ModMap.csv"));
+        assertEquals("mod", TranslationService.mapFilenameToDomain("Query_Mod.csv"));
     }
 
     // ── missing translations tracking ──

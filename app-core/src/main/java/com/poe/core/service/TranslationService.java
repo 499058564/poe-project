@@ -254,42 +254,183 @@ public class TranslationService {
     }
 
     /**
-     * 从 PoeCharm2 子模块导入基础翻译数据。
+     * 从 PoeCharm2 子模块导入基础翻译数据（默认路径）。
      * <p>
-     * 扫描 {@code poecharm2/src/main/resources/} 目录下的 JSON 翻译包文件，
-     * 逐文件导入 translations 表。
+     * 扫描 {@code poecharm2/Data/Translate/zh-rCN/} 目录下的 CSV 翻译文件，
+     * 解析 {@code "English",中文} 格式，按文件名映射到翻译领域并导入 translations 表。
      *
      * @return 导入的总条目数
      */
     public int importFromPoeCharm2() {
-        int total = 0;
-        Path poecharm2Dir = Paths.get(POECHARM2_PATH);
-        Path resourcesDir = poecharm2Dir.resolve("src/main/resources");
+        Path translateDir = Paths.get(POECHARM2_PATH, "Data", "Translate", "zh-rCN");
+        return importFromPoeCharm2(translateDir);
+    }
 
-        if (!Files.exists(resourcesDir)) {
-            log.info("PoeCharm2 resources directory not found: {}", resourcesDir.toAbsolutePath());
+    /**
+     * 从 PoeCharm2 翻译目录导入基础翻译数据（可指定路径，便于测试）。
+     *
+     * @param translateDir PoeCharm2 zh-rCN 翻译数据目录
+     * @return 导入的总条目数
+     */
+    public int importFromPoeCharm2(Path translateDir) {
+        if (!Files.exists(translateDir) || !Files.isDirectory(translateDir)) {
+            log.info("PoeCharm2 translate directory not found: {}", translateDir.toAbsolutePath());
             return 0;
         }
 
-        try (Stream<Path> files = Files.list(resourcesDir)) {
-            List<Path> jsonFiles = files
-                .filter(p -> p.toString().endsWith(".json"))
+        int total = 0;
+        try (Stream<Path> files = Files.list(translateDir)) {
+            List<Path> csvFiles = files
+                .filter(p -> p.toString().endsWith(".csv"))
                 .collect(Collectors.toList());
 
-            for (Path file : jsonFiles) {
+            for (Path file : csvFiles) {
                 try {
-                    int count = importTranslationPackFile(file.toString());
-                    total += count;
+                    String filename = file.getFileName().toString();
+                    String domain = mapFilenameToDomain(filename);
+                    Map<String, String> entries = parsePoeCharm2Csv(file);
+                    if (!entries.isEmpty()) {
+                        importTranslations(entries, domain);
+                        total += entries.size();
+                        log.debug("PoeCharm2: imported {} entries from {} (domain={})",
+                            entries.size(), filename, domain);
+                    }
                 } catch (Exception e) {
-                    log.warn("Failed to import translation from {}: {}", file, e.getMessage());
+                    log.warn("Failed to import PoeCharm2 CSV {}: {}", file.getFileName(), e.getMessage());
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to scan PoeCharm2 resources", e);
+            log.error("Failed to scan PoeCharm2 translate directory", e);
         }
 
-        log.info("PoeCharm2 import complete: {} translations imported", total);
+        log.info("PoeCharm2 import complete: {} translations imported from {}", total, translateDir);
         return total;
+    }
+
+    /**
+     * 解析 PoeCharm2 CSV 翻译文件。
+     * <p>
+     * CSV 格式：{@code "English Name",中文译名} 或 {@code EnglishName,中文译名}。
+     * 跳过空行和注释行。
+     *
+     * @param csvFile CSV 文件路径
+     * @return 英文 → 中文 翻译映射
+     */
+    static Map<String, String> parsePoeCharm2Csv(Path csvFile) {
+        Map<String, String> result = new LinkedHashMap<>();
+        try {
+            List<String> lines = Files.readAllLines(csvFile, StandardCharsets.UTF_8);
+            for (String line : lines) {
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                // 格式1: "English Name",中文译名
+                // 格式2: EnglishName,中文译名
+                String[] parts = parseCsvLine(line);
+                if (parts != null && parts.length == 2) {
+                    String source = parts[0].trim();
+                    String target = parts[1].trim();
+                    if (!source.isEmpty() && !target.isEmpty()) {
+                        result.put(source, target);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse PoeCharm2 CSV: " + csvFile, e);
+        }
+        return result;
+    }
+
+    /**
+     * 解析单行 CSV：处理引号包裹的字段。
+     * <p>
+     * 支持格式：
+     * <ul>
+     *   <li>{@code "English",中文} → ["English", "中文"]</li>
+     *   <li>{@code "English, text",中文} → ["English, text", "中文"]</li>
+     *   <li>{@code English,中文} → ["English", "中文"]</li>
+     * </ul>
+     *
+     * @param line 原始行
+     * @return [source, target] 或 null
+     */
+    private static String[] parseCsvLine(String line) {
+        // 引号包裹的字段（如 "Blue Pearl Amulet",碧珠护身符）
+        if (line.startsWith("\"")) {
+            int endQuote = findClosingQuote(line, 1);
+            if (endQuote < 0) {
+                return null;
+            }
+            String source = line.substring(1, endQuote);
+            int commaIdx = line.indexOf(',', endQuote);
+            if (commaIdx < 0) {
+                return null;
+            }
+            // 去掉目标字段可能的引号
+            String target = stripQuotes(line.substring(commaIdx + 1).trim());
+            return new String[]{source, target};
+        }
+
+        // 无引号简单格式（如 Andvarius,贪欲之记）
+        int commaIdx = line.indexOf(',');
+        if (commaIdx < 0) {
+            return null;
+        }
+        String source = stripQuotes(line.substring(0, commaIdx).trim());
+        String target = stripQuotes(line.substring(commaIdx + 1).trim());
+        return new String[]{source, target};
+    }
+
+    /** 查找闭合引号的位置，处理转义引号 "" */
+    private static int findClosingQuote(String line, int start) {
+        for (int i = start; i < line.length(); i++) {
+            if (line.charAt(i) == '"') {
+                // 检查是否是转义引号（两个连续引号）
+                if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                    i++; // 跳过转义引号
+                    continue;
+                }
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** 去除首尾引号 */
+    private static String stripQuotes(String s) {
+        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+            return s.substring(1, s.length() - 1);
+        }
+        return s;
+    }
+
+    /**
+     * 根据 PoeCharm2 CSV 文件名映射到翻译领域。
+     * <p>按具体程度从高到低匹配，避免 {@code items_*} 通配过早命中。
+     */
+    static String mapFilenameToDomain(String filename) {
+        String lower = filename.toLowerCase();
+        // 技能宝石
+        if (lower.startsWith("items_gems") || lower.startsWith("gems_")) {
+            return "skill";
+        }
+        // 被动技能树
+        if (lower.startsWith("passivetree") || lower.startsWith("tree_")) {
+            return "passive";
+        }
+        // 词缀 / 属性描述 / 怪物
+        if (lower.startsWith("statdescriptions") || lower.startsWith("modmap")
+            || lower.startsWith("query_mod") || lower.startsWith("monsters")
+            || lower.startsWith("minions")) {
+            return "mod";
+        }
+        // 物品（Items_*.csv / Uniques_*.csv）
+        if (lower.startsWith("items_") || lower.startsWith("uniques")) {
+            return "item";
+        }
+        // 默认归为 item
+        return "item";
     }
 
     // ── 缺失翻译跟踪 ──
