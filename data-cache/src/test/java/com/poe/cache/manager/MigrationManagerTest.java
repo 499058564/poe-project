@@ -38,8 +38,8 @@ class MigrationManagerTest {
         // 验证 schema_version 表存在
         assertTrue(tableExists("schema_version"));
 
-        // 验证 13 个迁移版本已记录
-        assertEquals(13, getMigrationCount());
+        // 验证 14 个迁移版本已记录
+        assertEquals(14, getMigrationCount());
 
         // 验证业务表已创建
         assertTrue(tableExists("base_items"));
@@ -60,13 +60,13 @@ class MigrationManagerTest {
 
         // 首次运行
         mgr.migrate();
-        assertEquals(13, getMigrationCount());
+        assertEquals(14, getMigrationCount());
 
         // 二次运行
         mgr.migrate();
 
         // 版本数不变
-        assertEquals(13, getMigrationCount());
+        assertEquals(14, getMigrationCount());
     }
 
     @Test
@@ -79,8 +79,8 @@ class MigrationManagerTest {
         // 使用完整 MigrationManager 继续执行
         new MigrationManager(connection).migrate();
 
-        // 13 个迁移全部完成
-        assertEquals(13, getMigrationCount());
+        // 14 个迁移全部完成
+        assertEquals(14, getMigrationCount());
         assertTrue(tableExists("items_fts"), "v007 items_fts should be created");
         assertTrue(tableExists("weapons"), "v008 weapons should be created");
     }
@@ -110,9 +110,9 @@ class MigrationManagerTest {
 
         List<MigrationRecord> records = getMigrationRecords();
 
-        assertEquals(13, records.size());
+        assertEquals(14, records.size());
         assertEquals("v001_base_items.sql", records.get(0).description);
-        assertEquals("v013_miscellaneous.sql", records.get(12).description);
+        assertEquals("v014_data_version_extend.sql", records.get(13).description);
         records.forEach(r -> assertNotNull(r.executedAt, "executed_at should not be null"));
     }
 
@@ -128,7 +128,7 @@ class MigrationManagerTest {
              ResultSet rs = stmt.executeQuery(
                  "SELECT COALESCE(MAX(version), 0) FROM schema_version")) {
             assertTrue(rs.next());
-            assertEquals(13, rs.getInt(1));
+            assertEquals(14, rs.getInt(1));
         } catch (SQLException e) {
             fail(e);
         }
