@@ -11,20 +11,32 @@ import java.sql.SQLException;
  * 数据库文件位于 {@code ~/.poe-tool/data/poe.db}。
  * <p>
  * 通过 {@link #testMode} / {@link #testDbPath} 支持测试时注入内存数据库。
+ * 通过 {@link #DatabaseManager(String)} 构造函数支持自定义路径（如 SeedDbBuilder）。
  */
 public class DatabaseManager {
 
-    private static final String DB_PATH =
+    static final String DB_PATH =
         System.getProperty("user.home") + "/.poe-tool/data/poe.db";
 
     private static DatabaseManager instance;
     private Connection connection;
+    private final String dbPath;
 
     // 测试模式：设为 true 后 getConnection() 使用 testDbPath 而非默认磁盘路径
     public static volatile boolean testMode = false;
     public static String testDbPath = null;
 
-    private DatabaseManager() {}
+    private DatabaseManager() {
+        this.dbPath = DB_PATH;
+    }
+
+    /**
+     * 使用自定义数据库路径创建管理器（非单例）。
+     * <p>适用于 SeedDbBuilder 等独立工具链。
+     */
+    public DatabaseManager(String dbPath) {
+        this.dbPath = dbPath;
+    }
 
     /**
      * 获取单例实例（双重检查锁定）。
@@ -38,6 +50,7 @@ public class DatabaseManager {
 
     /**
      * 获取数据库连接，首次调用自动执行迁移脚本初始化表结构。
+     * <p>调用方应确保数据库文件已就绪（通过 DatabaseInitializer）。
      */
     public Connection getConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
@@ -52,7 +65,7 @@ public class DatabaseManager {
         if (testMode && testDbPath != null) {
             return "jdbc:sqlite:" + testDbPath;
         }
-        return "jdbc:sqlite:" + DB_PATH;
+        return "jdbc:sqlite:" + dbPath;
     }
 
     /**
@@ -65,6 +78,25 @@ public class DatabaseManager {
         } catch (RuntimeException e) {
             throw new RuntimeException("Failed to run migrations", e);
         }
+    }
+
+    /**
+     * 强制初始化：创建连接 + 运行迁移（用于 SeedDbBuilder 首次构建新库）。
+     */
+    public void forceInit() throws SQLException {
+        if (connection != null && !connection.isClosed()) {
+            connection.close();
+        }
+        String url = getDbUrl();
+        connection = DriverManager.getConnection(url);
+        init();
+    }
+
+    /**
+     * 关闭数据库连接并重置状态，线程安全。
+     */
+    public synchronized void shutdown() {
+        close();
     }
 
     /**
