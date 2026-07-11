@@ -38,8 +38,8 @@ class MigrationManagerTest {
         // 验证 schema_version 表存在
         assertTrue(tableExists("schema_version"));
 
-        // 验证 10 个迁移版本已记录
-        assertEquals(10, getMigrationCount());
+        // 验证 11 个迁移版本已记录
+        assertEquals(11, getMigrationCount());
 
         // 验证业务表已创建
         assertTrue(tableExists("base_items"));
@@ -60,13 +60,13 @@ class MigrationManagerTest {
 
         // 首次运行
         mgr.migrate();
-        assertEquals(10, getMigrationCount());
+        assertEquals(11, getMigrationCount());
 
         // 二次运行
         mgr.migrate();
 
         // 版本数不变
-        assertEquals(10, getMigrationCount());
+        assertEquals(11, getMigrationCount());
     }
 
     @Test
@@ -79,8 +79,8 @@ class MigrationManagerTest {
         // 使用完整 MigrationManager 继续执行
         new MigrationManager(connection).migrate();
 
-        // 10 个迁移全部完成
-        assertEquals(10, getMigrationCount());
+        // 11 个迁移全部完成
+        assertEquals(11, getMigrationCount());
         assertTrue(tableExists("items_fts"), "v007 items_fts should be created");
         assertTrue(tableExists("weapons"), "v008 weapons should be created");
     }
@@ -110,9 +110,9 @@ class MigrationManagerTest {
 
         List<MigrationRecord> records = getMigrationRecords();
 
-        assertEquals(10, records.size());
+        assertEquals(11, records.size());
         assertEquals("v001_base_items.sql", records.get(0).description);
-        assertEquals("v010_skill_passive_detail.sql", records.get(9).description);
+        assertEquals("v011_monster_world_atlas.sql", records.get(10).description);
         records.forEach(r -> assertNotNull(r.executedAt, "executed_at should not be null"));
     }
 
@@ -128,7 +128,7 @@ class MigrationManagerTest {
              ResultSet rs = stmt.executeQuery(
                  "SELECT COALESCE(MAX(version), 0) FROM schema_version")) {
             assertTrue(rs.next());
-            assertEquals(10, rs.getInt(1));
+            assertEquals(11, rs.getInt(1));
         } catch (SQLException e) {
             fail(e);
         }
