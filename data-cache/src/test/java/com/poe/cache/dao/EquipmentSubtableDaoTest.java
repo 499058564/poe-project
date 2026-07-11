@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import javax.sql.DataSource;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class EquipmentSubtableDaoTest {
 
     private Connection connection;
+    private javax.sql.DataSource dataSource;
 
     private static final String[] MIGRATION_FILES = {
         "v001_base_items.sql",
@@ -37,7 +39,8 @@ class EquipmentSubtableDaoTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        connection = DriverManager.getConnection("jdbc:sqlite::memory:");
+        connection = DriverManager.getConnection("jdbc:sqlite:file::memory:?cache=shared");
+        dataSource = createDataSource();
         runMigrations();
     }
 
@@ -53,7 +56,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("WeaponDao: insert and findById")
     void weaponDaoInsertAndFindById() {
-        WeaponDao dao = new WeaponDao(connection);
+        WeaponDao dao = new WeaponDao(dataSource);
         Weapon w = new Weapon();
         w.setPageId(1);
         w.setPageName("Rusted_Sword");
@@ -75,7 +78,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("WeaponDao: batchInsert and count")
     void weaponDaoBatchInsert() {
-        WeaponDao dao = new WeaponDao(connection);
+        WeaponDao dao = new WeaponDao(dataSource);
         List<Weapon> weapons = new ArrayList<>();
         for (int i = 1; i <= 100; i++) {
             Weapon w = new Weapon();
@@ -92,7 +95,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("WeaponDao: batchInsert rolls back on duplicate")
     void weaponDaoBatchInsertRollback() {
-        WeaponDao dao = new WeaponDao(connection);
+        WeaponDao dao = new WeaponDao(dataSource);
         List<Weapon> weapons = new ArrayList<>();
         Weapon w1 = new Weapon();
         w1.setPageId(1);
@@ -112,7 +115,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("ArmourDao: insert and findById")
     void armourDaoInsertAndFindById() {
-        ArmourDao dao = new ArmourDao(connection);
+        ArmourDao dao = new ArmourDao(dataSource);
         Armour a = new Armour();
         a.setPageId(1);
         a.setPageName("Simple_Robe");
@@ -133,7 +136,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("ArmourDao: batchInsert and count")
     void armourDaoBatchInsert() {
-        ArmourDao dao = new ArmourDao(connection);
+        ArmourDao dao = new ArmourDao(dataSource);
         List<Armour> list = new ArrayList<>();
         for (int i = 1; i <= 50; i++) {
             Armour a = new Armour();
@@ -152,7 +155,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("ShieldDao: insert and findById")
     void shieldDaoInsertAndFindById() {
-        ShieldDao dao = new ShieldDao(connection);
+        ShieldDao dao = new ShieldDao(dataSource);
         Shield s = new Shield();
         s.setPageId(1);
         s.setPageName("Buckler");
@@ -167,7 +170,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("ShieldDao: findAll returns ordered")
     void shieldDaoFindAll() {
-        ShieldDao dao = new ShieldDao(connection);
+        ShieldDao dao = new ShieldDao(dataSource);
         Shield s1 = new Shield();
         s1.setPageId(2);
         s1.setPageName("B");
@@ -189,7 +192,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("AmuletDao: insert with talisman fields")
     void amuletDaoInsertTalisman() {
-        AmuletDao dao = new AmuletDao(connection);
+        AmuletDao dao = new AmuletDao(dataSource);
         Amulet a = new Amulet();
         a.setPageId(1);
         a.setPageName("Wereclaw_Talisman");
@@ -206,7 +209,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("AmuletDao: deleteById")
     void amuletDaoDeleteById() {
-        AmuletDao dao = new AmuletDao(connection);
+        AmuletDao dao = new AmuletDao(dataSource);
         Amulet a = new Amulet();
         a.setPageId(1);
         a.setPageName("Test_Amulet");
@@ -221,7 +224,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("FlaskDao: insert and findById")
     void flaskDaoInsertAndFindById() {
-        FlaskDao dao = new FlaskDao(connection);
+        FlaskDao dao = new FlaskDao(dataSource);
         Flask f = new Flask();
         f.setPageId(1);
         f.setPageName("Amethyst_Flask");
@@ -241,7 +244,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("FlaskDao: batchInsert with life/mana flasks")
     void flaskDaoBatchInsert() {
-        FlaskDao dao = new FlaskDao(connection);
+        FlaskDao dao = new FlaskDao(dataSource);
         List<Flask> flasks = new ArrayList<>();
         Flask life = new Flask();
         life.setPageId(1);
@@ -264,7 +267,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("JewelDao: insert and findById")
     void jewelDaoInsertAndFindById() {
-        JewelDao dao = new JewelDao(connection);
+        JewelDao dao = new JewelDao(dataSource);
         Jewel j = new Jewel();
         j.setPageId(1);
         j.setPageName("Cobalt_Jewel");
@@ -283,7 +286,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("StackableDao: insert and findById")
     void stackableDaoInsertAndFindById() {
-        StackableDao dao = new StackableDao(connection);
+        StackableDao dao = new StackableDao(dataSource);
         Stackable s = new Stackable();
         s.setPageId(1);
         s.setPageName("Chaos_Orb");
@@ -302,7 +305,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("MapDao: insert and findById")
     void mapDaoInsertAndFindById() {
-        MapDao dao = new MapDao(connection);
+        MapDao dao = new MapDao(dataSource);
         GameMap m = new GameMap();
         m.setPageId(1);
         m.setPageName("Beach_Map");
@@ -323,7 +326,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("MapDao: batchInsert with unique area")
     void mapDaoBatchInsert() {
-        MapDao dao = new MapDao(connection);
+        MapDao dao = new MapDao(dataSource);
         List<GameMap> maps = new ArrayList<>();
         GameMap m = new GameMap();
         m.setPageId(1);
@@ -346,7 +349,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("MapFragmentDao: insert and findById")
     void mapFragmentDaoInsertAndFindById() {
-        MapFragmentDao dao = new MapFragmentDao(connection);
+        MapFragmentDao dao = new MapFragmentDao(dataSource);
         MapFragment mf = new MapFragment();
         mf.setPageId(1);
         mf.setPageName("Sacrifice_at_Dusk");
@@ -363,7 +366,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("MapSeriesDao: insert and findById")
     void mapSeriesDaoInsertAndFindById() {
-        MapSeriesDao dao = new MapSeriesDao(connection);
+        MapSeriesDao dao = new MapSeriesDao(dataSource);
         MapSeries ms = new MapSeries();
         ms.setPageId(1);
         ms.setPageName("Atlas_of_Worlds");
@@ -383,7 +386,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("DivinationCardDao: insert and findById")
     void divinationCardDaoInsertAndFindById() {
-        DivinationCardDao dao = new DivinationCardDao(connection);
+        DivinationCardDao dao = new DivinationCardDao(dataSource);
         DivinationCard dc = new DivinationCard();
         dc.setPageId(1);
         dc.setPageName("The_Doctor");
@@ -399,7 +402,7 @@ class EquipmentSubtableDaoTest {
     @Test
     @DisplayName("DivinationCardDao: batchInsert multiple cards")
     void divinationCardDaoBatchInsert() {
-        DivinationCardDao dao = new DivinationCardDao(connection);
+        DivinationCardDao dao = new DivinationCardDao(dataSource);
         List<DivinationCard> cards = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
             DivinationCard dc = new DivinationCard();
@@ -430,4 +433,9 @@ class EquipmentSubtableDaoTest {
             }
         }
     }
-}
+
+    private javax.sql.DataSource createDataSource() {
+        org.sqlite.SQLiteDataSource ds = new org.sqlite.SQLiteDataSource();
+        ds.setUrl("jdbc:sqlite:file::memory:?cache=shared");
+        return ds;
+    }}

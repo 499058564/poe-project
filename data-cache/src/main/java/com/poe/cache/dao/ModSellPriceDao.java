@@ -15,17 +15,17 @@ import java.util.Optional;
  */
 public class ModSellPriceDao implements CrudRepository<ModSellPrice, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public ModSellPriceDao(Connection connection) {
-        this.connection = connection;
+    public ModSellPriceDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public void insert(ModSellPrice entity) {
         String sql = "INSERT INTO mod_sell_prices (page_id, page_name, amount, currency_name) " +
             "VALUES (?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -37,20 +37,20 @@ public class ModSellPriceDao implements CrudRepository<ModSellPrice, Integer> {
     public void batchInsert(List<ModSellPrice> entities) {
         String sql = "INSERT INTO mod_sell_prices (page_id, page_name, amount, currency_name) " +
             "VALUES (?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (ModSellPrice entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert mod_sell_prices", e);
@@ -60,7 +60,7 @@ public class ModSellPriceDao implements CrudRepository<ModSellPrice, Integer> {
     @Override
     public Optional<ModSellPrice> findById(Integer pageId) {
         String sql = "SELECT * FROM mod_sell_prices WHERE page_id = ? LIMIT 1";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -75,7 +75,8 @@ public class ModSellPriceDao implements CrudRepository<ModSellPrice, Integer> {
     public List<ModSellPrice> findAll() {
         List<ModSellPrice> list = new ArrayList<>();
         String sql = "SELECT * FROM mod_sell_prices ORDER BY page_id, currency_name";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -87,7 +88,7 @@ public class ModSellPriceDao implements CrudRepository<ModSellPrice, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM mod_sell_prices WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -98,7 +99,8 @@ public class ModSellPriceDao implements CrudRepository<ModSellPrice, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM mod_sell_prices";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

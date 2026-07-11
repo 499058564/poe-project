@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class MonsterMapMultiplierDao implements CrudRepository<MonsterMapMultiplier, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public MonsterMapMultiplierDao(Connection connection) {
-        this.connection = connection;
+    public MonsterMapMultiplierDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -30,7 +30,7 @@ public class MonsterMapMultiplierDao implements CrudRepository<MonsterMapMultipl
         String sql = "INSERT INTO monster_map_multipliers (level, boss_damage, boss_item_quantity, "
             + "boss_item_rarity, boss_life, damage, life) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -48,20 +48,20 @@ public class MonsterMapMultiplierDao implements CrudRepository<MonsterMapMultipl
         String sql = "INSERT INTO monster_map_multipliers (level, boss_damage, boss_item_quantity, "
             + "boss_item_rarity, boss_life, damage, life) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (MonsterMapMultiplier entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert monster map multipliers", e);
@@ -77,7 +77,7 @@ public class MonsterMapMultiplierDao implements CrudRepository<MonsterMapMultipl
     @Override
     public Optional<MonsterMapMultiplier> findById(Integer level) {
         String sql = "SELECT * FROM monster_map_multipliers WHERE level = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, level);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -97,7 +97,8 @@ public class MonsterMapMultiplierDao implements CrudRepository<MonsterMapMultipl
     public List<MonsterMapMultiplier> findAll() {
         List<MonsterMapMultiplier> list = new ArrayList<>();
         String sql = "SELECT * FROM monster_map_multipliers ORDER BY level";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -114,7 +115,7 @@ public class MonsterMapMultiplierDao implements CrudRepository<MonsterMapMultipl
     @Override
     public void deleteById(Integer level) {
         String sql = "DELETE FROM monster_map_multipliers WHERE level = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, level);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -130,7 +131,8 @@ public class MonsterMapMultiplierDao implements CrudRepository<MonsterMapMultipl
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM monster_map_multipliers";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class MapDao implements CrudRepository<GameMap, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public MapDao(Connection connection) {
-        this.connection = connection;
+    public MapDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -31,7 +31,7 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         String sql = "INSERT INTO maps (page_id, page_name, area_id, area_level, guild_character, "
             + "series, tier, unique_area_id, unique_area_level, unique_guild_character) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, m);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -51,20 +51,20 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         String sql = "INSERT INTO maps (page_id, page_name, area_id, area_level, guild_character, "
             + "series, tier, unique_area_id, unique_area_level, unique_guild_character) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (GameMap m : maps) {
                     setParams(ps, m);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert maps", e);
@@ -80,7 +80,7 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
     @Override
     public Optional<GameMap> findById(Integer pageId) {
         String sql = "SELECT * FROM maps WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -100,7 +100,8 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
     public List<GameMap> findAll() {
         List<GameMap> list = new ArrayList<>();
         String sql = "SELECT * FROM maps ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -117,7 +118,7 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM maps WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -133,7 +134,8 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM maps";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

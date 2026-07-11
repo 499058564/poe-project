@@ -9,17 +9,17 @@ import java.util.Optional;
 
 public class BestiaryRecipeComponentsDao implements CrudRepository<BestiaryRecipeComponents, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public BestiaryRecipeComponentsDao(Connection connection) {
-        this.connection = connection;
+    public BestiaryRecipeComponentsDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public void insert(BestiaryRecipeComponents entity) {
         String sql = "INSERT INTO bestiary_recipe_components (page_id, page_name, amount, component_id, recipe_id) "
             + "VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -31,20 +31,20 @@ public class BestiaryRecipeComponentsDao implements CrudRepository<BestiaryRecip
     public void batchInsert(List<BestiaryRecipeComponents> entities) {
         String sql = "INSERT INTO bestiary_recipe_components (page_id, page_name, amount, component_id, recipe_id) "
             + "VALUES (?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (BestiaryRecipeComponents entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert bestiary_recipe_components", e);
@@ -54,7 +54,7 @@ public class BestiaryRecipeComponentsDao implements CrudRepository<BestiaryRecip
     @Override
     public Optional<BestiaryRecipeComponents> findById(Integer pageId) {
         String sql = "SELECT * FROM bestiary_recipe_components WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -69,7 +69,8 @@ public class BestiaryRecipeComponentsDao implements CrudRepository<BestiaryRecip
     public List<BestiaryRecipeComponents> findAll() {
         List<BestiaryRecipeComponents> list = new ArrayList<>();
         String sql = "SELECT * FROM bestiary_recipe_components ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -81,7 +82,7 @@ public class BestiaryRecipeComponentsDao implements CrudRepository<BestiaryRecip
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM bestiary_recipe_components WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -92,7 +93,8 @@ public class BestiaryRecipeComponentsDao implements CrudRepository<BestiaryRecip
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM bestiary_recipe_components";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

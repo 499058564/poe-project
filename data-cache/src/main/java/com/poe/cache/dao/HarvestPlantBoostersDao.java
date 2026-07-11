@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class HarvestPlantBoostersDao implements CrudRepository<HarvestPlantBoosters, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public HarvestPlantBoostersDao(Connection connection) {
-        this.connection = connection;
+    public HarvestPlantBoostersDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class HarvestPlantBoostersDao implements CrudRepository<HarvestPlantBoost
         String sql = "INSERT INTO harvest_plant_boosters (page_id, page_name, additional_crafting_options, "
             + "extra_chances, lifeforce, radius) "
             + "VALUES (?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -33,20 +33,20 @@ public class HarvestPlantBoostersDao implements CrudRepository<HarvestPlantBoost
         String sql = "INSERT INTO harvest_plant_boosters (page_id, page_name, additional_crafting_options, "
             + "extra_chances, lifeforce, radius) "
             + "VALUES (?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (HarvestPlantBoosters entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert harvest_plant_boosters", e);
@@ -56,7 +56,7 @@ public class HarvestPlantBoostersDao implements CrudRepository<HarvestPlantBoost
     @Override
     public Optional<HarvestPlantBoosters> findById(Integer pageId) {
         String sql = "SELECT * FROM harvest_plant_boosters WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -71,7 +71,8 @@ public class HarvestPlantBoostersDao implements CrudRepository<HarvestPlantBoost
     public List<HarvestPlantBoosters> findAll() {
         List<HarvestPlantBoosters> list = new ArrayList<>();
         String sql = "SELECT * FROM harvest_plant_boosters ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -83,7 +84,7 @@ public class HarvestPlantBoostersDao implements CrudRepository<HarvestPlantBoost
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM harvest_plant_boosters WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -94,7 +95,8 @@ public class HarvestPlantBoostersDao implements CrudRepository<HarvestPlantBoost
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM harvest_plant_boosters";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

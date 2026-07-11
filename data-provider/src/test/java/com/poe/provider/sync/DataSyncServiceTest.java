@@ -39,8 +39,8 @@ class DataSyncServiceTest {
         DatabaseManager.reset();
 
         // 初始化表结构
-        try {
-            DatabaseManager.getInstance().getConnection();
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            // migration runs automatically on first getConnection()
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -103,8 +103,8 @@ class DataSyncServiceTest {
         assertFalse(results.get("mods").isSkipped());
 
         // 验证数据写入
-        Connection conn = DatabaseManager.getInstance().getConnection();
-        try (Statement stmt = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            try (Statement stmt = conn.createStatement()) {
 
             try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM base_items")) {
                 assertTrue(rs.next());
@@ -122,13 +122,14 @@ class DataSyncServiceTest {
                 assertTrue(rs.next());
                 assertEquals(1, rs.getInt(1));
             }
-        }
+            }
 
         // 验证 data_version 已更新
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM data_version")) {
             assertTrue(rs.next());
             assertEquals(4, rs.getInt(1));
+        }
         }
     }
 

@@ -180,9 +180,8 @@ class DataSourceHealthCheckTest {
     @Test
     @DisplayName("Wiki 缓存有数据时应为 HEALTHY")
     void shouldReportWikiCacheHealthy() throws Exception {
-        DatabaseManager.getInstance().getConnection(); // trigger migration
-        Connection conn = DatabaseManager.getInstance().getConnection();
-        try (Statement stmt = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement stmt = conn.createStatement()) {
             stmt.execute("INSERT INTO base_items (name, class, version) "
                 + "VALUES ('Test Item', 'Test', '1.0')");
         }

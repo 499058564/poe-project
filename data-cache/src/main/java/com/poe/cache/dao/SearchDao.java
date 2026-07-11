@@ -2,6 +2,7 @@ package com.poe.cache.dao;
 
 import com.poe.cache.model.ItemSummary;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +23,10 @@ import java.util.List;
  */
 public class SearchDao {
 
-    private final Connection connection;
+    private final DataSource dataSource;
 
-    public SearchDao(Connection connection) {
-        this.connection = connection;
+    public SearchDao(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -56,7 +57,8 @@ public class SearchDao {
             (itemClass != null ? "AND b.class = ? " : "") +
             "ORDER BY rank LIMIT ? OFFSET ?";
         List<ItemSummary> results = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             int idx = 1;
             ps.setString(idx++, keyword);
             if (itemClass != null) {
@@ -106,7 +108,8 @@ public class SearchDao {
             "JOIN base_items b ON f.rowid = b.id " +
             "WHERE items_fts MATCH ? " +
             (itemClass != null ? "AND b.class = ? " : "");
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             int idx = 1;
             ps.setString(idx++, keyword);
             if (itemClass != null) {

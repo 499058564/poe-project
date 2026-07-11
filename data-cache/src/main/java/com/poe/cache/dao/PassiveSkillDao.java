@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public PassiveSkillDao(Connection connection) {
-        this.connection = connection;
+    public PassiveSkillDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -31,7 +31,7 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         String sql = "INSERT INTO passive_skills (id, name, name_zh, class, ascendancy, stats, " +
             "is_keystone, is_notable, is_jewel_socket, x, y, connections, version) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, skill);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -48,20 +48,20 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         String sql = "INSERT INTO passive_skills (id, name, name_zh, class, ascendancy, stats, " +
             "is_keystone, is_notable, is_jewel_socket, x, y, connections, version) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (PassiveSkill skill : skills) {
                     setParams(ps, skill);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert passive skills", e);
@@ -77,7 +77,7 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
     @Override
     public Optional<PassiveSkill> findById(Integer id) {
         String sql = "SELECT * FROM passive_skills WHERE id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -99,7 +99,8 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
     public List<PassiveSkill> findAll() {
         String sql = "SELECT * FROM passive_skills ORDER BY id";
         List<PassiveSkill> skills = new ArrayList<>();
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 skills.add(mapRow(rs));
@@ -118,7 +119,7 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
     @Override
     public void deleteById(Integer id) {
         String sql = "DELETE FROM passive_skills WHERE id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -134,7 +135,8 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM passive_skills";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getInt(1);

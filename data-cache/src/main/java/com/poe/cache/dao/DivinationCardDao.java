@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class DivinationCardDao implements CrudRepository<DivinationCard, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public DivinationCardDao(Connection connection) {
-        this.connection = connection;
+    public DivinationCardDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -29,7 +29,7 @@ public class DivinationCardDao implements CrudRepository<DivinationCard, Integer
     @Override
     public void insert(DivinationCard dc) {
         String sql = "INSERT INTO divination_cards (page_id, page_name, card_art, card_background) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, dc);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -47,20 +47,20 @@ public class DivinationCardDao implements CrudRepository<DivinationCard, Integer
     @Override
     public void batchInsert(List<DivinationCard> cards) {
         String sql = "INSERT INTO divination_cards (page_id, page_name, card_art, card_background) VALUES (?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (DivinationCard dc : cards) {
                     setParams(ps, dc);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert divination cards", e);
@@ -76,7 +76,7 @@ public class DivinationCardDao implements CrudRepository<DivinationCard, Integer
     @Override
     public Optional<DivinationCard> findById(Integer pageId) {
         String sql = "SELECT * FROM divination_cards WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -96,7 +96,8 @@ public class DivinationCardDao implements CrudRepository<DivinationCard, Integer
     public List<DivinationCard> findAll() {
         List<DivinationCard> list = new ArrayList<>();
         String sql = "SELECT * FROM divination_cards ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -113,7 +114,7 @@ public class DivinationCardDao implements CrudRepository<DivinationCard, Integer
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM divination_cards WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -129,7 +130,8 @@ public class DivinationCardDao implements CrudRepository<DivinationCard, Integer
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM divination_cards";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

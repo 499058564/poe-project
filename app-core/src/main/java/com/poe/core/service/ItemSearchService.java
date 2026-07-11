@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.poe.cache.dao.ItemDao;
 import com.poe.cache.dao.SearchDao;
+import com.poe.cache.dao.TranslationDao;
+import com.poe.cache.manager.DatabaseManager;
 import com.poe.cache.model.Item;
 import com.poe.cache.model.ItemSummary;
 import com.poe.common.util.StringUtils;
@@ -13,6 +15,8 @@ import com.poe.core.model.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -43,13 +47,19 @@ public class ItemSearchService {
     /** 翻译服务，用于详情页翻译 */
     private final TranslationService translationService;
 
+    public ItemSearchService() throws SQLException {
+        DatabaseManager dbManager = DatabaseManager.getInstance();
+        DataSource ds = dbManager.getDataSource();
+        this.translationService = new TranslationService(ds);
+        this.searchDao = new SearchDao(ds);
+        this.itemDao = new ItemDao(ds);
+        log.info("MainWindow|initializeServices|successfully");
+    }
+
     /**
-     * @param searchDao          FTS5 全文搜索 DAO
-     * @param itemDao            物品数据访问对象
-     * @param translationService 翻译服务
+     * 直接注入 DAO 和 TranslationService（用于测试）。
      */
-    public ItemSearchService(SearchDao searchDao, ItemDao itemDao,
-                             TranslationService translationService) {
+    public ItemSearchService(SearchDao searchDao, ItemDao itemDao, TranslationService translationService) {
         this.searchDao = searchDao;
         this.itemDao = itemDao;
         this.translationService = translationService;

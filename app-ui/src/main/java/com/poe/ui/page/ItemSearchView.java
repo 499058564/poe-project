@@ -52,10 +52,13 @@ import java.util.concurrent.Executors;
 public class ItemSearchView extends BorderPane {
 
     private static final Logger log = LoggerFactory.getLogger(ItemSearchView.class);
-
+    /**
+     * 默认每页显示数量
+     */
     private static final int DEFAULT_PAGE_SIZE = 20;
 
     private final ItemSearchService searchService;
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "item-search");
         t.setDaemon(true);
@@ -97,7 +100,7 @@ public class ItemSearchView extends BorderPane {
         this.searchService = searchService;
         getStyleClass().add("item-search-view");
 
-        // ---- Top: Search Bar ----
+        // 搜索输入框
         searchField = new TextField();
         searchField.setPromptText(Messages.get(SearchKeys.PLACEHOLDER));
         searchField.getStyleClass().add("search-field");
@@ -115,7 +118,7 @@ public class ItemSearchView extends BorderPane {
         searchBar.getStyleClass().add(StyleClasses.SEARCH_BAR);
         setTop(searchBar);
 
-        // ---- Center: Result List + Detail Panel ----
+        // 结果列表 + 详细信息面板
         resultList = new ListView<>(resultItems);
         resultList.getStyleClass().add(StyleClasses.RESULT_LIST);
         resultList.setCellFactory(lv -> new ItemResultCell());
@@ -127,7 +130,7 @@ public class ItemSearchView extends BorderPane {
         splitPane.setOrientation(Orientation.HORIZONTAL);
         splitPane.setDividerPosition(0, 0.4);
 
-        // Loading indicator overlay
+        // 加载覆盖层
         loadingIndicator = new ProgressIndicator();
         loadingIndicator.getStyleClass().add(StyleClasses.SEARCH_LOADING);
         loadingIndicator.setVisible(false);
@@ -137,7 +140,7 @@ public class ItemSearchView extends BorderPane {
         StackPane.setAlignment(loadingIndicator, javafx.geometry.Pos.CENTER);
         setCenter(centerPane);
 
-        // ---- Bottom: Pagination ----
+        // 分页信息
         paginationLabel = new Label();
         paginationLabel.getStyleClass().add(StyleClasses.PAGINATION_LABEL);
 

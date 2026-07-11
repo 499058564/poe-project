@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class IncursionRoomsDao implements CrudRepository<IncursionRooms, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public IncursionRoomsDao(Connection connection) {
-        this.connection = connection;
+    public IncursionRoomsDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -21,7 +21,7 @@ public class IncursionRoomsDao implements CrudRepository<IncursionRooms, Integer
             + "description, flavour_text, icon, room_id, min_level, modifier_ids, name, stat_text, "
             + "tier, upgrade_room_id) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -35,20 +35,20 @@ public class IncursionRoomsDao implements CrudRepository<IncursionRooms, Integer
             + "description, flavour_text, icon, room_id, min_level, modifier_ids, name, stat_text, "
             + "tier, upgrade_room_id) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (IncursionRooms entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert incursion_rooms", e);
@@ -58,7 +58,7 @@ public class IncursionRoomsDao implements CrudRepository<IncursionRooms, Integer
     @Override
     public Optional<IncursionRooms> findById(Integer pageId) {
         String sql = "SELECT * FROM incursion_rooms WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -73,7 +73,8 @@ public class IncursionRoomsDao implements CrudRepository<IncursionRooms, Integer
     public List<IncursionRooms> findAll() {
         List<IncursionRooms> list = new ArrayList<>();
         String sql = "SELECT * FROM incursion_rooms ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -85,7 +86,7 @@ public class IncursionRoomsDao implements CrudRepository<IncursionRooms, Integer
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM incursion_rooms WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -96,7 +97,8 @@ public class IncursionRoomsDao implements CrudRepository<IncursionRooms, Integer
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM incursion_rooms";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

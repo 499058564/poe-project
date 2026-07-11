@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class WeaponDao implements CrudRepository<Weapon, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public WeaponDao(Connection connection) {
-        this.connection = connection;
+    public WeaponDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -33,7 +33,7 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
             + "fire_damage_min, fire_damage_max, cold_damage_min, cold_damage_max, "
             + "lightning_damage_min, lightning_damage_max, chaos_damage_min, chaos_damage_max) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, w);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -55,20 +55,20 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
             + "fire_damage_min, fire_damage_max, cold_damage_min, cold_damage_max, "
             + "lightning_damage_min, lightning_damage_max, chaos_damage_min, chaos_damage_max) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Weapon w : weapons) {
                     setParams(ps, w);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert weapons", e);
@@ -84,7 +84,7 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
     @Override
     public Optional<Weapon> findById(Integer pageId) {
         String sql = "SELECT * FROM weapons WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -104,7 +104,8 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
     public List<Weapon> findAll() {
         List<Weapon> list = new ArrayList<>();
         String sql = "SELECT * FROM weapons ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -121,7 +122,7 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM weapons WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -137,7 +138,8 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM weapons";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

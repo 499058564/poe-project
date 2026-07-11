@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class HarvestSeedsDao implements CrudRepository<HarvestSeeds, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public HarvestSeedsDao(Connection connection) {
-        this.connection = connection;
+    public HarvestSeedsDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -22,7 +22,7 @@ public class HarvestSeedsDao implements CrudRepository<HarvestSeeds, Integer> {
             + "granted_craft_option_ids, growth_cycles, required_nearby_seed_amount, "
             + "required_nearby_seed_tier, tier, type, type_id) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -37,20 +37,20 @@ public class HarvestSeedsDao implements CrudRepository<HarvestSeeds, Integer> {
             + "granted_craft_option_ids, growth_cycles, required_nearby_seed_amount, "
             + "required_nearby_seed_tier, tier, type, type_id) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (HarvestSeeds entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert harvest_seeds", e);
@@ -60,7 +60,7 @@ public class HarvestSeedsDao implements CrudRepository<HarvestSeeds, Integer> {
     @Override
     public Optional<HarvestSeeds> findById(Integer pageId) {
         String sql = "SELECT * FROM harvest_seeds WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -75,7 +75,8 @@ public class HarvestSeedsDao implements CrudRepository<HarvestSeeds, Integer> {
     public List<HarvestSeeds> findAll() {
         List<HarvestSeeds> list = new ArrayList<>();
         String sql = "SELECT * FROM harvest_seeds ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -87,7 +88,7 @@ public class HarvestSeedsDao implements CrudRepository<HarvestSeeds, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM harvest_seeds WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -98,7 +99,8 @@ public class HarvestSeedsDao implements CrudRepository<HarvestSeeds, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM harvest_seeds";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

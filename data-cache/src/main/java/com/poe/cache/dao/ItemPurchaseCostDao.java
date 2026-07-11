@@ -15,17 +15,17 @@ import java.util.Optional;
  */
 public class ItemPurchaseCostDao implements CrudRepository<ItemPurchaseCost, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public ItemPurchaseCostDao(Connection connection) {
-        this.connection = connection;
+    public ItemPurchaseCostDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public void insert(ItemPurchaseCost entity) {
         String sql = "INSERT INTO item_purchase_costs (page_id, page_name, amount, " +
             "currency_name, rarity) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -37,20 +37,20 @@ public class ItemPurchaseCostDao implements CrudRepository<ItemPurchaseCost, Int
     public void batchInsert(List<ItemPurchaseCost> entities) {
         String sql = "INSERT INTO item_purchase_costs (page_id, page_name, amount, " +
             "currency_name, rarity) VALUES (?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (ItemPurchaseCost entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert item_purchase_costs", e);
@@ -60,7 +60,7 @@ public class ItemPurchaseCostDao implements CrudRepository<ItemPurchaseCost, Int
     @Override
     public Optional<ItemPurchaseCost> findById(Integer pageId) {
         String sql = "SELECT * FROM item_purchase_costs WHERE page_id = ? LIMIT 1";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -75,7 +75,8 @@ public class ItemPurchaseCostDao implements CrudRepository<ItemPurchaseCost, Int
     public List<ItemPurchaseCost> findAll() {
         List<ItemPurchaseCost> list = new ArrayList<>();
         String sql = "SELECT * FROM item_purchase_costs ORDER BY page_id, currency_name, rarity";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -87,7 +88,7 @@ public class ItemPurchaseCostDao implements CrudRepository<ItemPurchaseCost, Int
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM item_purchase_costs WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -98,7 +99,8 @@ public class ItemPurchaseCostDao implements CrudRepository<ItemPurchaseCost, Int
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM item_purchase_costs";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

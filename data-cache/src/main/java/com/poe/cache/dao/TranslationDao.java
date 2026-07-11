@@ -11,10 +11,10 @@ import java.util.*;
  */
 public class TranslationDao {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public TranslationDao(Connection connection) {
-        this.connection = connection;
+    public TranslationDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -26,7 +26,7 @@ public class TranslationDao {
      */
     public Optional<String> translate(String source, String domain) {
         String sql = "SELECT target FROM translations WHERE source = ? AND domain = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, source);
             ps.setString(2, domain);
             try (ResultSet rs = ps.executeQuery()) {
@@ -56,7 +56,7 @@ public class TranslationDao {
         Map<String, String> result = new HashMap<>();
         String placeholders = String.join(",", Collections.nCopies(sources.size(), "?"));
         String sql = "SELECT source, target FROM translations WHERE source IN (" + placeholders + ") AND domain = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             for (int i = 0; i < sources.size(); i++) {
                 ps.setString(i + 1, sources.get(i));
             }
@@ -83,7 +83,7 @@ public class TranslationDao {
      */
     public void saveTranslation(String source, String target, String domain) {
         String sql = "INSERT OR REPLACE INTO translations (source, target, domain) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, source);
             ps.setString(2, target);
             ps.setString(3, domain);
@@ -107,9 +107,9 @@ public class TranslationDao {
             return;
         }
         String sql = "INSERT OR REPLACE INTO translations (source, target, domain) VALUES (?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Map.Entry<String, String> entry : translations.entrySet()) {
                     ps.setString(1, entry.getKey());
                     ps.setString(2, entry.getValue());
@@ -117,12 +117,12 @@ public class TranslationDao {
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch save translations", e);

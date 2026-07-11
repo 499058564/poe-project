@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import javax.sql.DataSource;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.*;
@@ -17,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TranslationDaoTest {
 
     private Connection connection;
+    private javax.sql.DataSource dataSource;
     private TranslationDao dao;
 
     private static final String[] MIGRATION_FILES = {
@@ -31,9 +33,10 @@ class TranslationDaoTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        connection = DriverManager.getConnection("jdbc:sqlite::memory:");
+        connection = DriverManager.getConnection("jdbc:sqlite:file::memory:?cache=shared");
+        dataSource = createDataSource();
         runMigrations();
-        dao = new TranslationDao(connection);
+        dao = new TranslationDao(dataSource);
     }
 
     @AfterEach
@@ -149,4 +152,9 @@ class TranslationDaoTest {
             }
         }
     }
-}
+
+    private javax.sql.DataSource createDataSource() {
+        org.sqlite.SQLiteDataSource ds = new org.sqlite.SQLiteDataSource();
+        ds.setUrl("jdbc:sqlite:file::memory:?cache=shared");
+        return ds;
+    }}

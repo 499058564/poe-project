@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class MapFragmentDao implements CrudRepository<MapFragment, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public MapFragmentDao(Connection connection) {
-        this.connection = connection;
+    public MapFragmentDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -29,7 +29,7 @@ public class MapFragmentDao implements CrudRepository<MapFragment, Integer> {
     @Override
     public void insert(MapFragment mf) {
         String sql = "INSERT INTO map_fragments (page_id, page_name, map_fragment_limit) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, mf);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -47,20 +47,20 @@ public class MapFragmentDao implements CrudRepository<MapFragment, Integer> {
     @Override
     public void batchInsert(List<MapFragment> fragments) {
         String sql = "INSERT INTO map_fragments (page_id, page_name, map_fragment_limit) VALUES (?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (MapFragment mf : fragments) {
                     setParams(ps, mf);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert map fragments", e);
@@ -76,7 +76,7 @@ public class MapFragmentDao implements CrudRepository<MapFragment, Integer> {
     @Override
     public Optional<MapFragment> findById(Integer pageId) {
         String sql = "SELECT * FROM map_fragments WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -96,7 +96,8 @@ public class MapFragmentDao implements CrudRepository<MapFragment, Integer> {
     public List<MapFragment> findAll() {
         List<MapFragment> list = new ArrayList<>();
         String sql = "SELECT * FROM map_fragments ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -113,7 +114,7 @@ public class MapFragmentDao implements CrudRepository<MapFragment, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM map_fragments WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -129,7 +130,8 @@ public class MapFragmentDao implements CrudRepository<MapFragment, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM map_fragments";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

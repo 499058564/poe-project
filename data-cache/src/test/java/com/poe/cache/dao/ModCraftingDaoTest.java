@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import javax.sql.DataSource;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ModCraftingDaoTest {
 
     private Connection connection;
+    private javax.sql.DataSource dataSource;
 
     private static final String[] MIGRATION_FILES = {
         "v001_base_items.sql",
@@ -39,7 +41,8 @@ class ModCraftingDaoTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        connection = DriverManager.getConnection("jdbc:sqlite::memory:");
+        connection = DriverManager.getConnection("jdbc:sqlite:file::memory:?cache=shared");
+        dataSource = createDataSource();
         runMigrations();
     }
 
@@ -55,7 +58,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ModStatDao: insert and findById")
     void modStatDaoInsertAndFindById() {
-        ModStatDao dao = new ModStatDao(connection);
+        ModStatDao dao = new ModStatDao(dataSource);
         ModStat ms = new ModStat();
         ms.setPageId(100);
         ms.setPageName("TestMod");
@@ -74,7 +77,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ModSpawnWeightDao: batchInsert and count")
     void modSpawnWeightDaoBatchInsert() {
-        ModSpawnWeightDao dao = new ModSpawnWeightDao(connection);
+        ModSpawnWeightDao dao = new ModSpawnWeightDao(dataSource);
         List<ModSpawnWeight> list = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
             ModSpawnWeight msw = new ModSpawnWeight();
@@ -92,7 +95,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ModSellPriceDao: insert and findById")
     void modSellPriceDaoInsertAndFindById() {
-        ModSellPriceDao dao = new ModSellPriceDao(connection);
+        ModSellPriceDao dao = new ModSellPriceDao(dataSource);
         ModSellPrice msp = new ModSellPrice();
         msp.setPageId(300);
         msp.setPageName("TestMod");
@@ -111,7 +114,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ItemModDao: insert with boolean fields")
     void itemModDaoInsertWithBooleanFields() {
-        ItemModDao dao = new ItemModDao(connection);
+        ItemModDao dao = new ItemModDao(dataSource);
         ItemMod im = new ItemMod();
         im.setPageId(400);
         im.setPageName("TestItem");
@@ -133,7 +136,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ItemStatDao: insert and findById")
     void itemStatDaoInsertAndFindById() {
-        ItemStatDao dao = new ItemStatDao(connection);
+        ItemStatDao dao = new ItemStatDao(dataSource);
         ItemStat is = new ItemStat();
         is.setPageId(500);
         is.setPageName("TestItem");
@@ -154,7 +157,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ItemBuffDao: insert with JSON buff_values")
     void itemBuffDaoInsertWithJsonValues() {
-        ItemBuffDao dao = new ItemBuffDao(connection);
+        ItemBuffDao dao = new ItemBuffDao(dataSource);
         ItemBuff ib = new ItemBuff();
         ib.setPageId(600);
         ib.setPageName("TestBuff");
@@ -176,7 +179,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("CraftingBenchOptionDao: insert and findById")
     void craftingBenchOptionDaoInsertAndFindById() {
-        CraftingBenchOptionDao dao = new CraftingBenchOptionDao(connection);
+        CraftingBenchOptionDao dao = new CraftingBenchOptionDao(dataSource);
         CraftingBenchOption cbo = new CraftingBenchOption();
         cbo.setOptionId(1);
         cbo.setPageId(700);
@@ -202,7 +205,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("CraftingBenchOptionCostDao: insert and findById")
     void craftingBenchOptionCostDaoInsertAndFindById() {
-        CraftingBenchOptionCostDao dao = new CraftingBenchOptionCostDao(connection);
+        CraftingBenchOptionCostDao dao = new CraftingBenchOptionCostDao(dataSource);
         CraftingBenchOptionCost cost = new CraftingBenchOptionCost();
         cost.setPageId(701);
         cost.setPageName("Cost_1");
@@ -220,7 +223,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("EssenceDao: insert and findById")
     void essenceDaoInsertAndFindById() {
-        EssenceDao dao = new EssenceDao(connection);
+        EssenceDao dao = new EssenceDao(dataSource);
         Essence e = new Essence();
         e.setPageId(800);
         e.setPageName("Essence_of_Greed");
@@ -240,7 +243,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("FossilDao: insert with boolean and JSON fields")
     void fossilDaoInsertWithBooleanFields() {
-        FossilDao dao = new FossilDao(connection);
+        FossilDao dao = new FossilDao(dataSource);
         Fossil f = new Fossil();
         f.setPageId(900);
         f.setPageName("Aberrant_Fossil");
@@ -263,7 +266,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("FossilWeightDao: insert and batchInsert")
     void fossilWeightDaoBatchInsert() {
-        FossilWeightDao dao = new FossilWeightDao(connection);
+        FossilWeightDao dao = new FossilWeightDao(dataSource);
         List<FossilWeight> list = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             FossilWeight fw = new FossilWeight();
@@ -285,7 +288,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("VendorRewardDao: insert with JSON class_ids")
     void vendorRewardDaoInsertWithJson() {
-        VendorRewardDao dao = new VendorRewardDao(connection);
+        VendorRewardDao dao = new VendorRewardDao(dataSource);
         VendorReward vr = new VendorReward();
         vr.setPageId(1100);
         vr.setPageName("Recipe_1");
@@ -307,7 +310,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ItemSellPriceDao: insert and findById")
     void itemSellPriceDaoInsertAndFindById() {
-        ItemSellPriceDao dao = new ItemSellPriceDao(connection);
+        ItemSellPriceDao dao = new ItemSellPriceDao(dataSource);
         ItemSellPrice isp = new ItemSellPrice();
         isp.setPageId(1200);
         isp.setPageName("SellPrice_1");
@@ -324,7 +327,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ItemPurchaseCostDao: insert with rarity field")
     void itemPurchaseCostDaoInsertWithRarity() {
-        ItemPurchaseCostDao dao = new ItemPurchaseCostDao(connection);
+        ItemPurchaseCostDao dao = new ItemPurchaseCostDao(dataSource);
         ItemPurchaseCost ipc = new ItemPurchaseCost();
         ipc.setPageId(1300);
         ipc.setPageName("Cost_1");
@@ -345,7 +348,7 @@ class ModCraftingDaoTest {
     @Test
     @DisplayName("ModSpawnWeightDao: batchInsert rolls back on duplicate")
     void modSpawnWeightDaoBatchInsertRollback() {
-        ModSpawnWeightDao dao = new ModSpawnWeightDao(connection);
+        ModSpawnWeightDao dao = new ModSpawnWeightDao(dataSource);
         List<ModSpawnWeight> list = new ArrayList<>();
         ModSpawnWeight msw1 = new ModSpawnWeight();
         msw1.setPageId(200);
@@ -385,4 +388,9 @@ class ModCraftingDaoTest {
             }
         }
     }
-}
+
+    private javax.sql.DataSource createDataSource() {
+        org.sqlite.SQLiteDataSource ds = new org.sqlite.SQLiteDataSource();
+        ds.setUrl("jdbc:sqlite:file::memory:?cache=shared");
+        return ds;
+    }}

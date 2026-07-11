@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class ArmourDao implements CrudRepository<Armour, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public ArmourDao(Connection connection) {
-        this.connection = connection;
+    public ArmourDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -32,7 +32,7 @@ public class ArmourDao implements CrudRepository<Armour, Integer> {
             + "evasion_min, evasion_max, energy_shield_min, energy_shield_max, "
             + "ward_min, ward_max, movement_speed) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, a);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -53,20 +53,20 @@ public class ArmourDao implements CrudRepository<Armour, Integer> {
             + "evasion_min, evasion_max, energy_shield_min, energy_shield_max, "
             + "ward_min, ward_max, movement_speed) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Armour a : armours) {
                     setParams(ps, a);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert armours", e);
@@ -82,7 +82,7 @@ public class ArmourDao implements CrudRepository<Armour, Integer> {
     @Override
     public Optional<Armour> findById(Integer pageId) {
         String sql = "SELECT * FROM armours WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -102,7 +102,8 @@ public class ArmourDao implements CrudRepository<Armour, Integer> {
     public List<Armour> findAll() {
         List<Armour> list = new ArrayList<>();
         String sql = "SELECT * FROM armours ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -119,7 +120,7 @@ public class ArmourDao implements CrudRepository<Armour, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM armours WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -135,7 +136,8 @@ public class ArmourDao implements CrudRepository<Armour, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM armours";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

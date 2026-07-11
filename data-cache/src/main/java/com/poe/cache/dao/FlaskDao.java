@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class FlaskDao implements CrudRepository<Flask, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public FlaskDao(Connection connection) {
-        this.connection = connection;
+    public FlaskDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -30,7 +30,7 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
     public void insert(Flask f) {
         String sql = "INSERT INTO flasks (page_id, page_name, charges_max, charges_per_use, duration, life, mana) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, f);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -49,20 +49,20 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
     public void batchInsert(List<Flask> flasks) {
         String sql = "INSERT INTO flasks (page_id, page_name, charges_max, charges_per_use, duration, life, mana) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Flask f : flasks) {
                     setParams(ps, f);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert flasks", e);
@@ -78,7 +78,7 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
     @Override
     public Optional<Flask> findById(Integer pageId) {
         String sql = "SELECT * FROM flasks WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -98,7 +98,8 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
     public List<Flask> findAll() {
         List<Flask> list = new ArrayList<>();
         String sql = "SELECT * FROM flasks ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -115,7 +116,7 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM flasks WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -131,7 +132,8 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM flasks";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

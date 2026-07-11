@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class ItemModDao implements CrudRepository<ItemMod, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public ItemModDao(Connection connection) {
-        this.connection = connection;
+    public ItemModDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -26,7 +26,7 @@ public class ItemModDao implements CrudRepository<ItemMod, Integer> {
         String sql = "INSERT INTO item_mods (page_id, page_name, mod_id, is_explicit, " +
             "is_implicit, is_map_fragment_bonus, is_random, text) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -39,20 +39,20 @@ public class ItemModDao implements CrudRepository<ItemMod, Integer> {
         String sql = "INSERT INTO item_mods (page_id, page_name, mod_id, is_explicit, " +
             "is_implicit, is_map_fragment_bonus, is_random, text) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (ItemMod entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert item_mods", e);
@@ -62,7 +62,7 @@ public class ItemModDao implements CrudRepository<ItemMod, Integer> {
     @Override
     public Optional<ItemMod> findById(Integer pageId) {
         String sql = "SELECT * FROM item_mods WHERE page_id = ? LIMIT 1";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -77,7 +77,8 @@ public class ItemModDao implements CrudRepository<ItemMod, Integer> {
     public List<ItemMod> findAll() {
         List<ItemMod> list = new ArrayList<>();
         String sql = "SELECT * FROM item_mods ORDER BY page_id, mod_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -89,7 +90,7 @@ public class ItemModDao implements CrudRepository<ItemMod, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM item_mods WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -100,7 +101,8 @@ public class ItemModDao implements CrudRepository<ItemMod, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM item_mods";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

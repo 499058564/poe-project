@@ -1,14 +1,20 @@
 package com.poe.cache.manager;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * SQLite 数据库管理器（线程安全单例）。
+ * SQLite 数据库管理器（线程安全单例，HikariCP 连接池）。
  * <p>
- * 负责连接生命周期管理和迁移脚本执行。
+ * 负责连接池生命周期管理和迁移脚本执行。
  * 数据库文件位于 {@code ~/.poe-tool/data/poe.db}。
+ * <p>
+ * 连接池配置：最大 5 个连接，WAL 模式，支持并发读。
+ * 内存数据库模式自动降级为单连接池（{@code file::memory:?cache=shared}）。
  * <p>
  * 通过 {@link #testMode} / {@link #testDbPath} 支持测试时注入内存数据库。
  * 通过 {@link #DatabaseManager(String)} 构造函数支持自定义路径（如 SeedDbBuilder）。
@@ -18,9 +24,16 @@ public class DatabaseManager {
     static final String DB_PATH =
         System.getProperty("user.home") + "/.poe-tool/data/poe.db";
 
+    private static final int MAX_POOL_SIZE = 5;
+    private static final int IN_MEMORY_POOL_SIZE = 1;
+    private static final int CONNECTION_TIMEOUT_MS = 5000;
+    private static final int IDLE_TIMEOUT_MS = 600_000;
+    private static final int MAX_LIFETIME_MS = 1_800_000;
+
     private static DatabaseManager instance;
-    private Connection connection;
+    private HikariDataSource dataSource;
     private final String dbPath;
+    private final Object poolLock = new Object();
 
     // 测试模式：设为 true 后 getConnection() 使用 testDbPath 而非默认磁盘路径
     public static volatile boolean testMode = false;
@@ -49,20 +62,77 @@ public class DatabaseManager {
     }
 
     /**
-     * 获取数据库连接，首次调用自动执行迁移脚本初始化表结构。
+     * 从连接池获取数据库连接，首次调用自动执行迁移脚本初始化表结构。
+     * <p>调用方 <b>必须</b>在使用完毕后调用 {@link Connection#close()} 归还连接到池中。
      * <p>调用方应确保数据库文件已就绪（通过 DatabaseInitializer）。
+     *
+     * @return 池化连接
      */
     public Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            String url = getDbUrl();
-            connection = DriverManager.getConnection(url);
-            init();
+        return getDataSource().getConnection();
+    }
+
+    /**
+     * 获取连接池 {@link DataSource}，供 DAO 层按需借还连接。
+     * <p>首次调用自动初始化连接池并执行迁移。
+     *
+     * @return HikariCP 数据源
+     */
+    public DataSource getDataSource() throws SQLException {
+        if (dataSource == null || dataSource.isClosed()) {
+            synchronized (poolLock) {
+                if (dataSource == null || dataSource.isClosed()) {
+                    initPool();
+                }
+            }
         }
-        return connection;
+        return dataSource;
+    }
+
+    private void initPool() throws SQLException {
+        String url = getDbUrl();
+        boolean inMemory = isInMemory();
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(url);
+        config.setMaximumPoolSize(inMemory ? IN_MEMORY_POOL_SIZE : MAX_POOL_SIZE);
+        config.setMinimumIdle(inMemory ? 1 : 0);
+        config.setConnectionTimeout(CONNECTION_TIMEOUT_MS);
+        config.setIdleTimeout(IDLE_TIMEOUT_MS);
+        config.setMaxLifetime(MAX_LIFETIME_MS);
+
+        if (!inMemory) {
+            // 磁盘数据库启用 WAL + 性能优化 PRAGMA
+            config.setConnectionInitSql(
+                "PRAGMA journal_mode=WAL;" +
+                "PRAGMA busy_timeout=5000;" +
+                "PRAGMA synchronous=NORMAL;" +
+                "PRAGMA foreign_keys=ON"
+            );
+        }
+
+        dataSource = new HikariDataSource(config);
+
+        // 使用池中首个连接执行迁移（仅一次）
+        try (Connection conn = dataSource.getConnection()) {
+            new MigrationManager(conn).migrate();
+        } catch (RuntimeException e) {
+            dataSource.close();
+            dataSource = null;
+            throw new RuntimeException("Failed to run migrations", e);
+        }
+    }
+
+    private boolean isInMemory() {
+        String path = testMode && testDbPath != null ? testDbPath : dbPath;
+        return ":memory:".equals(path);
     }
 
     private String getDbUrl() {
         if (testMode && testDbPath != null) {
+            if (":memory:".equals(testDbPath)) {
+                return "jdbc:sqlite:file::memory:?cache=shared";
+            }
             return "jdbc:sqlite:" + testDbPath;
         }
         return "jdbc:sqlite:" + dbPath;
@@ -70,48 +140,46 @@ public class DatabaseManager {
 
     /**
      * 通过 {@link MigrationManager} 执行版本化迁移。
+     * 仅在连接池尚未初始化时触发；已初始化时幂等跳过。
      * 仅执行未运行过的脚本，支持幂等重复调用。
      */
     public void init() {
-        try {
-            new MigrationManager(connection).migrate();
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Failed to run migrations", e);
+        if (dataSource == null || dataSource.isClosed()) {
+            synchronized (poolLock) {
+                if (dataSource == null || dataSource.isClosed()) {
+                    try {
+                        initPool();
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Failed to initialise database pool", e);
+                    }
+                }
+            }
         }
     }
 
     /**
-     * 强制初始化：创建连接 + 运行迁移（用于 SeedDbBuilder 首次构建新库）。
+     * 强制初始化：关闭旧连接池 + 重新创建 + 运行迁移（用于 SeedDbBuilder 首次构建新库）。
      */
     public void forceInit() throws SQLException {
-        if (connection != null && !connection.isClosed()) {
-            connection.close();
-        }
-        String url = getDbUrl();
-        connection = DriverManager.getConnection(url);
-        init();
+        close();
+        initPool();
     }
 
     /**
-     * 关闭数据库连接并重置状态，线程安全。
+     * 关闭连接池并重置状态，线程安全。
      */
     public synchronized void shutdown() {
         close();
     }
 
     /**
-     * 关闭数据库连接，线程安全。
+     * 关闭 HikariCP 连接池，线程安全。
      * 关闭失败时静默忽略，确保状态重置。
      */
     public synchronized void close() {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                // ignore
-            } finally {
-                connection = null;
-            }
+        if (dataSource != null) {
+            dataSource.close();
+            dataSource = null;
         }
     }
 

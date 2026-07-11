@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class JewelDao implements CrudRepository<Jewel, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public JewelDao(Connection connection) {
-        this.connection = connection;
+    public JewelDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -29,7 +29,7 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
     @Override
     public void insert(Jewel j) {
         String sql = "INSERT INTO jewels (page_id, page_name, jewel_limit, radius_html) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, j);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -47,20 +47,20 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
     @Override
     public void batchInsert(List<Jewel> jewels) {
         String sql = "INSERT INTO jewels (page_id, page_name, jewel_limit, radius_html) VALUES (?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Jewel j : jewels) {
                     setParams(ps, j);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert jewels", e);
@@ -76,7 +76,7 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
     @Override
     public Optional<Jewel> findById(Integer pageId) {
         String sql = "SELECT * FROM jewels WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -96,7 +96,8 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
     public List<Jewel> findAll() {
         List<Jewel> list = new ArrayList<>();
         String sql = "SELECT * FROM jewels ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -113,7 +114,7 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM jewels WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -129,7 +130,8 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM jewels";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

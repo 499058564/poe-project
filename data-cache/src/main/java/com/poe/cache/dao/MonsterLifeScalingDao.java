@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class MonsterLifeScalingDao implements CrudRepository<MonsterLifeScaling, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public MonsterLifeScalingDao(Connection connection) {
-        this.connection = connection;
+    public MonsterLifeScalingDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -28,7 +28,7 @@ public class MonsterLifeScalingDao implements CrudRepository<MonsterLifeScaling,
     @Override
     public void insert(MonsterLifeScaling entity) {
         String sql = "INSERT INTO monster_life_scaling (level, magic, rare) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -44,20 +44,20 @@ public class MonsterLifeScalingDao implements CrudRepository<MonsterLifeScaling,
     @Override
     public void batchInsert(List<MonsterLifeScaling> entities) {
         String sql = "INSERT INTO monster_life_scaling (level, magic, rare) VALUES (?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (MonsterLifeScaling entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert monster life scalings", e);
@@ -73,7 +73,7 @@ public class MonsterLifeScalingDao implements CrudRepository<MonsterLifeScaling,
     @Override
     public Optional<MonsterLifeScaling> findById(Integer level) {
         String sql = "SELECT * FROM monster_life_scaling WHERE level = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, level);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -93,7 +93,8 @@ public class MonsterLifeScalingDao implements CrudRepository<MonsterLifeScaling,
     public List<MonsterLifeScaling> findAll() {
         List<MonsterLifeScaling> list = new ArrayList<>();
         String sql = "SELECT * FROM monster_life_scaling ORDER BY level";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -110,7 +111,7 @@ public class MonsterLifeScalingDao implements CrudRepository<MonsterLifeScaling,
     @Override
     public void deleteById(Integer level) {
         String sql = "DELETE FROM monster_life_scaling WHERE level = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, level);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -126,7 +127,8 @@ public class MonsterLifeScalingDao implements CrudRepository<MonsterLifeScaling,
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM monster_life_scaling";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

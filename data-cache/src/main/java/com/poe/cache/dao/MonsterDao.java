@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class MonsterDao implements CrudRepository<Monster, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public MonsterDao(Connection connection) {
-        this.connection = connection;
+    public MonsterDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -33,7 +33,7 @@ public class MonsterDao implements CrudRepository<Monster, Integer> {
             + "mod_ids, model_size_multiplier, monster_type_id, name, part1_mod_ids, "
             + "part2_mod_ids, rarity, rarity_id, size, skill_ids, tags) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -54,20 +54,20 @@ public class MonsterDao implements CrudRepository<Monster, Integer> {
             + "mod_ids, model_size_multiplier, monster_type_id, name, part1_mod_ids, "
             + "part2_mod_ids, rarity, rarity_id, size, skill_ids, tags) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Monster entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert monsters", e);
@@ -83,7 +83,7 @@ public class MonsterDao implements CrudRepository<Monster, Integer> {
     @Override
     public Optional<Monster> findById(Integer pageId) {
         String sql = "SELECT * FROM monsters WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -103,7 +103,8 @@ public class MonsterDao implements CrudRepository<Monster, Integer> {
     public List<Monster> findAll() {
         List<Monster> list = new ArrayList<>();
         String sql = "SELECT * FROM monsters ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -120,7 +121,7 @@ public class MonsterDao implements CrudRepository<Monster, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM monsters WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -136,7 +137,8 @@ public class MonsterDao implements CrudRepository<Monster, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM monsters";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class ModDao implements CrudRepository<Mod, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public ModDao(Connection connection) {
-        this.connection = connection;
+    public ModDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -31,7 +31,7 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         String sql = "INSERT INTO mods (id, name, name_zh, mod_type, domain, generation_type, " +
             "mod_group, stats, spawn_tags, spawn_weights, required_level, version) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, mod);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -48,20 +48,20 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         String sql = "INSERT INTO mods (id, name, name_zh, mod_type, domain, generation_type, " +
             "mod_group, stats, spawn_tags, spawn_weights, required_level, version) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Mod mod : mods) {
                     setParams(ps, mod);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert mods", e);
@@ -77,7 +77,7 @@ public class ModDao implements CrudRepository<Mod, Integer> {
     @Override
     public Optional<Mod> findById(Integer id) {
         String sql = "SELECT * FROM mods WHERE id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -99,7 +99,8 @@ public class ModDao implements CrudRepository<Mod, Integer> {
     public List<Mod> findAll() {
         String sql = "SELECT * FROM mods ORDER BY id";
         List<Mod> mods = new ArrayList<>();
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 mods.add(mapRow(rs));
@@ -118,7 +119,7 @@ public class ModDao implements CrudRepository<Mod, Integer> {
     @Override
     public void deleteById(Integer id) {
         String sql = "DELETE FROM mods WHERE id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -134,7 +135,8 @@ public class ModDao implements CrudRepository<Mod, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM mods";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getInt(1);

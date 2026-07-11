@@ -44,7 +44,7 @@ class StartupSyncRunnerTest {
         StubSyncProvider provider = new StubSyncProvider(false, false, false);
 
         StartupSyncRunner runner = new StartupSyncRunner(provider);
-        CompletableFuture<Map<String, ?>> future = runner.runAsync(null);
+        CompletableFuture<Map<String, ?>> future = runner.runAsync();
         future.get(10, TimeUnit.SECONDS);
 
         assertTrue(capturedEvents.stream()
@@ -67,7 +67,7 @@ class StartupSyncRunnerTest {
         StubSyncProvider provider = new StubSyncProvider(true, false, false);
 
         StartupSyncRunner runner = new StartupSyncRunner(provider);
-        CompletableFuture<Map<String, ?>> future = runner.runAsync(null);
+        CompletableFuture<Map<String, ?>> future = runner.runAsync();
         future.get(10, TimeUnit.SECONDS);
 
         assertTrue(capturedEvents.stream()
@@ -81,7 +81,7 @@ class StartupSyncRunnerTest {
         provider.syncResult = Map.of("items", "ok", "skills", "ok");
 
         StartupSyncRunner runner = new StartupSyncRunner(provider);
-        CompletableFuture<Map<String, ?>> future = runner.runAsync(null);
+        CompletableFuture<Map<String, ?>> future = runner.runAsync();
         Map<String, ?> result = future.get(10, TimeUnit.SECONDS);
 
         assertEquals(2, result.size());

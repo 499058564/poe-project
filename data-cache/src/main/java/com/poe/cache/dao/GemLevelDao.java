@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class GemLevelDao implements CrudRepository<GemLevel, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public GemLevelDao(Connection connection) {
-        this.connection = connection;
+    public GemLevelDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -30,7 +30,7 @@ public class GemLevelDao implements CrudRepository<GemLevel, Integer> {
         String sql = "INSERT INTO gem_levels (page_id, page_name, experience, level, "
             + "required_dexterity, required_intelligence, required_level, required_strength) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -48,20 +48,20 @@ public class GemLevelDao implements CrudRepository<GemLevel, Integer> {
         String sql = "INSERT INTO gem_levels (page_id, page_name, experience, level, "
             + "required_dexterity, required_intelligence, required_level, required_strength) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (GemLevel entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert gem_levels", e);
@@ -77,7 +77,7 @@ public class GemLevelDao implements CrudRepository<GemLevel, Integer> {
     @Override
     public Optional<GemLevel> findById(Integer pageId) {
         String sql = "SELECT * FROM gem_levels WHERE page_id = ? LIMIT 1";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -97,7 +97,8 @@ public class GemLevelDao implements CrudRepository<GemLevel, Integer> {
     public List<GemLevel> findAll() {
         List<GemLevel> list = new ArrayList<>();
         String sql = "SELECT * FROM gem_levels ORDER BY page_id, level";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -114,7 +115,7 @@ public class GemLevelDao implements CrudRepository<GemLevel, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM gem_levels WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -130,7 +131,8 @@ public class GemLevelDao implements CrudRepository<GemLevel, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM gem_levels";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

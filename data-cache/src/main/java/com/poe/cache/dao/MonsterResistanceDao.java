@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class MonsterResistanceDao implements CrudRepository<MonsterResistance, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public MonsterResistanceDao(Connection connection) {
-        this.connection = connection;
+    public MonsterResistanceDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -33,7 +33,7 @@ public class MonsterResistanceDao implements CrudRepository<MonsterResistance, I
             + "part1_chaos, part1_cold, part1_fire, part1_lightning, "
             + "part2_chaos, part2_cold, part2_fire, part2_lightning) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -53,20 +53,20 @@ public class MonsterResistanceDao implements CrudRepository<MonsterResistance, I
             + "part1_chaos, part1_cold, part1_fire, part1_lightning, "
             + "part2_chaos, part2_cold, part2_fire, part2_lightning) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (MonsterResistance entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert monster resistances", e);
@@ -82,7 +82,7 @@ public class MonsterResistanceDao implements CrudRepository<MonsterResistance, I
     @Override
     public Optional<MonsterResistance> findById(Integer pageId) {
         String sql = "SELECT * FROM monster_resistances WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -102,7 +102,8 @@ public class MonsterResistanceDao implements CrudRepository<MonsterResistance, I
     public List<MonsterResistance> findAll() {
         List<MonsterResistance> list = new ArrayList<>();
         String sql = "SELECT * FROM monster_resistances ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -119,7 +120,7 @@ public class MonsterResistanceDao implements CrudRepository<MonsterResistance, I
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM monster_resistances WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -135,7 +136,8 @@ public class MonsterResistanceDao implements CrudRepository<MonsterResistance, I
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM monster_resistances";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

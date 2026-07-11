@@ -1,11 +1,6 @@
 package com.poe.ui.window;
 
-import com.poe.cache.dao.ItemDao;
-import com.poe.cache.dao.SearchDao;
-import com.poe.cache.dao.TranslationDao;
-import com.poe.cache.manager.DatabaseManager;
 import com.poe.core.service.ItemSearchService;
-import com.poe.core.service.TranslationService;
 import com.poe.ui.components.ContentArea;
 import com.poe.ui.components.Sidebar;
 import com.poe.ui.components.StatusBar;
@@ -58,8 +53,7 @@ public class MainWindow {
         stage.setMinHeight(LayoutConstants.WINDOW_MIN_HEIGHT);
         stage.centerOnScreen();
 
-        // Initialize backend services
-        ItemSearchService searchService = initializeServices();
+        ItemSearchService searchService = initItemSearchServices();
 
         sidebar = new Sidebar(PageDefEnum.values());
         contentArea = new ContentArea(PageDefEnum.values());
@@ -103,26 +97,16 @@ public class MainWindow {
     }
 
     /**
-     * Initialize backend services: DatabaseManager, DAOs, TranslationService, ItemSearchService.
+     * 初始化后端服务：数据库管理器、DAO、翻译服务、物品搜索服务。
      *
-     * @return initialized ItemSearchService
+     * @return ItemSearchService 实例
      */
-    private ItemSearchService initializeServices() {
+    private ItemSearchService initItemSearchServices() {
         try {
-            DatabaseManager dbManager = DatabaseManager.getInstance();
-            // Trigger connection to ensure DB is initialized
-            var conn = dbManager.getConnection();
-
-            TranslationDao translationDao = new TranslationDao(conn);
-            TranslationService translationService = new TranslationService(translationDao);
-
-            SearchDao searchDao = new SearchDao(conn);
-            ItemDao itemDao = new ItemDao(conn);
-
-            log.info("Backend services initialized successfully");
-            return new ItemSearchService(searchDao, itemDao, translationService);
+            log.info("MainWindow|initializeServices|successfully");
+            return new ItemSearchService();
         } catch (Exception e) {
-            log.error("Failed to initialize backend services", e);
+            log.error("MainWindow|initializeServices|failed", e);
             return null;
         }
     }

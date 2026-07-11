@@ -122,9 +122,8 @@ class VersionDetectorTest {
     @Test
     @DisplayName("应能从 Wiki base_items 表检测版本")
     void shouldDetectFromWiki() throws SQLException {
-        DatabaseManager.getInstance().getConnection(); // trigger migration
-        Connection conn = DatabaseManager.getInstance().getConnection();
-        try (Statement stmt = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement stmt = conn.createStatement()) {
             stmt.execute("INSERT INTO base_items (name, class, version) "
                 + "VALUES ('Mageblood', 'Belt', '3.16.0')");
             stmt.execute("INSERT INTO base_items (name, class, version) "
@@ -149,8 +148,8 @@ class VersionDetectorTest {
     @Test
     @DisplayName("应能从 data_version 缓存检测版本")
     void shouldDetectFromCache() throws SQLException {
-        Connection conn = DatabaseManager.getInstance().getConnection();
-        try (Statement stmt = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement stmt = conn.createStatement()) {
             stmt.execute("CREATE TABLE IF NOT EXISTS data_version ("
                 + "table_name TEXT PRIMARY KEY, last_sync TEXT, "
                 + "record_count INTEGER DEFAULT 0, wiki_version TEXT, "
@@ -168,8 +167,8 @@ class VersionDetectorTest {
     @Test
     @DisplayName("空 data_version 表应返回 unknown")
     void shouldReturnUnknownForEmptyCache() throws SQLException {
-        Connection conn = DatabaseManager.getInstance().getConnection();
-        try (Statement stmt = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement stmt = conn.createStatement()) {
             stmt.execute("CREATE TABLE IF NOT EXISTS data_version ("
                 + "table_name TEXT PRIMARY KEY, last_sync TEXT, "
                 + "record_count INTEGER DEFAULT 0, wiki_version TEXT, "
@@ -204,9 +203,8 @@ class VersionDetectorTest {
             .setBody("[{\"id\": \"Settlers\", \"realm\": \"pc\"}]")
             .addHeader("Content-Type", "application/json"));
 
-        DatabaseManager.getInstance().getConnection(); // trigger migration
-        Connection conn = DatabaseManager.getInstance().getConnection();
-        try (Statement stmt = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement stmt = conn.createStatement()) {
             stmt.execute("INSERT INTO base_items (name, class, version) "
                 + "VALUES ('Mageblood', 'Belt', '3.25')");
         }

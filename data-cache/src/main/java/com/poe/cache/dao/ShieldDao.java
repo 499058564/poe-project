@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class ShieldDao implements CrudRepository<Shield, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public ShieldDao(Connection connection) {
-        this.connection = connection;
+    public ShieldDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -29,7 +29,7 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
     @Override
     public void insert(Shield s) {
         String sql = "INSERT INTO shields (page_id, page_name, block) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, s);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -47,20 +47,20 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
     @Override
     public void batchInsert(List<Shield> shields) {
         String sql = "INSERT INTO shields (page_id, page_name, block) VALUES (?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Shield s : shields) {
                     setParams(ps, s);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert shields", e);
@@ -76,7 +76,7 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
     @Override
     public Optional<Shield> findById(Integer pageId) {
         String sql = "SELECT * FROM shields WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -96,7 +96,8 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
     public List<Shield> findAll() {
         List<Shield> list = new ArrayList<>();
         String sql = "SELECT * FROM shields ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -113,7 +114,7 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM shields WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -129,7 +130,8 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM shields";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

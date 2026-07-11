@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class PantheonStatsDao implements CrudRepository<PantheonStats, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public PantheonStatsDao(Connection connection) {
-        this.connection = connection;
+    public PantheonStatsDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class PantheonStatsDao implements CrudRepository<PantheonStats, Integer> 
         String sql = "INSERT INTO pantheon_stats (page_id, page_name, stat_id, ordinal, pantheon_id, "
             + "pantheon_ordinal, value) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -33,20 +33,20 @@ public class PantheonStatsDao implements CrudRepository<PantheonStats, Integer> 
         String sql = "INSERT INTO pantheon_stats (page_id, page_name, stat_id, ordinal, pantheon_id, "
             + "pantheon_ordinal, value) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (PantheonStats entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert pantheon_stats", e);
@@ -56,7 +56,7 @@ public class PantheonStatsDao implements CrudRepository<PantheonStats, Integer> 
     @Override
     public Optional<PantheonStats> findById(Integer pageId) {
         String sql = "SELECT * FROM pantheon_stats WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -71,7 +71,8 @@ public class PantheonStatsDao implements CrudRepository<PantheonStats, Integer> 
     public List<PantheonStats> findAll() {
         List<PantheonStats> list = new ArrayList<>();
         String sql = "SELECT * FROM pantheon_stats ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -83,7 +84,7 @@ public class PantheonStatsDao implements CrudRepository<PantheonStats, Integer> 
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM pantheon_stats WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -94,7 +95,8 @@ public class PantheonStatsDao implements CrudRepository<PantheonStats, Integer> 
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM pantheon_stats";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

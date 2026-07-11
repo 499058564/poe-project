@@ -97,13 +97,10 @@ public class SeedDbBuilder {
         dbm.forceInit(); // 运行迁移
 
         // 2. 导入 PoeCharm2 翻译
-        try (Connection conn = dbm.getConnection()) {
-            TranslationService ts = new TranslationService(
-                    new com.poe.cache.dao.TranslationDao(conn));
-            Path translateDir = poeCharm2Path.resolve("Data/Translate/zh-rCN");
-            int count = ts.importFromPoeCharm2(translateDir);
-            log.info("PoeCharm2 translations imported: {} entries", count);
-        }
+        TranslationService ts = new TranslationService(dbm.getDataSource());
+        Path translateDir = poeCharm2Path.resolve("Data/Translate/zh-rCN");
+        int count = ts.importFromPoeCharm2(translateDir);
+        log.info("PoeCharm2 translations imported: {} entries", count);
 
         // 3. 从 Wiki 同步数据（可选）
         if (!skipWiki) {

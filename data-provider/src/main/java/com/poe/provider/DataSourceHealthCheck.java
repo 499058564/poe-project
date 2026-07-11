@@ -113,20 +113,18 @@ public class DataSourceHealthCheck {
      */
     DataSourceHealth checkWikiCache() {
         long start = System.currentTimeMillis();
-        try {
-            Connection conn = dbManager.getConnection();
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM base_items")) {
-                if (rs.next()) {
-                    int count = rs.getInt(1);
-                    long elapsed = System.currentTimeMillis() - start;
-                    if (count > 0) {
-                        return new DataSourceHealth("Wiki Cache", Status.HEALTHY,
-                            elapsed, count + " items cached");
-                    } else {
-                        return new DataSourceHealth("Wiki Cache", Status.DEGRADED,
-                            elapsed, "Cache is empty — sync needed");
-                    }
+        try (Connection conn = dbManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM base_items")) {
+            if (rs.next()) {
+                int count = rs.getInt(1);
+                long elapsed = System.currentTimeMillis() - start;
+                if (count > 0) {
+                    return new DataSourceHealth("Wiki Cache", Status.HEALTHY,
+                        elapsed, count + " items cached");
+                } else {
+                    return new DataSourceHealth("Wiki Cache", Status.DEGRADED,
+                        elapsed, "Cache is empty — sync needed");
                 }
             }
         } catch (Exception e) {

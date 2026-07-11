@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.sql.Connection;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -42,10 +41,9 @@ public class StartupSyncRunner {
     /**
      * 异步执行启动同步。
      *
-     * @param conn 已就绪的 JDBC 连接
      * @return 同步结果的 CompletableFuture
      */
-    public CompletableFuture<Map<String, ?>> runAsync(Connection conn) {
+    public CompletableFuture<Map<String, ?>> runAsync() {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return doSync();

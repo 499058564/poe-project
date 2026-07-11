@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javax.sql.DataSource;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -49,6 +50,13 @@ public class TranslationService {
     /** 缺失翻译记录（source → domain 集合），用于日志和后续补充 */
     private final Set<String> missingTranslations = ConcurrentHashMap.newKeySet();
 
+    public TranslationService(DataSource dataSource) {
+        this.translationDao = new TranslationDao(dataSource);
+    }
+
+    /**
+     * 直接注入 TranslationDao（用于测试）。
+     */
     public TranslationService(TranslationDao translationDao) {
         this.translationDao = translationDao;
     }

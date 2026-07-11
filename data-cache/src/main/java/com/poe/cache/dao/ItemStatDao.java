@@ -15,17 +15,17 @@ import java.util.Optional;
  */
 public class ItemStatDao implements CrudRepository<ItemStat, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public ItemStatDao(Connection connection) {
-        this.connection = connection;
+    public ItemStatDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public void insert(ItemStat entity) {
         String sql = "INSERT INTO item_stats (page_id, page_name, avg, stat_id, " +
             "max_value, min_value, mod_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -37,20 +37,20 @@ public class ItemStatDao implements CrudRepository<ItemStat, Integer> {
     public void batchInsert(List<ItemStat> entities) {
         String sql = "INSERT INTO item_stats (page_id, page_name, avg, stat_id, " +
             "max_value, min_value, mod_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (ItemStat entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert item_stats", e);
@@ -60,7 +60,7 @@ public class ItemStatDao implements CrudRepository<ItemStat, Integer> {
     @Override
     public Optional<ItemStat> findById(Integer pageId) {
         String sql = "SELECT * FROM item_stats WHERE page_id = ? LIMIT 1";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -75,7 +75,8 @@ public class ItemStatDao implements CrudRepository<ItemStat, Integer> {
     public List<ItemStat> findAll() {
         List<ItemStat> list = new ArrayList<>();
         String sql = "SELECT * FROM item_stats ORDER BY page_id, stat_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -87,7 +88,7 @@ public class ItemStatDao implements CrudRepository<ItemStat, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM item_stats WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -98,7 +99,8 @@ public class ItemStatDao implements CrudRepository<ItemStat, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM item_stats";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

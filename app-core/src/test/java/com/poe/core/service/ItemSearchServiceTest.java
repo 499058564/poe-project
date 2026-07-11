@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import javax.sql.DataSource;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -28,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ItemSearchServiceTest {
 
     private Connection connection;
+    private javax.sql.DataSource dataSource;
     private ItemSearchService service;
     private ItemDao itemDao;
     private SearchDao searchDao;
@@ -42,13 +44,16 @@ class ItemSearchServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        connection = DriverManager.getConnection("jdbc:sqlite::memory:");
+        connection = DriverManager.getConnection("jdbc:sqlite:file::memory:?cache=shared");
+        org.sqlite.SQLiteDataSource ds = new org.sqlite.SQLiteDataSource();
+        ds.setUrl("jdbc:sqlite:file::memory:?cache=shared");
+        dataSource = ds;
         runMigrations();
         insertTestData();
 
-        itemDao = new ItemDao(connection);
-        searchDao = new SearchDao(connection);
-        translationDao = new TranslationDao(connection);
+        itemDao = new ItemDao(dataSource);
+        searchDao = new SearchDao(dataSource);
+        translationDao = new TranslationDao(dataSource);
         translationService = new TranslationService(translationDao);
         service = new ItemSearchService(searchDao, itemDao, translationService);
     }

@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class AreaDao implements CrudRepository<Area, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public AreaDao(Connection connection) {
-        this.connection = connection;
+    public AreaDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -38,7 +38,7 @@ public class AreaDao implements CrudRepository<Area, Integer> {
             + "strongbox_weight_normal, strongbox_weight_rare, strongbox_weight_unique, "
             + "tags, vaal_area_ids, vaal_area_spawn_chance) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -64,20 +64,20 @@ public class AreaDao implements CrudRepository<Area, Integer> {
             + "strongbox_weight_normal, strongbox_weight_rare, strongbox_weight_unique, "
             + "tags, vaal_area_ids, vaal_area_spawn_chance) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Area entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert areas", e);
@@ -93,7 +93,7 @@ public class AreaDao implements CrudRepository<Area, Integer> {
     @Override
     public Optional<Area> findById(Integer pageId) {
         String sql = "SELECT * FROM areas WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -113,7 +113,8 @@ public class AreaDao implements CrudRepository<Area, Integer> {
     public List<Area> findAll() {
         List<Area> list = new ArrayList<>();
         String sql = "SELECT * FROM areas ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -130,7 +131,7 @@ public class AreaDao implements CrudRepository<Area, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM areas WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -146,7 +147,8 @@ public class AreaDao implements CrudRepository<Area, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM areas";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

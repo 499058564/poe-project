@@ -15,17 +15,17 @@ import java.util.Optional;
  */
 public class CraftingBenchOptionCostDao implements CrudRepository<CraftingBenchOptionCost, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public CraftingBenchOptionCostDao(Connection connection) {
-        this.connection = connection;
+    public CraftingBenchOptionCostDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public void insert(CraftingBenchOptionCost entity) {
         String sql = "INSERT INTO crafting_bench_options_costs (page_id, page_name, option_id, " +
             "amount, currency_name) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -37,20 +37,20 @@ public class CraftingBenchOptionCostDao implements CrudRepository<CraftingBenchO
     public void batchInsert(List<CraftingBenchOptionCost> entities) {
         String sql = "INSERT INTO crafting_bench_options_costs (page_id, page_name, option_id, " +
             "amount, currency_name) VALUES (?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (CraftingBenchOptionCost entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert crafting_bench_options_costs", e);
@@ -60,7 +60,7 @@ public class CraftingBenchOptionCostDao implements CrudRepository<CraftingBenchO
     @Override
     public Optional<CraftingBenchOptionCost> findById(Integer pageId) {
         String sql = "SELECT * FROM crafting_bench_options_costs WHERE page_id = ? LIMIT 1";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -75,7 +75,8 @@ public class CraftingBenchOptionCostDao implements CrudRepository<CraftingBenchO
     public List<CraftingBenchOptionCost> findAll() {
         List<CraftingBenchOptionCost> list = new ArrayList<>();
         String sql = "SELECT * FROM crafting_bench_options_costs ORDER BY option_id, currency_name";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -87,7 +88,7 @@ public class CraftingBenchOptionCostDao implements CrudRepository<CraftingBenchO
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM crafting_bench_options_costs WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -98,7 +99,8 @@ public class CraftingBenchOptionCostDao implements CrudRepository<CraftingBenchO
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM crafting_bench_options_costs";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

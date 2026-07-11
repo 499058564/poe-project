@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class DelveLevelScalingDao implements CrudRepository<DelveLevelScaling, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public DelveLevelScalingDao(Connection connection) {
-        this.connection = connection;
+    public DelveLevelScalingDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class DelveLevelScalingDao implements CrudRepository<DelveLevelScaling, I
         String sql = "INSERT INTO delve_level_scaling (depth, page_name, darkness_resistance, light_radius, "
             + "monster_damage, monster_level, monster_life, sulphite_cost) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -33,20 +33,20 @@ public class DelveLevelScalingDao implements CrudRepository<DelveLevelScaling, I
         String sql = "INSERT INTO delve_level_scaling (depth, page_name, darkness_resistance, light_radius, "
             + "monster_damage, monster_level, monster_life, sulphite_cost) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (DelveLevelScaling entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert delve_level_scaling", e);
@@ -56,7 +56,7 @@ public class DelveLevelScalingDao implements CrudRepository<DelveLevelScaling, I
     @Override
     public Optional<DelveLevelScaling> findById(Integer depth) {
         String sql = "SELECT * FROM delve_level_scaling WHERE depth = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, depth);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -71,7 +71,8 @@ public class DelveLevelScalingDao implements CrudRepository<DelveLevelScaling, I
     public List<DelveLevelScaling> findAll() {
         List<DelveLevelScaling> list = new ArrayList<>();
         String sql = "SELECT * FROM delve_level_scaling ORDER BY depth";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -83,7 +84,7 @@ public class DelveLevelScalingDao implements CrudRepository<DelveLevelScaling, I
     @Override
     public void deleteById(Integer depth) {
         String sql = "DELETE FROM delve_level_scaling WHERE depth = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, depth);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -94,7 +95,8 @@ public class DelveLevelScalingDao implements CrudRepository<DelveLevelScaling, I
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM delve_level_scaling";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

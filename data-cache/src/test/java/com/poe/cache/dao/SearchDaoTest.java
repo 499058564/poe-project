@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import javax.sql.DataSource;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.List;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SearchDaoTest {
 
     private Connection connection;
+    private javax.sql.DataSource dataSource;
     private SearchDao dao;
 
     private static final String[] MIGRATION_FILES = {
@@ -32,7 +34,8 @@ class SearchDaoTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        connection = DriverManager.getConnection("jdbc:sqlite::memory:");
+        connection = DriverManager.getConnection("jdbc:sqlite:file::memory:?cache=shared");
+        dataSource = createDataSource();
         runMigrations();
 
         // 插入测试数据
@@ -57,7 +60,7 @@ class SearchDaoTest {
             stmt.executeUpdate("INSERT INTO items_fts(items_fts) VALUES ('rebuild')");
         }
 
-        dao = new SearchDao(connection);
+        dao = new SearchDao(dataSource);
     }
 
     @AfterEach
@@ -169,4 +172,9 @@ class SearchDaoTest {
             }
         }
     }
-}
+
+    private javax.sql.DataSource createDataSource() {
+        org.sqlite.SQLiteDataSource ds = new org.sqlite.SQLiteDataSource();
+        ds.setUrl("jdbc:sqlite:file::memory:?cache=shared");
+        return ds;
+    }}

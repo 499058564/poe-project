@@ -112,16 +112,14 @@ public class VersionDetector {
      * 从 Wiki items 表最大 version 检测版本。
      */
     GameVersion detectFromWiki() {
-        try {
-            Connection conn = dbManager.getConnection();
-            String sql = "SELECT COALESCE(MAX(version), 'unknown') FROM base_items";
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(sql)) {
-                if (rs.next()) {
-                    String version = rs.getString(1);
-                    if (!"unknown".equals(version)) {
-                        return new GameVersion(version, "unknown_league", "Wiki", Instant.now());
-                    }
+        String sql = "SELECT COALESCE(MAX(version), 'unknown') FROM base_items";
+        try (Connection conn = dbManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                String version = rs.getString(1);
+                if (!"unknown".equals(version)) {
+                    return new GameVersion(version, "unknown_league", "Wiki", Instant.now());
                 }
             }
         } catch (Exception e) {
@@ -134,18 +132,16 @@ public class VersionDetector {
      * 从本地 data_version 缓存检测版本。
      */
     GameVersion detectFromCache() {
-        try {
-            Connection conn = dbManager.getConnection();
-            String sql = "SELECT source_version FROM data_version "
+        String sql = "SELECT source_version FROM data_version "
                 + "WHERE table_name = 'base_items' AND source_version IS NOT NULL "
                 + "ORDER BY last_sync DESC LIMIT 1";
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(sql)) {
-                if (rs.next()) {
-                    String version = rs.getString(1);
-                    if (version != null && !version.isEmpty()) {
-                        return new GameVersion(version, "unknown_league", "data_version", Instant.now());
-                    }
+        try (Connection conn = dbManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                String version = rs.getString(1);
+                if (version != null && !version.isEmpty()) {
+                    return new GameVersion(version, "unknown_league", "data_version", Instant.now());
                 }
             }
         } catch (Exception e) {

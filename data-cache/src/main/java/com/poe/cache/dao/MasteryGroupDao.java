@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class MasteryGroupDao implements CrudRepository<MasteryGroup, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public MasteryGroupDao(Connection connection) {
-        this.connection = connection;
+    public MasteryGroupDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -29,7 +29,7 @@ public class MasteryGroupDao implements CrudRepository<MasteryGroup, Integer> {
     public void insert(MasteryGroup entity) {
         String sql = "INSERT INTO mastery_groups (page_id, page_name, icon, group_id, name) "
             + "VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -46,20 +46,20 @@ public class MasteryGroupDao implements CrudRepository<MasteryGroup, Integer> {
     public void batchInsert(List<MasteryGroup> entities) {
         String sql = "INSERT INTO mastery_groups (page_id, page_name, icon, group_id, name) "
             + "VALUES (?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (MasteryGroup entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert mastery_groups", e);
@@ -75,7 +75,7 @@ public class MasteryGroupDao implements CrudRepository<MasteryGroup, Integer> {
     @Override
     public Optional<MasteryGroup> findById(Integer pageId) {
         String sql = "SELECT * FROM mastery_groups WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -95,7 +95,8 @@ public class MasteryGroupDao implements CrudRepository<MasteryGroup, Integer> {
     public List<MasteryGroup> findAll() {
         List<MasteryGroup> list = new ArrayList<>();
         String sql = "SELECT * FROM mastery_groups ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -112,7 +113,7 @@ public class MasteryGroupDao implements CrudRepository<MasteryGroup, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM mastery_groups WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -128,7 +129,8 @@ public class MasteryGroupDao implements CrudRepository<MasteryGroup, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM mastery_groups";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

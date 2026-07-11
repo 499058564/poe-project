@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class SentinelDao implements CrudRepository<Sentinel, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public SentinelDao(Connection connection) {
-        this.connection = connection;
+    public SentinelDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -25,7 +25,7 @@ public class SentinelDao implements CrudRepository<Sentinel, Integer> {
             "empowers, empowers_html, empowers_range_average, empowers_range_colour, empowers_range_maximum, " +
             "empowers_range_minimum, empowers_range_text, monster, monster_level) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -43,20 +43,20 @@ public class SentinelDao implements CrudRepository<Sentinel, Integer> {
             "empowers, empowers_html, empowers_range_average, empowers_range_colour, empowers_range_maximum, " +
             "empowers_range_minimum, empowers_range_text, monster, monster_level) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Sentinel entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert sentinels", e);
@@ -66,7 +66,7 @@ public class SentinelDao implements CrudRepository<Sentinel, Integer> {
     @Override
     public Optional<Sentinel> findById(Integer pageId) {
         String sql = "SELECT * FROM sentinels WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -81,7 +81,8 @@ public class SentinelDao implements CrudRepository<Sentinel, Integer> {
     public List<Sentinel> findAll() {
         List<Sentinel> list = new ArrayList<>();
         String sql = "SELECT * FROM sentinels ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -93,7 +94,7 @@ public class SentinelDao implements CrudRepository<Sentinel, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM sentinels WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -104,7 +105,8 @@ public class SentinelDao implements CrudRepository<Sentinel, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM sentinels";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

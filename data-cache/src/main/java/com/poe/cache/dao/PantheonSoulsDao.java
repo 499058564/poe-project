@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class PantheonSoulsDao implements CrudRepository<PantheonSouls, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public PantheonSoulsDao(Connection connection) {
-        this.connection = connection;
+    public PantheonSoulsDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class PantheonSoulsDao implements CrudRepository<PantheonSouls, Integer> 
         String sql = "INSERT INTO pantheon_souls (page_id, page_name, soul_id, item_id, name, ordinal, "
             + "stat_text, target_area_id, target_monster_id) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -33,20 +33,20 @@ public class PantheonSoulsDao implements CrudRepository<PantheonSouls, Integer> 
         String sql = "INSERT INTO pantheon_souls (page_id, page_name, soul_id, item_id, name, ordinal, "
             + "stat_text, target_area_id, target_monster_id) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (PantheonSouls entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert pantheon_souls", e);
@@ -56,7 +56,7 @@ public class PantheonSoulsDao implements CrudRepository<PantheonSouls, Integer> 
     @Override
     public Optional<PantheonSouls> findById(Integer pageId) {
         String sql = "SELECT * FROM pantheon_souls WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -71,7 +71,8 @@ public class PantheonSoulsDao implements CrudRepository<PantheonSouls, Integer> 
     public List<PantheonSouls> findAll() {
         List<PantheonSouls> list = new ArrayList<>();
         String sql = "SELECT * FROM pantheon_souls ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -83,7 +84,7 @@ public class PantheonSoulsDao implements CrudRepository<PantheonSouls, Integer> 
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM pantheon_souls WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -94,7 +95,8 @@ public class PantheonSoulsDao implements CrudRepository<PantheonSouls, Integer> 
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM pantheon_souls";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

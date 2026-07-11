@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class FossilDao implements CrudRepository<Fossil, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public FossilDao(Connection connection) {
-        this.connection = connection;
+    public FossilDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -28,7 +28,7 @@ public class FossilDao implements CrudRepository<Fossil, Integer> {
             "can_roll_white_sockets, corrupted_essence_chance, forbidden_tags, " +
             "forced_modifier_ids, is_lucky, sell_price_modifier_ids) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -43,20 +43,20 @@ public class FossilDao implements CrudRepository<Fossil, Integer> {
             "can_roll_white_sockets, corrupted_essence_chance, forbidden_tags, " +
             "forced_modifier_ids, is_lucky, sell_price_modifier_ids) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Fossil entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert fossils", e);
@@ -66,7 +66,7 @@ public class FossilDao implements CrudRepository<Fossil, Integer> {
     @Override
     public Optional<Fossil> findById(Integer pageId) {
         String sql = "SELECT * FROM fossils WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -81,7 +81,8 @@ public class FossilDao implements CrudRepository<Fossil, Integer> {
     public List<Fossil> findAll() {
         List<Fossil> list = new ArrayList<>();
         String sql = "SELECT * FROM fossils ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -93,7 +94,7 @@ public class FossilDao implements CrudRepository<Fossil, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM fossils WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -104,7 +105,8 @@ public class FossilDao implements CrudRepository<Fossil, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM fossils";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

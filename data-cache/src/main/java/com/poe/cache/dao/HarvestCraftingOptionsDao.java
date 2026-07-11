@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class HarvestCraftingOptionsDao implements CrudRepository<HarvestCraftingOptions, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public HarvestCraftingOptionsDao(Connection connection) {
-        this.connection = connection;
+    public HarvestCraftingOptionsDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class HarvestCraftingOptionsDao implements CrudRepository<HarvestCrafting
         String sql = "INSERT INTO harvest_crafting_options (page_id, page_name, option_id, cost_primal, "
             + "cost_rancour, cost_sacred, cost_vivid, cost_wild, effect, effect_html, ordinal) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -33,20 +33,20 @@ public class HarvestCraftingOptionsDao implements CrudRepository<HarvestCrafting
         String sql = "INSERT INTO harvest_crafting_options (page_id, page_name, option_id, cost_primal, "
             + "cost_rancour, cost_sacred, cost_vivid, cost_wild, effect, effect_html, ordinal) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (HarvestCraftingOptions entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert harvest_crafting_options", e);
@@ -56,7 +56,7 @@ public class HarvestCraftingOptionsDao implements CrudRepository<HarvestCrafting
     @Override
     public Optional<HarvestCraftingOptions> findById(Integer pageId) {
         String sql = "SELECT * FROM harvest_crafting_options WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -71,7 +71,8 @@ public class HarvestCraftingOptionsDao implements CrudRepository<HarvestCrafting
     public List<HarvestCraftingOptions> findAll() {
         List<HarvestCraftingOptions> list = new ArrayList<>();
         String sql = "SELECT * FROM harvest_crafting_options ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -83,7 +84,7 @@ public class HarvestCraftingOptionsDao implements CrudRepository<HarvestCrafting
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM harvest_crafting_options WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -94,7 +95,8 @@ public class HarvestCraftingOptionsDao implements CrudRepository<HarvestCrafting
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM harvest_crafting_options";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import javax.sql.DataSource;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.*;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TranslationServiceTest {
 
     private Connection connection;
+    private javax.sql.DataSource dataSource;
     private TranslationDao dao;
     private TranslationService service;
 
@@ -27,9 +29,12 @@ class TranslationServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        connection = DriverManager.getConnection("jdbc:sqlite::memory:");
+        connection = DriverManager.getConnection("jdbc:sqlite:file::memory:?cache=shared");
+        org.sqlite.SQLiteDataSource ds = new org.sqlite.SQLiteDataSource();
+        ds.setUrl("jdbc:sqlite:file::memory:?cache=shared");
+        dataSource = ds;
         runMigrations();
-        dao = new TranslationDao(connection);
+        dao = new TranslationDao(dataSource);
         service = new TranslationService(dao);
     }
 

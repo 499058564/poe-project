@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class SkillDao implements CrudRepository<Skill, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public SkillDao(Connection connection) {
-        this.connection = connection;
+    public SkillDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -31,7 +31,7 @@ public class SkillDao implements CrudRepository<Skill, Integer> {
             + "description, is_support, item_class_id_restriction, item_class_restriction, "
             + "max_level, skill_id, stat_text) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -50,20 +50,20 @@ public class SkillDao implements CrudRepository<Skill, Integer> {
             + "description, is_support, item_class_id_restriction, item_class_restriction, "
             + "max_level, skill_id, stat_text) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Skill entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert skills", e);
@@ -79,7 +79,7 @@ public class SkillDao implements CrudRepository<Skill, Integer> {
     @Override
     public Optional<Skill> findById(Integer pageId) {
         String sql = "SELECT * FROM skills WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -99,7 +99,8 @@ public class SkillDao implements CrudRepository<Skill, Integer> {
     public List<Skill> findAll() {
         List<Skill> list = new ArrayList<>();
         String sql = "SELECT * FROM skills ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -116,7 +117,7 @@ public class SkillDao implements CrudRepository<Skill, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM skills WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -132,7 +133,8 @@ public class SkillDao implements CrudRepository<Skill, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM skills";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

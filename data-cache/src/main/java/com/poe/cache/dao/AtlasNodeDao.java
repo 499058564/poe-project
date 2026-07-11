@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class AtlasNodeDao implements CrudRepository<AtlasNode, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public AtlasNodeDao(Connection connection) {
-        this.connection = connection;
+    public AtlasNodeDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -32,7 +32,7 @@ public class AtlasNodeDao implements CrudRepository<AtlasNode, Integer> {
             + "region_connections_2, region_connections_3, region_connections_4, "
             + "region_id, region_minimum, series_id, tier_0, tier_1, tier_2, tier_3, tier_4) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -52,20 +52,20 @@ public class AtlasNodeDao implements CrudRepository<AtlasNode, Integer> {
             + "region_connections_2, region_connections_3, region_connections_4, "
             + "region_id, region_minimum, series_id, tier_0, tier_1, tier_2, tier_3, tier_4) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (AtlasNode entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert atlas nodes", e);
@@ -81,7 +81,7 @@ public class AtlasNodeDao implements CrudRepository<AtlasNode, Integer> {
     @Override
     public Optional<AtlasNode> findById(Integer pageId) {
         String sql = "SELECT * FROM atlas_nodes WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -101,7 +101,8 @@ public class AtlasNodeDao implements CrudRepository<AtlasNode, Integer> {
     public List<AtlasNode> findAll() {
         List<AtlasNode> list = new ArrayList<>();
         String sql = "SELECT * FROM atlas_nodes ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -118,7 +119,7 @@ public class AtlasNodeDao implements CrudRepository<AtlasNode, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM atlas_nodes WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -134,7 +135,8 @@ public class AtlasNodeDao implements CrudRepository<AtlasNode, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM atlas_nodes";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

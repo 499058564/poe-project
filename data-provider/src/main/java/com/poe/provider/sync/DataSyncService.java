@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
+import javax.sql.DataSource;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -358,7 +359,7 @@ public class DataSyncService {
      *
      * @return 每个表的同步结果映射（Cargo表名 → SyncResult）
      */
-    public Map<String, SyncResult> syncAll() {
+    public Map<String, SyncResult> syncAll() throws SQLException {
         Map<String, SyncResult> results = new LinkedHashMap<>();
         for (String tableName : TABLE_CONFIGS.keySet()) {
             try {
@@ -380,7 +381,7 @@ public class DataSyncService {
      * @return 同步结果
      * @throws IllegalArgumentException 表名未在配置中
      */
-    public SyncResult syncTable(String cargoTable) {
+    public SyncResult syncTable(String cargoTable) throws SQLException {
         TableConfig config = TABLE_CONFIGS.get(cargoTable);
         if (config == null) {
             throw new IllegalArgumentException("Unknown table: " + cargoTable);
@@ -436,8 +437,7 @@ public class DataSyncService {
      * @return true 至少一个表有变化
      */
     public boolean hasUpdates() {
-        try {
-            Connection conn = dbManager.getConnection();
+        try (Connection conn = dbManager.getConnection()) {
             for (Map.Entry<String, TableConfig> entry : TABLE_CONFIGS.entrySet()) {
                 int remote = wikiClient.queryCargoTableCount(entry.getKey());
                 int local = getLocalRecordCount(conn, entry.getValue().sqliteTable);
@@ -456,47 +456,43 @@ public class DataSyncService {
     /**
      * 分批拉取 + 转换 + 事务写入。
      */
-    private int batchSync(String cargoTable, TableConfig config, int totalCount) {
+    private int batchSync(String cargoTable, TableConfig config, int totalCount) throws SQLException {
         int totalSynced = 0;
 
-        try {
-            Connection conn = dbManager.getConnection();
-            Object dao = createDao(conn, cargoTable);
+        DataSource ds = dbManager.getDataSource();
+        Object dao = createDao(ds, cargoTable);
 
-            // 先清空旧数据
-            clearTable(conn, config.sqliteTable);
+        // 先清空旧数据
+        clearTable(ds, config.sqliteTable);
 
-            for (int offset = 0; offset < totalCount; offset += BATCH_SIZE) {
-                // 分批拉取（需要含 _pageID 用于主键映射）
-                String fields = "_pageID," + config.fields;
-                JsonNode root = wikiClient.queryCargoTable(cargoTable, fields, offset, BATCH_SIZE);
-                JsonNode rows = root.path("cargoquery");
-                if (!rows.isArray()) break;
+        for (int offset = 0; offset < totalCount; offset += BATCH_SIZE) {
+            // 分批拉取（需要含 _pageID 用于主键映射）
+            String fields = "_pageID," + config.fields;
+            JsonNode root = wikiClient.queryCargoTable(cargoTable, fields, offset, BATCH_SIZE);
+            JsonNode rows = root.path("cargoquery");
+            if (!rows.isArray()) break;
 
-                // 转换
-                int batchSize = rows.size();
-                List<Object> batch = new ArrayList<>(batchSize);
-                DataConverter<Object> converter = getConverter(cargoTable);
-                for (JsonNode row : rows) {
-                    Object entity = converter.convert(row.path("title"));
-                    if (entity != null) batch.add(entity);
-                }
-
-                // 事务写入
-                if (!batch.isEmpty()) {
-                    batchInsert(conn, dao, batch);
-                }
-
-                totalSynced += batch.size();
-
-                // 发布进度事件
-                AppEventBus.postAsync(new DataSyncProgressEvent(cargoTable,
-                    Math.min(totalSynced, totalCount), totalCount));
-
-                if (rows.size() < BATCH_SIZE) break; // 最后一批
+            // 转换
+            int batchSize = rows.size();
+            List<Object> batch = new ArrayList<>(batchSize);
+            DataConverter<Object> converter = getConverter(cargoTable);
+            for (JsonNode row : rows) {
+                Object entity = converter.convert(row.path("title"));
+                if (entity != null) batch.add(entity);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to sync table: " + cargoTable, e);
+
+            // 事务写入
+            if (!batch.isEmpty()) {
+                batchInsert(dao, batch);
+            }
+
+            totalSynced += batch.size();
+
+            // 发布进度事件
+            AppEventBus.postAsync(new DataSyncProgressEvent(cargoTable,
+                Math.min(totalSynced, totalCount), totalCount));
+
+            if (rows.size() < BATCH_SIZE) break; // 最后一批
         }
 
         return totalSynced;
@@ -505,15 +501,16 @@ public class DataSyncService {
     // ---- 数据库操作 ----
 
     /** 清空目标表所有数据（DELETE，无 WHERE 条件）。 */
-    private void clearTable(Connection conn, String tableName) throws SQLException {
-        try (Statement stmt = conn.createStatement()) {
+    private void clearTable(DataSource ds, String tableName) throws SQLException {
+        try (Connection conn = ds.getConnection();
+             Statement stmt = conn.createStatement()) {
             stmt.executeUpdate("DELETE FROM " + tableName);
         }
     }
 
     /** 根据 DAO 类型分发批量插入调用。 */
     @SuppressWarnings("unchecked")
-    private void batchInsert(Connection conn, Object dao, List<Object> entities) throws SQLException {
+    private void batchInsert(Object dao, List<Object> entities) throws SQLException {
         if (dao instanceof ItemDao) {
             ((ItemDao) dao).batchInsert((List<Item>) (List<?>) entities);
         } else if (dao instanceof SkillGemDao) {
@@ -703,8 +700,8 @@ public class DataSyncService {
 
     /** 查询本地表记录数，失败返回 -1（触发强制同步）。 */
     private int getLocalRecordCount(String tableName) {
-        try {
-            return getLocalRecordCount(dbManager.getConnection(), tableName);
+        try (Connection conn = dbManager.getConnection()) {
+            return getLocalRecordCount(conn, tableName);
         } catch (SQLException e) {
             log.error("Failed to get local count for {}", tableName, e);
             return -1; // 强制同步
@@ -725,15 +722,13 @@ public class DataSyncService {
 
     /** 写入或更新 data_version 表，记录同步时间与记录数。 */
     private void updateDataVersion(String tableName, int recordCount) {
-        try {
-            Connection conn = dbManager.getConnection();
-            String sql = "INSERT OR REPLACE INTO data_version (table_name, last_sync, record_count) " +
-                "VALUES (?, datetime('now'), ?)";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, tableName);
-                ps.setInt(2, recordCount);
-                ps.executeUpdate();
-            }
+        String sql = "INSERT OR REPLACE INTO data_version (table_name, last_sync, record_count) " +
+            "VALUES (?, datetime('now'), ?)";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+            ps.setInt(2, recordCount);
+            ps.executeUpdate();
         } catch (SQLException e) {
             log.error("Failed to update data_version for {}", tableName, e);
         }
@@ -743,12 +738,10 @@ public class DataSyncService {
      * 重建 FTS5 items_fts 全文索引（外部内容表模式）。
      */
     private void rebuildFts() {
-        try {
-            Connection conn = dbManager.getConnection();
-            try (Statement stmt = conn.createStatement()) {
-                stmt.executeUpdate("INSERT INTO items_fts(items_fts) VALUES('rebuild')");
-                log.info("FTS index rebuilt");
-            }
+        try (Connection conn = dbManager.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("INSERT INTO items_fts(items_fts) VALUES('rebuild')");
+            log.info("FTS index rebuilt");
         } catch (SQLException e) {
             log.error("Failed to rebuild FTS index", e);
         }
@@ -946,189 +939,189 @@ public class DataSyncService {
     }
 
     /** 根据 Cargo 表名创建对应的 DAO 实例。 */
-    private static Object createDao(Connection conn, String cargoTable) {
+    private static Object createDao(DataSource ds, String cargoTable) {
         if ("items".equals(cargoTable)) {
-            return new ItemDao(conn);
+            return new ItemDao(ds);
         } else if ("skill_gems".equals(cargoTable)) {
-            return new SkillGemDao(conn);
+            return new SkillGemDao(ds);
         } else if ("passive_skills".equals(cargoTable)) {
-            return new PassiveSkillDao(conn);
+            return new PassiveSkillDao(ds);
         } else if ("mods".equals(cargoTable)) {
-            return new ModDao(conn);
+            return new ModDao(ds);
         } else if ("weapons".equals(cargoTable)) {
-            return new WeaponDao(conn);
+            return new WeaponDao(ds);
         } else if ("armours".equals(cargoTable)) {
-            return new ArmourDao(conn);
+            return new ArmourDao(ds);
         } else if ("shields".equals(cargoTable)) {
-            return new ShieldDao(conn);
+            return new ShieldDao(ds);
         } else if ("amulets".equals(cargoTable)) {
-            return new AmuletDao(conn);
+            return new AmuletDao(ds);
         } else if ("flasks".equals(cargoTable)) {
-            return new FlaskDao(conn);
+            return new FlaskDao(ds);
         } else if ("jewels".equals(cargoTable)) {
-            return new JewelDao(conn);
+            return new JewelDao(ds);
         } else if ("stackables".equals(cargoTable)) {
-            return new StackableDao(conn);
+            return new StackableDao(ds);
         } else if ("maps".equals(cargoTable)) {
-            return new MapDao(conn);
+            return new MapDao(ds);
         } else if ("map_fragments".equals(cargoTable)) {
-            return new MapFragmentDao(conn);
+            return new MapFragmentDao(ds);
         } else if ("map_series".equals(cargoTable)) {
-            return new MapSeriesDao(conn);
+            return new MapSeriesDao(ds);
         } else if ("divination_cards".equals(cargoTable)) {
-            return new DivinationCardDao(conn);
+            return new DivinationCardDao(ds);
         } else if ("mod_stats".equals(cargoTable)) {
-            return new ModStatDao(conn);
+            return new ModStatDao(ds);
         } else if ("mod_spawn_weights".equals(cargoTable)) {
-            return new ModSpawnWeightDao(conn);
+            return new ModSpawnWeightDao(ds);
         } else if ("mod_generation_weights".equals(cargoTable)) {
-            return new ModGenerationWeightDao(conn);
+            return new ModGenerationWeightDao(ds);
         } else if ("mod_sell_prices".equals(cargoTable)) {
-            return new ModSellPriceDao(conn);
+            return new ModSellPriceDao(ds);
         } else if ("item_mods".equals(cargoTable)) {
-            return new ItemModDao(conn);
+            return new ItemModDao(ds);
         } else if ("item_stats".equals(cargoTable)) {
-            return new ItemStatDao(conn);
+            return new ItemStatDao(ds);
         } else if ("item_buffs".equals(cargoTable)) {
-            return new ItemBuffDao(conn);
+            return new ItemBuffDao(ds);
         } else if ("crafting_bench_options".equals(cargoTable)) {
-            return new CraftingBenchOptionDao(conn);
+            return new CraftingBenchOptionDao(ds);
         } else if ("crafting_bench_options_costs".equals(cargoTable)) {
-            return new CraftingBenchOptionCostDao(conn);
+            return new CraftingBenchOptionCostDao(ds);
         } else if ("essences".equals(cargoTable)) {
-            return new EssenceDao(conn);
+            return new EssenceDao(ds);
         } else if ("fossils".equals(cargoTable)) {
-            return new FossilDao(conn);
+            return new FossilDao(ds);
         } else if ("fossil_weights".equals(cargoTable)) {
-            return new FossilWeightDao(conn);
+            return new FossilWeightDao(ds);
         } else if ("vendor_rewards".equals(cargoTable)) {
-            return new VendorRewardDao(conn);
+            return new VendorRewardDao(ds);
         } else if ("item_sell_prices".equals(cargoTable)) {
-            return new ItemSellPriceDao(conn);
+            return new ItemSellPriceDao(ds);
         } else if ("item_purchase_costs".equals(cargoTable)) {
-            return new ItemPurchaseCostDao(conn);
+            return new ItemPurchaseCostDao(ds);
         } else if ("skill".equals(cargoTable)) {
-            return new SkillDao(conn);
+            return new SkillDao(ds);
         } else if ("skill_levels".equals(cargoTable)) {
-            return new SkillLevelDao(conn);
+            return new SkillLevelDao(ds);
         } else if ("skill_stats_per_level".equals(cargoTable)) {
-            return new SkillStatsPerLevelDao(conn);
+            return new SkillStatsPerLevelDao(ds);
         } else if ("skill_quality".equals(cargoTable)) {
-            return new SkillQualityDao(conn);
+            return new SkillQualityDao(ds);
         } else if ("skill_quality_stats".equals(cargoTable)) {
-            return new SkillQualityStatsDao(conn);
+            return new SkillQualityStatsDao(ds);
         } else if ("gem_levels".equals(cargoTable)) {
-            return new GemLevelDao(conn);
+            return new GemLevelDao(ds);
         } else if ("passive_skill_connections".equals(cargoTable)) {
-            return new PassiveSkillConnectionDao(conn);
+            return new PassiveSkillConnectionDao(ds);
         } else if ("mastery_effects".equals(cargoTable)) {
-            return new MasteryEffectDao(conn);
+            return new MasteryEffectDao(ds);
         } else if ("mastery_groups".equals(cargoTable)) {
-            return new MasteryGroupDao(conn);
+            return new MasteryGroupDao(ds);
         } else if ("character_classes".equals(cargoTable)) {
-            return new CharacterClassDao(conn);
+            return new CharacterClassDao(ds);
         } else if ("ascendancy_classes".equals(cargoTable)) {
-            return new AscendancyClassDao(conn);
+            return new AscendancyClassDao(ds);
         } else if ("monsters".equals(cargoTable)) {
-            return new MonsterDao(conn);
+            return new MonsterDao(ds);
         } else if ("monster_types".equals(cargoTable)) {
-            return new MonsterTypeDao(conn);
+            return new MonsterTypeDao(ds);
         } else if ("monster_base_stats".equals(cargoTable)) {
-            return new MonsterBaseStatDao(conn);
+            return new MonsterBaseStatDao(ds);
         } else if ("monster_life_scaling".equals(cargoTable)) {
-            return new MonsterLifeScalingDao(conn);
+            return new MonsterLifeScalingDao(ds);
         } else if ("monster_map_multipliers".equals(cargoTable)) {
-            return new MonsterMapMultiplierDao(conn);
+            return new MonsterMapMultiplierDao(ds);
         } else if ("monster_resistances".equals(cargoTable)) {
-            return new MonsterResistanceDao(conn);
+            return new MonsterResistanceDao(ds);
         } else if ("areas".equals(cargoTable)) {
-            return new AreaDao(conn);
+            return new AreaDao(ds);
         } else if ("atlas_nodes".equals(cargoTable)) {
-            return new AtlasNodeDao(conn);
+            return new AtlasNodeDao(ds);
         } else if ("delve_level_scaling".equals(cargoTable)) {
-            return new DelveLevelScalingDao(conn);
+            return new DelveLevelScalingDao(ds);
         } else if ("delve_resources_per_level".equals(cargoTable)) {
-            return new DelveResourcesPerLevelDao(conn);
+            return new DelveResourcesPerLevelDao(ds);
         } else if ("delve_upgrades".equals(cargoTable)) {
-            return new DelveUpgradesDao(conn);
+            return new DelveUpgradesDao(ds);
         } else if ("delve_upgrade_stats".equals(cargoTable)) {
-            return new DelveUpgradeStatsDao(conn);
+            return new DelveUpgradeStatsDao(ds);
         } else if ("heist_areas".equals(cargoTable)) {
-            return new HeistAreasDao(conn);
+            return new HeistAreasDao(ds);
         } else if ("heist_jobs".equals(cargoTable)) {
-            return new HeistJobsDao(conn);
+            return new HeistJobsDao(ds);
         } else if ("heist_npcs".equals(cargoTable)) {
-            return new HeistNpcsDao(conn);
+            return new HeistNpcsDao(ds);
         } else if ("heist_npc_skills".equals(cargoTable)) {
-            return new HeistNpcSkillsDao(conn);
+            return new HeistNpcSkillsDao(ds);
         } else if ("heist_npc_stats".equals(cargoTable)) {
-            return new HeistNpcStatsDao(conn);
+            return new HeistNpcStatsDao(ds);
         } else if ("heist_equipment".equals(cargoTable)) {
-            return new HeistEquipmentDao(conn);
+            return new HeistEquipmentDao(ds);
         } else if ("blight_crafting_recipes".equals(cargoTable)) {
-            return new BlightCraftingRecipesDao(conn);
+            return new BlightCraftingRecipesDao(ds);
         } else if ("blight_crafting_recipes_items".equals(cargoTable)) {
-            return new BlightCraftingRecipesItemsDao(conn);
+            return new BlightCraftingRecipesItemsDao(ds);
         } else if ("blight_items".equals(cargoTable)) {
-            return new BlightItemsDao(conn);
+            return new BlightItemsDao(ds);
         } else if ("blight_towers".equals(cargoTable)) {
-            return new BlightTowersDao(conn);
+            return new BlightTowersDao(ds);
         } else if ("harvest_crafting_options".equals(cargoTable)) {
-            return new HarvestCraftingOptionsDao(conn);
+            return new HarvestCraftingOptionsDao(ds);
         } else if ("harvest_plant_boosters".equals(cargoTable)) {
-            return new HarvestPlantBoostersDao(conn);
+            return new HarvestPlantBoostersDao(ds);
         } else if ("harvest_seeds".equals(cargoTable)) {
-            return new HarvestSeedsDao(conn);
+            return new HarvestSeedsDao(ds);
         } else if ("synthesis_areas".equals(cargoTable)) {
-            return new SynthesisAreasDao(conn);
+            return new SynthesisAreasDao(ds);
         } else if ("synthesis_corrupted_mods".equals(cargoTable)) {
-            return new SynthesisCorruptedModsDao(conn);
+            return new SynthesisCorruptedModsDao(ds);
         } else if ("synthesis_global_mods".equals(cargoTable)) {
-            return new SynthesisGlobalModsDao(conn);
+            return new SynthesisGlobalModsDao(ds);
         } else if ("synthesis_mods".equals(cargoTable)) {
-            return new SynthesisModsDao(conn);
+            return new SynthesisModsDao(ds);
         } else if ("bestiary_recipes".equals(cargoTable)) {
-            return new BestiaryRecipesDao(conn);
+            return new BestiaryRecipesDao(ds);
         } else if ("bestiary_recipe_components".equals(cargoTable)) {
-            return new BestiaryRecipeComponentsDao(conn);
+            return new BestiaryRecipeComponentsDao(ds);
         } else if ("incursion_rooms".equals(cargoTable)) {
-            return new IncursionRoomsDao(conn);
+            return new IncursionRoomsDao(ds);
         } else if ("pantheon".equals(cargoTable)) {
-            return new PantheonDao(conn);
+            return new PantheonDao(ds);
         } else if ("pantheon_souls".equals(cargoTable)) {
-            return new PantheonSoulsDao(conn);
+            return new PantheonSoulsDao(ds);
         } else if ("pantheon_stats".equals(cargoTable)) {
-            return new PantheonStatsDao(conn);
+            return new PantheonStatsDao(ds);
         } else if ("versions".equals(cargoTable)) {
-            return new VersionDao(conn);
+            return new VersionDao(ds);
         } else if ("legacy_variants".equals(cargoTable)) {
-            return new LegacyVariantDao(conn);
+            return new LegacyVariantDao(ds);
         } else if ("prophecies".equals(cargoTable)) {
-            return new ProphecyDao(conn);
+            return new ProphecyDao(ds);
         } else if ("quest_rewards".equals(cargoTable)) {
-            return new QuestRewardDao(conn);
+            return new QuestRewardDao(ds);
         } else if ("spawn_weights".equals(cargoTable)) {
-            return new SpawnWeightDao(conn);
+            return new SpawnWeightDao(ds);
         } else if ("generic_stats".equals(cargoTable)) {
-            return new GenericStatDao(conn);
+            return new GenericStatDao(ds);
         } else if ("tattoos".equals(cargoTable)) {
-            return new TattooDao(conn);
+            return new TattooDao(ds);
         } else if ("tinctures".equals(cargoTable)) {
-            return new TinctureDao(conn);
+            return new TinctureDao(ds);
         } else if ("sentinels".equals(cargoTable)) {
-            return new SentinelDao(conn);
+            return new SentinelDao(ds);
         } else if ("idols".equals(cargoTable)) {
-            return new IdolDao(conn);
+            return new IdolDao(ds);
         } else if ("grafts".equals(cargoTable)) {
-            return new GraftDao(conn);
+            return new GraftDao(ds);
         } else if ("corpse_items".equals(cargoTable)) {
-            return new CorpseItemDao(conn);
+            return new CorpseItemDao(ds);
         } else if ("cosmetic_items".equals(cargoTable)) {
-            return new CosmeticItemDao(conn);
+            return new CosmeticItemDao(ds);
         } else if ("hideout_doodads".equals(cargoTable)) {
-            return new HideoutDoodadDao(conn);
+            return new HideoutDoodadDao(ds);
         } else if ("guides".equals(cargoTable)) {
-            return new GuideDao(conn);
+            return new GuideDao(ds);
         }
         throw new IllegalArgumentException("No DAO for: " + cargoTable);
     }

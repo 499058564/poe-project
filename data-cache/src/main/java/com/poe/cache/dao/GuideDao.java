@@ -9,16 +9,16 @@ import java.util.Optional;
 
 public class GuideDao implements CrudRepository<Guide, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public GuideDao(Connection connection) {
-        this.connection = connection;
+    public GuideDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public void insert(Guide entity) {
         String sql = "INSERT INTO guides (page_id, page_name, date, subject, version) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -29,20 +29,20 @@ public class GuideDao implements CrudRepository<Guide, Integer> {
     @Override
     public void batchInsert(List<Guide> entities) {
         String sql = "INSERT INTO guides (page_id, page_name, date, subject, version) VALUES (?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Guide entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert guides", e);
@@ -52,7 +52,7 @@ public class GuideDao implements CrudRepository<Guide, Integer> {
     @Override
     public Optional<Guide> findById(Integer pageId) {
         String sql = "SELECT * FROM guides WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -67,7 +67,8 @@ public class GuideDao implements CrudRepository<Guide, Integer> {
     public List<Guide> findAll() {
         List<Guide> list = new ArrayList<>();
         String sql = "SELECT * FROM guides ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -79,7 +80,7 @@ public class GuideDao implements CrudRepository<Guide, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM guides WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -90,7 +91,8 @@ public class GuideDao implements CrudRepository<Guide, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM guides";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public class BestiaryRecipesDao implements CrudRepository<BestiaryRecipes, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public BestiaryRecipesDao(Connection connection) {
-        this.connection = connection;
+    public BestiaryRecipesDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class BestiaryRecipesDao implements CrudRepository<BestiaryRecipes, Integ
         String sql = "INSERT INTO bestiary_recipes (page_id, page_name, recipe_id, game_mode, "
             + "header, notes, subheader) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -33,20 +33,20 @@ public class BestiaryRecipesDao implements CrudRepository<BestiaryRecipes, Integ
         String sql = "INSERT INTO bestiary_recipes (page_id, page_name, recipe_id, game_mode, "
             + "header, notes, subheader) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (BestiaryRecipes entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert bestiary_recipes", e);
@@ -56,7 +56,7 @@ public class BestiaryRecipesDao implements CrudRepository<BestiaryRecipes, Integ
     @Override
     public Optional<BestiaryRecipes> findById(Integer pageId) {
         String sql = "SELECT * FROM bestiary_recipes WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -71,7 +71,8 @@ public class BestiaryRecipesDao implements CrudRepository<BestiaryRecipes, Integ
     public List<BestiaryRecipes> findAll() {
         List<BestiaryRecipes> list = new ArrayList<>();
         String sql = "SELECT * FROM bestiary_recipes ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -83,7 +84,7 @@ public class BestiaryRecipesDao implements CrudRepository<BestiaryRecipes, Integ
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM bestiary_recipes WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -94,7 +95,8 @@ public class BestiaryRecipesDao implements CrudRepository<BestiaryRecipes, Integ
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM bestiary_recipes";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

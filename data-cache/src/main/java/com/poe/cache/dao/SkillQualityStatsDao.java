@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class SkillQualityStatsDao implements CrudRepository<SkillQualityStats, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public SkillQualityStatsDao(Connection connection) {
-        this.connection = connection;
+    public SkillQualityStatsDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -29,7 +29,7 @@ public class SkillQualityStatsDao implements CrudRepository<SkillQualityStats, I
     public void insert(SkillQualityStats entity) {
         String sql = "INSERT INTO skill_quality_stats (page_id, page_name, stat_id, set_id, value) "
             + "VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -46,20 +46,20 @@ public class SkillQualityStatsDao implements CrudRepository<SkillQualityStats, I
     public void batchInsert(List<SkillQualityStats> entities) {
         String sql = "INSERT INTO skill_quality_stats (page_id, page_name, stat_id, set_id, value) "
             + "VALUES (?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (SkillQualityStats entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert skill_quality_stats", e);
@@ -75,7 +75,7 @@ public class SkillQualityStatsDao implements CrudRepository<SkillQualityStats, I
     @Override
     public Optional<SkillQualityStats> findById(Integer pageId) {
         String sql = "SELECT * FROM skill_quality_stats WHERE page_id = ? LIMIT 1";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -95,7 +95,8 @@ public class SkillQualityStatsDao implements CrudRepository<SkillQualityStats, I
     public List<SkillQualityStats> findAll() {
         List<SkillQualityStats> list = new ArrayList<>();
         String sql = "SELECT * FROM skill_quality_stats ORDER BY page_id, stat_id, set_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -112,7 +113,7 @@ public class SkillQualityStatsDao implements CrudRepository<SkillQualityStats, I
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM skill_quality_stats WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -128,7 +129,8 @@ public class SkillQualityStatsDao implements CrudRepository<SkillQualityStats, I
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM skill_quality_stats";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

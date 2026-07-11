@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 public class SkillLevelDao implements CrudRepository<SkillLevel, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public SkillLevelDao(Connection connection) {
-        this.connection = connection;
+    public SkillLevelDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -36,7 +36,7 @@ public class SkillLevelDao implements CrudRepository<SkillLevel, Integer> {
             + "stored_uses, strength_requirement, vaal_soul_gain_prevention_time, "
             + "vaal_souls_requirement, vaal_stored_uses) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -60,20 +60,20 @@ public class SkillLevelDao implements CrudRepository<SkillLevel, Integer> {
             + "stored_uses, strength_requirement, vaal_soul_gain_prevention_time, "
             + "vaal_souls_requirement, vaal_stored_uses) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (SkillLevel entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert skill_levels", e);
@@ -89,7 +89,7 @@ public class SkillLevelDao implements CrudRepository<SkillLevel, Integer> {
     @Override
     public Optional<SkillLevel> findById(Integer pageId) {
         String sql = "SELECT * FROM skill_levels WHERE page_id = ? LIMIT 1";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -109,7 +109,8 @@ public class SkillLevelDao implements CrudRepository<SkillLevel, Integer> {
     public List<SkillLevel> findAll() {
         List<SkillLevel> list = new ArrayList<>();
         String sql = "SELECT * FROM skill_levels ORDER BY page_id, level";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -126,7 +127,7 @@ public class SkillLevelDao implements CrudRepository<SkillLevel, Integer> {
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM skill_levels WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -142,7 +143,8 @@ public class SkillLevelDao implements CrudRepository<SkillLevel, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM skill_levels";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

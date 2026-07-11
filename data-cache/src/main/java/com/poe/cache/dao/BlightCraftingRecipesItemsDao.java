@@ -9,17 +9,17 @@ import java.util.Optional;
 
 public class BlightCraftingRecipesItemsDao implements CrudRepository<BlightCraftingRecipesItems, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public BlightCraftingRecipesItemsDao(Connection connection) {
-        this.connection = connection;
+    public BlightCraftingRecipesItemsDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public void insert(BlightCraftingRecipesItems entity) {
         String sql = "INSERT INTO blight_crafting_recipes_items (page_id, page_name, item_id, ordinal, recipe_id) "
             + "VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, entity);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -31,20 +31,20 @@ public class BlightCraftingRecipesItemsDao implements CrudRepository<BlightCraft
     public void batchInsert(List<BlightCraftingRecipesItems> entities) {
         String sql = "INSERT INTO blight_crafting_recipes_items (page_id, page_name, item_id, ordinal, recipe_id) "
             + "VALUES (?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (BlightCraftingRecipesItems entity : entities) {
                     setParams(ps, entity);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert blight_crafting_recipes_items", e);
@@ -54,7 +54,7 @@ public class BlightCraftingRecipesItemsDao implements CrudRepository<BlightCraft
     @Override
     public Optional<BlightCraftingRecipesItems> findById(Integer pageId) {
         String sql = "SELECT * FROM blight_crafting_recipes_items WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(mapRow(rs));
@@ -69,7 +69,8 @@ public class BlightCraftingRecipesItemsDao implements CrudRepository<BlightCraft
     public List<BlightCraftingRecipesItems> findAll() {
         List<BlightCraftingRecipesItems> list = new ArrayList<>();
         String sql = "SELECT * FROM blight_crafting_recipes_items ORDER BY page_id";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
@@ -81,7 +82,7 @@ public class BlightCraftingRecipesItemsDao implements CrudRepository<BlightCraft
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM blight_crafting_recipes_items WHERE page_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, pageId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -92,7 +93,8 @@ public class BlightCraftingRecipesItemsDao implements CrudRepository<BlightCraft
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM blight_crafting_recipes_items";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {

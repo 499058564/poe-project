@@ -96,18 +96,16 @@ public class DataCoordinator {
     boolean shouldSync(String tableName, String source, GameVersion currentVersion) {
         if (currentVersion.isUnknown()) return true;
 
-        try {
-            Connection conn = dbManager.getConnection();
-            String sql = "SELECT source_version FROM data_version WHERE table_name = ? AND source = ?";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, tableName);
-                ps.setString(2, source);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        String cached = rs.getString(1);
-                        if (cached != null && cached.equals(currentVersion.getVersion())) {
-                            return false; // 版本一致，无需同步
-                        }
+        String sql = "SELECT source_version FROM data_version WHERE table_name = ? AND source = ?";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+            ps.setString(2, source);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String cached = rs.getString(1);
+                    if (cached != null && cached.equals(currentVersion.getVersion())) {
+                        return false; // 版本一致，无需同步
                     }
                 }
             }
@@ -122,11 +120,12 @@ public class DataCoordinator {
      * 同步完成后更新 data_version 表。
      */
     public void recordSync(String tableName, String source, String sourceVersion, int recordCount) {
-        try {
-            Connection conn = dbManager.getConnection();
-            // Upsert: 先尝试更新，若影响行数为 0 则插入
-            String updateSql = "UPDATE data_version SET last_sync = ?, record_count = ?, "
+        String updateSql = "UPDATE data_version SET last_sync = ?, record_count = ?, "
                 + "source = ?, source_version = ?, wiki_version = NULL WHERE table_name = ?";
+        String insertSql = "INSERT INTO data_version "
+                + "(table_name, last_sync, record_count, source, source_version) "
+                + "VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = dbManager.getConnection()) {
             try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                 ps.setString(1, Instant.now().toString());
                 ps.setInt(2, recordCount);
@@ -135,9 +134,6 @@ public class DataCoordinator {
                 ps.setString(5, tableName);
                 int updated = ps.executeUpdate();
                 if (updated == 0) {
-                    String insertSql = "INSERT INTO data_version "
-                        + "(table_name, last_sync, record_count, source, source_version) "
-                        + "VALUES (?, ?, ?, ?, ?)";
                     try (PreparedStatement ips = conn.prepareStatement(insertSql)) {
                         ips.setString(1, tableName);
                         ips.setString(2, Instant.now().toString());

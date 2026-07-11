@@ -15,10 +15,10 @@ import java.util.Optional;
  */
 public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
 
-    private final Connection connection;
+    private final javax.sql.DataSource dataSource;
 
-    public SkillGemDao(Connection connection) {
-        this.connection = connection;
+    public SkillGemDao(javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -35,7 +35,7 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
             + "awakened_variant_id, regular_variant_id, vaal_variant_id, "
             + "secondary_skill_id, ruthless_skill_id, ruthless_secondary_skill_id, version) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, gem);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -59,20 +59,20 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
             + "awakened_variant_id, regular_variant_id, vaal_variant_id, "
             + "secondary_skill_id, ruthless_skill_id, ruthless_secondary_skill_id, version) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+                        conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (SkillGem gem : gems) {
                     setParams(ps, gem);
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                connection.commit();
+                conn.commit();
             } catch (SQLException e) {
-                connection.rollback();
+                conn.rollback();
                 throw e;
             } finally {
-                connection.setAutoCommit(true);
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to batch insert skill gems", e);
@@ -88,7 +88,7 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
     @Override
     public Optional<SkillGem> findById(Integer id) {
         String sql = "SELECT * FROM skill_gems WHERE id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -110,7 +110,8 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
     public List<SkillGem> findAll() {
         String sql = "SELECT * FROM skill_gems ORDER BY id";
         List<SkillGem> gems = new ArrayList<>();
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 gems.add(mapRow(rs));
@@ -129,7 +130,7 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
     @Override
     public void deleteById(Integer id) {
         String sql = "DELETE FROM skill_gems WHERE id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -145,7 +146,8 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM skill_gems";
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getInt(1);
