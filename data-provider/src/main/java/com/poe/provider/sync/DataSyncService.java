@@ -94,6 +94,50 @@ public class DataSyncService {
             "id,name,ordinal"));
         TABLE_CONFIGS.put("divination_cards", new TableConfig("divination_cards",
             "card_art,card_background"));
+
+        // ---- 词缀子表 ----
+        TABLE_CONFIGS.put("mod_stats", new TableConfig("mod_stats",
+            "id,min,max"));
+        TABLE_CONFIGS.put("mod_spawn_weights", new TableConfig("mod_spawn_weights",
+            "ordinal,tag,value"));
+        TABLE_CONFIGS.put("mod_generation_weights", new TableConfig("mod_generation_weights",
+            "ordinal,tag,value"));
+        TABLE_CONFIGS.put("mod_sell_prices", new TableConfig("mod_sell_prices",
+            "amount,name"));
+
+        // ---- 物品-词缀关联 ----
+        TABLE_CONFIGS.put("item_mods", new TableConfig("item_mods",
+            "id,is_explicit,is_implicit,is_map_fragment_bonus,is_random,text"));
+        TABLE_CONFIGS.put("item_stats", new TableConfig("item_stats",
+            "avg,id,max,min,mod_id"));
+        TABLE_CONFIGS.put("item_buffs", new TableConfig("item_buffs",
+            "buff_values,icon,id,stat_text"));
+
+        // ---- 工艺/配方 ----
+        TABLE_CONFIGS.put("crafting_bench_options", new TableConfig("crafting_bench_options",
+            "id,name,affix_type,mod_id,mod_group,rank,required_level,npc,description,"
+            + "recipe_unlock_location,crafting_bench_unlock_category,"
+            + "crafting_bench_unlock_category_description,item_class_categories,"
+            + "item_classes,item_classes_ids,links,ordinal,socket_colours,sockets,"
+            + "unveils_required"));
+        TABLE_CONFIGS.put("crafting_bench_options_costs", new TableConfig("crafting_bench_options_costs",
+            "amount,name,option_id"));
+        TABLE_CONFIGS.put("essences", new TableConfig("essences",
+            "category,level,level_restriction,type"));
+        TABLE_CONFIGS.put("fossils", new TableConfig("fossils",
+            "added_modifier_ids,allowed_tags,base_item_id,can_enchant,can_mirror,"
+            + "can_quality,can_roll_white_sockets,corrupted_essence_chance,"
+            + "forbidden_tags,forced_modifier_ids,is_lucky,sell_price_modifier_ids"));
+        TABLE_CONFIGS.put("fossil_weights", new TableConfig("fossil_weights",
+            "base_item_id,ordinal,tag,type,weight"));
+
+        // ---- 经济数据 ----
+        TABLE_CONFIGS.put("vendor_rewards", new TableConfig("vendor_rewards",
+            "act,class_ids,classes,npc,quest,quest_id"));
+        TABLE_CONFIGS.put("item_sell_prices", new TableConfig("item_sell_prices",
+            "amount,name"));
+        TABLE_CONFIGS.put("item_purchase_costs", new TableConfig("item_purchase_costs",
+            "amount,name,rarity"));
     }
 
     private final WikiApiClient wikiClient;
@@ -299,6 +343,36 @@ public class DataSyncService {
             ((MapSeriesDao) dao).batchInsert((List<MapSeries>) (List<?>) entities);
         } else if (dao instanceof DivinationCardDao) {
             ((DivinationCardDao) dao).batchInsert((List<DivinationCard>) (List<?>) entities);
+        } else if (dao instanceof ModStatDao) {
+            ((ModStatDao) dao).batchInsert((List<ModStat>) (List<?>) entities);
+        } else if (dao instanceof ModSpawnWeightDao) {
+            ((ModSpawnWeightDao) dao).batchInsert((List<ModSpawnWeight>) (List<?>) entities);
+        } else if (dao instanceof ModGenerationWeightDao) {
+            ((ModGenerationWeightDao) dao).batchInsert((List<ModGenerationWeight>) (List<?>) entities);
+        } else if (dao instanceof ModSellPriceDao) {
+            ((ModSellPriceDao) dao).batchInsert((List<ModSellPrice>) (List<?>) entities);
+        } else if (dao instanceof ItemModDao) {
+            ((ItemModDao) dao).batchInsert((List<ItemMod>) (List<?>) entities);
+        } else if (dao instanceof ItemStatDao) {
+            ((ItemStatDao) dao).batchInsert((List<ItemStat>) (List<?>) entities);
+        } else if (dao instanceof ItemBuffDao) {
+            ((ItemBuffDao) dao).batchInsert((List<ItemBuff>) (List<?>) entities);
+        } else if (dao instanceof CraftingBenchOptionDao) {
+            ((CraftingBenchOptionDao) dao).batchInsert((List<CraftingBenchOption>) (List<?>) entities);
+        } else if (dao instanceof CraftingBenchOptionCostDao) {
+            ((CraftingBenchOptionCostDao) dao).batchInsert((List<CraftingBenchOptionCost>) (List<?>) entities);
+        } else if (dao instanceof EssenceDao) {
+            ((EssenceDao) dao).batchInsert((List<Essence>) (List<?>) entities);
+        } else if (dao instanceof FossilDao) {
+            ((FossilDao) dao).batchInsert((List<Fossil>) (List<?>) entities);
+        } else if (dao instanceof FossilWeightDao) {
+            ((FossilWeightDao) dao).batchInsert((List<FossilWeight>) (List<?>) entities);
+        } else if (dao instanceof VendorRewardDao) {
+            ((VendorRewardDao) dao).batchInsert((List<VendorReward>) (List<?>) entities);
+        } else if (dao instanceof ItemSellPriceDao) {
+            ((ItemSellPriceDao) dao).batchInsert((List<ItemSellPrice>) (List<?>) entities);
+        } else if (dao instanceof ItemPurchaseCostDao) {
+            ((ItemPurchaseCostDao) dao).batchInsert((List<ItemPurchaseCost>) (List<?>) entities);
         } else {
             throw new IllegalArgumentException("Unknown DAO: " + dao.getClass());
         }
@@ -392,6 +466,36 @@ public class DataSyncService {
             return (DataConverter<Object>) (DataConverter<?>) new MapSeriesConverter();
         } else if ("divination_cards".equals(cargoTable)) {
             return (DataConverter<Object>) (DataConverter<?>) new DivinationCardConverter();
+        } else if ("mod_stats".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ModStatConverter();
+        } else if ("mod_spawn_weights".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ModSpawnWeightConverter();
+        } else if ("mod_generation_weights".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ModGenerationWeightConverter();
+        } else if ("mod_sell_prices".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ModSellPriceConverter();
+        } else if ("item_mods".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ItemModConverter();
+        } else if ("item_stats".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ItemStatConverter();
+        } else if ("item_buffs".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ItemBuffConverter();
+        } else if ("crafting_bench_options".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new CraftingBenchOptionConverter();
+        } else if ("crafting_bench_options_costs".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new CraftingBenchOptionCostConverter();
+        } else if ("essences".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new EssenceConverter();
+        } else if ("fossils".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new FossilConverter();
+        } else if ("fossil_weights".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new FossilWeightConverter();
+        } else if ("vendor_rewards".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new VendorRewardConverter();
+        } else if ("item_sell_prices".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ItemSellPriceConverter();
+        } else if ("item_purchase_costs".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ItemPurchaseCostConverter();
         }
         throw new IllegalArgumentException("No converter for: " + cargoTable);
     }
@@ -428,6 +532,36 @@ public class DataSyncService {
             return new MapSeriesDao(conn);
         } else if ("divination_cards".equals(cargoTable)) {
             return new DivinationCardDao(conn);
+        } else if ("mod_stats".equals(cargoTable)) {
+            return new ModStatDao(conn);
+        } else if ("mod_spawn_weights".equals(cargoTable)) {
+            return new ModSpawnWeightDao(conn);
+        } else if ("mod_generation_weights".equals(cargoTable)) {
+            return new ModGenerationWeightDao(conn);
+        } else if ("mod_sell_prices".equals(cargoTable)) {
+            return new ModSellPriceDao(conn);
+        } else if ("item_mods".equals(cargoTable)) {
+            return new ItemModDao(conn);
+        } else if ("item_stats".equals(cargoTable)) {
+            return new ItemStatDao(conn);
+        } else if ("item_buffs".equals(cargoTable)) {
+            return new ItemBuffDao(conn);
+        } else if ("crafting_bench_options".equals(cargoTable)) {
+            return new CraftingBenchOptionDao(conn);
+        } else if ("crafting_bench_options_costs".equals(cargoTable)) {
+            return new CraftingBenchOptionCostDao(conn);
+        } else if ("essences".equals(cargoTable)) {
+            return new EssenceDao(conn);
+        } else if ("fossils".equals(cargoTable)) {
+            return new FossilDao(conn);
+        } else if ("fossil_weights".equals(cargoTable)) {
+            return new FossilWeightDao(conn);
+        } else if ("vendor_rewards".equals(cargoTable)) {
+            return new VendorRewardDao(conn);
+        } else if ("item_sell_prices".equals(cargoTable)) {
+            return new ItemSellPriceDao(conn);
+        } else if ("item_purchase_costs".equals(cargoTable)) {
+            return new ItemPurchaseCostDao(conn);
         }
         throw new IllegalArgumentException("No DAO for: " + cargoTable);
     }
