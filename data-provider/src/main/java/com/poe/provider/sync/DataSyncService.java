@@ -138,6 +138,44 @@ public class DataSyncService {
             "amount,name"));
         TABLE_CONFIGS.put("item_purchase_costs", new TableConfig("item_purchase_costs",
             "amount,name,rarity"));
+
+        // ---- 技能详细数据 ----
+        TABLE_CONFIGS.put("skill", new TableConfig("skills",
+            "active_skill_name,cast_time,description,is_support,"
+            + "item_class_id_restriction,item_class_restriction,"
+            + "max_level,skill_id,stat_text"));
+        TABLE_CONFIGS.put("skill_levels", new TableConfig("skill_levels",
+            "attack_speed_multiplier,attack_time,cooldown,cost_amounts,"
+            + "cost_multiplier,cost_types,critical_strike_chance,"
+            + "damage_effectiveness,damage_multiplier,dexterity_requirement,"
+            + "duration,experience,intelligence_requirement,level,"
+            + "level_requirement,life_reservation_flat,life_reservation_percent,"
+            + "mana_reservation_flat,mana_reservation_percent,skill_level,"
+            + "stat_text,stored_uses,strength_requirement,"
+            + "vaal_soul_gain_prevention_time,vaal_souls_requirement,vaal_stored_uses"));
+        TABLE_CONFIGS.put("skill_stats_per_level", new TableConfig("skill_stats_per_level",
+            "id,level,value"));
+        TABLE_CONFIGS.put("skill_quality", new TableConfig("skill_quality",
+            "set_id,stat_text,weight"));
+        TABLE_CONFIGS.put("skill_quality_stats", new TableConfig("skill_quality_stats",
+            "id,set_id,value"));
+        TABLE_CONFIGS.put("gem_levels", new TableConfig("gem_levels",
+            "experience,level,required_dexterity,"
+            + "required_intelligence,required_level,required_strength"));
+
+        // ---- 天赋详细数据 ----
+        TABLE_CONFIGS.put("passive_skill_connections", new TableConfig("passive_skill_connections",
+            "node_ids,tree_id"));
+        TABLE_CONFIGS.put("mastery_effects", new TableConfig("mastery_effects",
+            "id,stat_ids,stat_text,stat_text_raw,stat_values"));
+        TABLE_CONFIGS.put("mastery_groups", new TableConfig("mastery_groups",
+            "icon,id,name"));
+
+        // ---- 职业数据 ----
+        TABLE_CONFIGS.put("character_classes", new TableConfig("character_classes",
+            "dexterity,flavour_text,id,intelligence,name,str_id,strength"));
+        TABLE_CONFIGS.put("ascendancy_classes", new TableConfig("ascendancy_classes",
+            "character_class,character_id,flavour_text,id,name"));
     }
 
     private final WikiApiClient wikiClient;
@@ -373,6 +411,28 @@ public class DataSyncService {
             ((ItemSellPriceDao) dao).batchInsert((List<ItemSellPrice>) (List<?>) entities);
         } else if (dao instanceof ItemPurchaseCostDao) {
             ((ItemPurchaseCostDao) dao).batchInsert((List<ItemPurchaseCost>) (List<?>) entities);
+        } else if (dao instanceof SkillDao) {
+            ((SkillDao) dao).batchInsert((List<Skill>) (List<?>) entities);
+        } else if (dao instanceof SkillLevelDao) {
+            ((SkillLevelDao) dao).batchInsert((List<SkillLevel>) (List<?>) entities);
+        } else if (dao instanceof SkillStatsPerLevelDao) {
+            ((SkillStatsPerLevelDao) dao).batchInsert((List<SkillStatsPerLevel>) (List<?>) entities);
+        } else if (dao instanceof SkillQualityDao) {
+            ((SkillQualityDao) dao).batchInsert((List<SkillQuality>) (List<?>) entities);
+        } else if (dao instanceof SkillQualityStatsDao) {
+            ((SkillQualityStatsDao) dao).batchInsert((List<SkillQualityStats>) (List<?>) entities);
+        } else if (dao instanceof GemLevelDao) {
+            ((GemLevelDao) dao).batchInsert((List<GemLevel>) (List<?>) entities);
+        } else if (dao instanceof PassiveSkillConnectionDao) {
+            ((PassiveSkillConnectionDao) dao).batchInsert((List<PassiveSkillConnection>) (List<?>) entities);
+        } else if (dao instanceof MasteryEffectDao) {
+            ((MasteryEffectDao) dao).batchInsert((List<MasteryEffect>) (List<?>) entities);
+        } else if (dao instanceof MasteryGroupDao) {
+            ((MasteryGroupDao) dao).batchInsert((List<MasteryGroup>) (List<?>) entities);
+        } else if (dao instanceof CharacterClassDao) {
+            ((CharacterClassDao) dao).batchInsert((List<CharacterClass>) (List<?>) entities);
+        } else if (dao instanceof AscendancyClassDao) {
+            ((AscendancyClassDao) dao).batchInsert((List<AscendancyClass>) (List<?>) entities);
         } else {
             throw new IllegalArgumentException("Unknown DAO: " + dao.getClass());
         }
@@ -496,6 +556,28 @@ public class DataSyncService {
             return (DataConverter<Object>) (DataConverter<?>) new ItemSellPriceConverter();
         } else if ("item_purchase_costs".equals(cargoTable)) {
             return (DataConverter<Object>) (DataConverter<?>) new ItemPurchaseCostConverter();
+        } else if ("skill".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SkillConverter();
+        } else if ("skill_levels".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SkillLevelConverter();
+        } else if ("skill_stats_per_level".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SkillStatsPerLevelConverter();
+        } else if ("skill_quality".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SkillQualityConverter();
+        } else if ("skill_quality_stats".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SkillQualityStatsConverter();
+        } else if ("gem_levels".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new GemLevelConverter();
+        } else if ("passive_skill_connections".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new PassiveSkillConnectionConverter();
+        } else if ("mastery_effects".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MasteryEffectConverter();
+        } else if ("mastery_groups".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MasteryGroupConverter();
+        } else if ("character_classes".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new CharacterClassConverter();
+        } else if ("ascendancy_classes".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new AscendancyClassConverter();
         }
         throw new IllegalArgumentException("No converter for: " + cargoTable);
     }
@@ -562,6 +644,28 @@ public class DataSyncService {
             return new ItemSellPriceDao(conn);
         } else if ("item_purchase_costs".equals(cargoTable)) {
             return new ItemPurchaseCostDao(conn);
+        } else if ("skill".equals(cargoTable)) {
+            return new SkillDao(conn);
+        } else if ("skill_levels".equals(cargoTable)) {
+            return new SkillLevelDao(conn);
+        } else if ("skill_stats_per_level".equals(cargoTable)) {
+            return new SkillStatsPerLevelDao(conn);
+        } else if ("skill_quality".equals(cargoTable)) {
+            return new SkillQualityDao(conn);
+        } else if ("skill_quality_stats".equals(cargoTable)) {
+            return new SkillQualityStatsDao(conn);
+        } else if ("gem_levels".equals(cargoTable)) {
+            return new GemLevelDao(conn);
+        } else if ("passive_skill_connections".equals(cargoTable)) {
+            return new PassiveSkillConnectionDao(conn);
+        } else if ("mastery_effects".equals(cargoTable)) {
+            return new MasteryEffectDao(conn);
+        } else if ("mastery_groups".equals(cargoTable)) {
+            return new MasteryGroupDao(conn);
+        } else if ("character_classes".equals(cargoTable)) {
+            return new CharacterClassDao(conn);
+        } else if ("ascendancy_classes".equals(cargoTable)) {
+            return new AscendancyClassDao(conn);
         }
         throw new IllegalArgumentException("No DAO for: " + cargoTable);
     }
