@@ -80,19 +80,19 @@ class DataSyncServiceTest {
     // ==================== 同步测试 ====================
 
     @Test
-    @DisplayName("全量同步 41 张表，4 张核心表数据应正确写入 SQLite，其余跳过")
+    @DisplayName("全量同步 91 张表，4 张核心表数据应正确写入 SQLite，其余跳过")
     void shouldSyncAllTablesAndInsertData() throws Exception {
         // 为 4 张核心表设置 mock 响应
         enqueueCargoResponse("items", 2, itemJson());
         enqueueCargoResponse("skill_gems", 1, skillGemJson());
         enqueueCargoResponse("passive_skills", 1, passiveSkillJson());
         enqueueCargoResponse("mods", 1, modJson());
-        // 其余 72 张表 count=0，自动跳过
+        // 其余 87 张表 count=0，自动跳过
         enqueueEquipmentSubtableCountResponses();
 
         Map<String, SyncResult> results = syncService.syncAll();
 
-        assertEquals(76, results.size());
+        assertEquals(91, results.size());
         // 核心表不应跳过
         SyncResult itemsResult = results.get("items");
         assertFalse(itemsResult.isSkipped(), "items should not be skipped");
@@ -199,18 +199,19 @@ class DataSyncServiceTest {
     // ==================== 表验证 ====================
 
     @Test
-    @DisplayName("配置表数量应为 76 张表（4 核心 + 11 装备 + 15 词缀/工艺/经济 + 11 技能/天赋/职业 + 8 怪物/区域/异界 + 27 联盟机制）")
+    @DisplayName("配置表数量应为 91 张表（4 核心 + 11 装备 + 15 词缀/工艺/经济 + 11 技能/天赋/职业 + 8 怪物/区域/异界 + 27 联盟机制 + 15 杂项）")
     void shouldHaveFifteenTables() throws Exception {
         // 所有表 count=0，快速跳过
         enqueueAllCountResponses(Map.of());
         Map<String, SyncResult> results = syncService.syncAll();
-        assertEquals(76, results.size());
+        assertEquals(91, results.size());
         assertTrue(results.containsKey("items"));
         assertTrue(results.containsKey("skill_gems"));
         assertTrue(results.containsKey("passive_skills"));
         assertTrue(results.containsKey("mods"));
         assertTrue(results.containsKey("weapons"));
         assertTrue(results.containsKey("divination_cards"));
+        assertTrue(results.containsKey("versions"));
     }
 
     // ==================== 断点续传 ====================
@@ -264,7 +265,11 @@ class DataSyncServiceTest {
         "synthesis_areas", "synthesis_corrupted_mods", "synthesis_global_mods", "synthesis_mods",
         "bestiary_recipes", "bestiary_recipe_components",
         "incursion_rooms",
-        "pantheon", "pantheon_souls", "pantheon_stats"
+        "pantheon", "pantheon_souls", "pantheon_stats",
+        "versions", "legacy_variants", "prophecies", "quest_rewards",
+        "spawn_weights", "generic_stats",
+        "tattoos", "tinctures", "sentinels", "idols", "grafts", "corpse_items",
+        "cosmetic_items", "hideout_doodads", "guides"
     };
 
     /**
@@ -289,7 +294,11 @@ class DataSyncServiceTest {
             "synthesis_areas", "synthesis_corrupted_mods", "synthesis_global_mods", "synthesis_mods",
             "bestiary_recipes", "bestiary_recipe_components",
             "incursion_rooms",
-            "pantheon", "pantheon_souls", "pantheon_stats"};
+            "pantheon", "pantheon_souls", "pantheon_stats",
+            "versions", "legacy_variants", "prophecies", "quest_rewards",
+            "spawn_weights", "generic_stats",
+            "tattoos", "tinctures", "sentinels", "idols", "grafts", "corpse_items",
+            "cosmetic_items", "hideout_doodads", "guides"};
         for (String table : tables) {
             enqueueCountResponse(table, 0);
         }

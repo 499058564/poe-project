@@ -18,3 +18,10 @@ replay_pid*
 # OS files
 .DS_Store
 Thumbs.db
+
+# ========== Submodules ==========
+
+# PoeCharm2 — Chinese translation data submodule
+# Managed via .gitmodules (ignore = dirty). Tracked as a gitlink only.
+# Submodule is read-only from the parent project's perspective;
+# build artifacts are ignored by the submodule's own .gitignore.

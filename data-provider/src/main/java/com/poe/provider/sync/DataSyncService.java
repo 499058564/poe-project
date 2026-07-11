@@ -291,6 +291,54 @@ public class DataSyncService {
             "dexterity,flavour_text,id,intelligence,name,str_id,strength"));
         TABLE_CONFIGS.put("ascendancy_classes", new TableConfig("ascendancy_classes",
             "character_class,character_id,flavour_text,id,name"));
+
+        // ---- 杂项与历史数据 ----
+        TABLE_CONFIGS.put("versions", new TableConfig("versions",
+            "after,major_part,minor_part,patch_part,previous,release_date,revision_part,version"));
+        TABLE_CONFIGS.put("legacy_variants", new TableConfig("legacy_variants",
+            "removal_version,implicit_stat_text,explicit_stat_text,stat_text,base_item,required_level"));
+        TABLE_CONFIGS.put("prophecies", new TableConfig("prophecies",
+            "objective,prediction_text,prophecy_id,reward,seal_cost"));
+        TABLE_CONFIGS.put("quest_rewards", new TableConfig("quest_rewards",
+            "act,class_ids,classes,item_level,notes,quest,quest_id,rarity,sockets"));
+        TABLE_CONFIGS.put("spawn_weights", new TableConfig("spawn_weights",
+            "ordinal,tag,weight"));
+        TABLE_CONFIGS.put("generic_stats", new TableConfig("generic_stats",
+            "id,name,stat_text,value"));
+
+        // ---- 赛季特有物品 ----
+        TABLE_CONFIGS.put("tattoos", new TableConfig("tattoos",
+            "max_adjacent,min_adjacent,skill_id,target,tattoo_limit,tribe"));
+        TABLE_CONFIGS.put("tinctures", new TableConfig("tinctures",
+            "cooldown,cooldown_html,cooldown_range_average,cooldown_range_colour,"
+            + "cooldown_range_maximum,cooldown_range_minimum,cooldown_range_text,"
+            + "debuff_interval,debuff_interval_html,debuff_interval_range_average,"
+            + "debuff_interval_range_colour,debuff_interval_range_maximum,"
+            + "debuff_interval_range_minimum,debuff_interval_range_text"));
+        TABLE_CONFIGS.put("sentinels", new TableConfig("sentinels",
+            "charge,charge_html,charge_range_average,charge_range_colour,"
+            + "charge_range_maximum,charge_range_minimum,charge_range_text,"
+            + "duration,duration_html,duration_range_average,duration_range_colour,"
+            + "duration_range_maximum,duration_range_minimum,duration_range_text,"
+            + "empowerment,empowerment_html,empowerment_range_average,empowerment_range_colour,"
+            + "empowerment_range_maximum,empowerment_range_minimum,empowerment_range_text,"
+            + "empowers,empowers_html,empowers_range_average,empowers_range_colour,"
+            + "empowers_range_maximum,empowers_range_minimum,empowers_range_text,"
+            + "monster,monster_level"));
+        TABLE_CONFIGS.put("idols", new TableConfig("idols",
+            "idol_limit"));
+        TABLE_CONFIGS.put("grafts", new TableConfig("grafts",
+            "skill_id"));
+        TABLE_CONFIGS.put("corpse_items", new TableConfig("corpse_items",
+            "monster_abilities,monster_category,monster_category_html,tier"));
+
+        // ---- 杂项低优先级 ----
+        TABLE_CONFIGS.put("cosmetic_items", new TableConfig("cosmetic_items",
+            "cosmetic_type,target,theme"));
+        TABLE_CONFIGS.put("hideout_doodads", new TableConfig("hideout_doodads",
+            "is_master_doodad,variation_count"));
+        TABLE_CONFIGS.put("guides", new TableConfig("guides",
+            "date,subject,version"));
     }
 
     private final WikiApiClient wikiClient;
@@ -618,6 +666,36 @@ public class DataSyncService {
             ((PantheonSoulsDao) dao).batchInsert((List<PantheonSouls>) (List<?>) entities);
         } else if (dao instanceof PantheonStatsDao) {
             ((PantheonStatsDao) dao).batchInsert((List<PantheonStats>) (List<?>) entities);
+        } else if (dao instanceof VersionDao) {
+            ((VersionDao) dao).batchInsert((List<Version>) (List<?>) entities);
+        } else if (dao instanceof LegacyVariantDao) {
+            ((LegacyVariantDao) dao).batchInsert((List<LegacyVariant>) (List<?>) entities);
+        } else if (dao instanceof ProphecyDao) {
+            ((ProphecyDao) dao).batchInsert((List<Prophecy>) (List<?>) entities);
+        } else if (dao instanceof QuestRewardDao) {
+            ((QuestRewardDao) dao).batchInsert((List<QuestReward>) (List<?>) entities);
+        } else if (dao instanceof SpawnWeightDao) {
+            ((SpawnWeightDao) dao).batchInsert((List<SpawnWeight>) (List<?>) entities);
+        } else if (dao instanceof GenericStatDao) {
+            ((GenericStatDao) dao).batchInsert((List<GenericStat>) (List<?>) entities);
+        } else if (dao instanceof TattooDao) {
+            ((TattooDao) dao).batchInsert((List<Tattoo>) (List<?>) entities);
+        } else if (dao instanceof TinctureDao) {
+            ((TinctureDao) dao).batchInsert((List<Tincture>) (List<?>) entities);
+        } else if (dao instanceof SentinelDao) {
+            ((SentinelDao) dao).batchInsert((List<Sentinel>) (List<?>) entities);
+        } else if (dao instanceof IdolDao) {
+            ((IdolDao) dao).batchInsert((List<Idol>) (List<?>) entities);
+        } else if (dao instanceof GraftDao) {
+            ((GraftDao) dao).batchInsert((List<Graft>) (List<?>) entities);
+        } else if (dao instanceof CorpseItemDao) {
+            ((CorpseItemDao) dao).batchInsert((List<CorpseItem>) (List<?>) entities);
+        } else if (dao instanceof CosmeticItemDao) {
+            ((CosmeticItemDao) dao).batchInsert((List<CosmeticItem>) (List<?>) entities);
+        } else if (dao instanceof HideoutDoodadDao) {
+            ((HideoutDoodadDao) dao).batchInsert((List<HideoutDoodad>) (List<?>) entities);
+        } else if (dao instanceof GuideDao) {
+            ((GuideDao) dao).batchInsert((List<Guide>) (List<?>) entities);
         } else {
             throw new IllegalArgumentException("Unknown DAO: " + dao.getClass());
         }
@@ -833,6 +911,36 @@ public class DataSyncService {
             return (DataConverter<Object>) (DataConverter<?>) new PantheonSoulsConverter();
         } else if ("pantheon_stats".equals(cargoTable)) {
             return (DataConverter<Object>) (DataConverter<?>) new PantheonStatsConverter();
+        } else if ("versions".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new VersionConverter();
+        } else if ("legacy_variants".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new LegacyVariantConverter();
+        } else if ("prophecies".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ProphecyConverter();
+        } else if ("quest_rewards".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new QuestRewardConverter();
+        } else if ("spawn_weights".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SpawnWeightConverter();
+        } else if ("generic_stats".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new GenericStatConverter();
+        } else if ("tattoos".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new TattooConverter();
+        } else if ("tinctures".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new TinctureConverter();
+        } else if ("sentinels".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SentinelConverter();
+        } else if ("idols".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new IdolConverter();
+        } else if ("grafts".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new GraftConverter();
+        } else if ("corpse_items".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new CorpseItemConverter();
+        } else if ("cosmetic_items".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new CosmeticItemConverter();
+        } else if ("hideout_doodads".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HideoutDoodadConverter();
+        } else if ("guides".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new GuideConverter();
         }
         throw new IllegalArgumentException("No converter for: " + cargoTable);
     }
@@ -991,6 +1099,36 @@ public class DataSyncService {
             return new PantheonSoulsDao(conn);
         } else if ("pantheon_stats".equals(cargoTable)) {
             return new PantheonStatsDao(conn);
+        } else if ("versions".equals(cargoTable)) {
+            return new VersionDao(conn);
+        } else if ("legacy_variants".equals(cargoTable)) {
+            return new LegacyVariantDao(conn);
+        } else if ("prophecies".equals(cargoTable)) {
+            return new ProphecyDao(conn);
+        } else if ("quest_rewards".equals(cargoTable)) {
+            return new QuestRewardDao(conn);
+        } else if ("spawn_weights".equals(cargoTable)) {
+            return new SpawnWeightDao(conn);
+        } else if ("generic_stats".equals(cargoTable)) {
+            return new GenericStatDao(conn);
+        } else if ("tattoos".equals(cargoTable)) {
+            return new TattooDao(conn);
+        } else if ("tinctures".equals(cargoTable)) {
+            return new TinctureDao(conn);
+        } else if ("sentinels".equals(cargoTable)) {
+            return new SentinelDao(conn);
+        } else if ("idols".equals(cargoTable)) {
+            return new IdolDao(conn);
+        } else if ("grafts".equals(cargoTable)) {
+            return new GraftDao(conn);
+        } else if ("corpse_items".equals(cargoTable)) {
+            return new CorpseItemDao(conn);
+        } else if ("cosmetic_items".equals(cargoTable)) {
+            return new CosmeticItemDao(conn);
+        } else if ("hideout_doodads".equals(cargoTable)) {
+            return new HideoutDoodadDao(conn);
+        } else if ("guides".equals(cargoTable)) {
+            return new GuideDao(conn);
         }
         throw new IllegalArgumentException("No DAO for: " + cargoTable);
     }
