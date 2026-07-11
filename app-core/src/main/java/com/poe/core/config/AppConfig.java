@@ -49,12 +49,19 @@ public class AppConfig {
 
     // ── 配置项 ──
 
+    /** 界面语言（"zh" / "en"），默认中文 */
     private String language = ConfigConstants.DEFAULT_LANGUAGE;
+    /** 数据存储目录路径，默认为 {@code ~/.poe-tool/data/} */
     private String dataDirectory;
+    /** Path of Building 安装路径或运行目录 */
     private String pobPath;
+    /** 是否在启动时自动同步数据 */
     private boolean autoSync = ConfigConstants.DEFAULT_AUTO_SYNC;
+    /** UI 主题名称（"dark" / "light"），默认暗色 */
     private String theme = ConfigConstants.DEFAULT_THEME;
+    /** 主窗口宽度（像素） */
     private int windowWidth = ConfigConstants.DEFAULT_WINDOW_WIDTH;
+    /** 主窗口高度（像素） */
     private int windowHeight = ConfigConstants.DEFAULT_WINDOW_HEIGHT;
 
     /** 单例（延迟初始化） */

@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * passive_skills 表数据访问对象。
+ * <p>
+ * 表使用 id 作为主键。
+ * 记录天赋树的全部被动技能，包括升华、基石、核心天赋和珠宝插槽的坐标与连接关系。
  */
 public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
 
@@ -18,6 +21,11 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条被动技能记录。
+     *
+     * @param skill 被动技能实体
+     */
     @Override
     public void insert(PassiveSkill skill) {
         String sql = "INSERT INTO passive_skills (id, name, name_zh, class, ascendancy, stats, " +
@@ -60,6 +68,12 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询被动技能。
+     *
+     * @param id 被动技能 ID
+     * @return 被动技能实体（可能为空）
+     */
     @Override
     public Optional<PassiveSkill> findById(Integer id) {
         String sql = "SELECT * FROM passive_skills WHERE id = ?";
@@ -76,6 +90,11 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部被动技能记录。
+     *
+     * @return 按 id 升序排列的被动技能列表
+     */
     @Override
     public List<PassiveSkill> findAll() {
         String sql = "SELECT * FROM passive_skills ORDER BY id";
@@ -91,6 +110,11 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         return skills;
     }
 
+    /**
+     * 根据主键删除被动技能。
+     *
+     * @param id 被动技能 ID
+     */
     @Override
     public void deleteById(Integer id) {
         String sql = "DELETE FROM passive_skills WHERE id = ?";
@@ -102,6 +126,11 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         }
     }
 
+    /**
+     * 统计被动技能记录总数。
+     *
+     * @return passive_skills 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM passive_skills";
@@ -116,6 +145,7 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 PassiveSkill 字段） */
     private void setParams(PreparedStatement ps, PassiveSkill skill) throws SQLException {
         ps.setInt(1, skill.getId());
         ps.setString(2, skill.getName());
@@ -132,6 +162,7 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         ps.setString(13, skill.getVersion());
     }
 
+    /** 从 ResultSet 映射一行到 PassiveSkill 实体 */
     private PassiveSkill mapRow(ResultSet rs) throws SQLException {
         PassiveSkill skill = new PassiveSkill();
         skill.setId(rs.getInt("id"));

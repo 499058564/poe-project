@@ -24,6 +24,12 @@ public class SearchResult<T> {
     /** 是否还有更多页 */
     private final boolean hasMore;
 
+    /**
+     * @param items    当前页结果列表
+     * @param total    匹配总数
+     * @param page     当前页码（从 1 开始）
+     * @param pageSize 每页数量
+     */
     public SearchResult(List<T> items, int total, int page, int pageSize) {
         this.items = items;
         this.total = total;

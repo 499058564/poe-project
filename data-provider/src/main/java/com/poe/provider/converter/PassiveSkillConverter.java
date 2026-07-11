@@ -13,6 +13,12 @@ import com.poe.cache.model.PassiveSkill;
  */
 public class PassiveSkillConverter implements DataConverter<PassiveSkill> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 PassiveSkill 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 天赋实体，x/y 固定为 0.0（需从 POB tree.json 补充），passive_class 固定为 null
+     */
     @Override
     public PassiveSkill convert(JsonNode row) {
         PassiveSkill ps = new PassiveSkill();
@@ -34,6 +40,7 @@ public class PassiveSkillConverter implements DataConverter<PassiveSkill> {
         return ps;
     }
 
+    /** 解析布尔字段，支持原生布尔值或 "1"/"true" 文本（不区分大小写） */
     private static boolean parseBool(JsonNode node, String field) {
         JsonNode val = node.path(field);
         if (val.isBoolean()) return val.asBoolean();

@@ -17,6 +17,8 @@ import java.util.List;
  *   <li>多词查询："Iron Ring" → AND 逻辑</li>
  * </ul>
  * 注意：FTS5 默认不分割 CJK 字符，中文搜索需使用完整短语或前缀通配符。
+ * <p>
+ * 此类不实现 CrudRepository，因为它不操作单表而是跨表 FTS 查询。
  */
 public class SearchDao {
 

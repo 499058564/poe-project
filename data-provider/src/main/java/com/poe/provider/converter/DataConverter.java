@@ -15,7 +15,7 @@ public interface DataConverter<T> {
      * 将 Wiki Cargo 单行 JSON 转换为模型对象。
      *
      * @param wikiRow cargoquery[i].title 节点，字段名与 Cargo 表列名一致
-     * @return 转换后的模型对象
+     * @return 转换后的模型对象，字段缺失时使用默认值（0 / 0.0 / null）
      */
     T convert(JsonNode wikiRow);
 }

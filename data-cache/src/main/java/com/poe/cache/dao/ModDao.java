@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * mods 表数据访问对象。
+ * <p>
+ * 表使用 id 作为主键。
+ * 记录装备词缀的完整信息，包括类型、域、生成方式、属性标签和权重。
  */
 public class ModDao implements CrudRepository<Mod, Integer> {
 
@@ -18,6 +21,11 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条词缀记录。
+     *
+     * @param mod 词缀实体
+     */
     @Override
     public void insert(Mod mod) {
         String sql = "INSERT INTO mods (id, name, name_zh, mod_type, domain, generation_type, " +
@@ -60,6 +68,12 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询词缀。
+     *
+     * @param id 词缀 ID
+     * @return 词缀实体（可能为空）
+     */
     @Override
     public Optional<Mod> findById(Integer id) {
         String sql = "SELECT * FROM mods WHERE id = ?";
@@ -76,6 +90,11 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部词缀记录。
+     *
+     * @return 按 id 升序排列的词缀列表
+     */
     @Override
     public List<Mod> findAll() {
         String sql = "SELECT * FROM mods ORDER BY id";
@@ -91,6 +110,11 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         return mods;
     }
 
+    /**
+     * 根据主键删除词缀。
+     *
+     * @param id 词缀 ID
+     */
     @Override
     public void deleteById(Integer id) {
         String sql = "DELETE FROM mods WHERE id = ?";
@@ -102,6 +126,11 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         }
     }
 
+    /**
+     * 统计词缀记录总数。
+     *
+     * @return mods 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM mods";
@@ -116,6 +145,7 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 Mod 字段） */
     private void setParams(PreparedStatement ps, Mod mod) throws SQLException {
         ps.setInt(1, mod.getId());
         ps.setString(2, mod.getName());
@@ -131,6 +161,7 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         ps.setString(12, mod.getVersion());
     }
 
+    /** 从 ResultSet 映射一行到 Mod 实体 */
     private Mod mapRow(ResultSet rs) throws SQLException {
         Mod mod = new Mod();
         mod.setId(rs.getInt("id"));

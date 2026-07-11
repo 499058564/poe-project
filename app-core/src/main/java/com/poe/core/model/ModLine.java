@@ -15,8 +15,14 @@ public class ModLine {
     /** 词缀类型：prefix/suffix/implicit/enchant */
     private String type;
 
+    /** 无参构造，用于 JSON 反序列化 */
     public ModLine() {}
 
+    /**
+     * @param text  词缀描述文本
+     * @param value 词缀值范围
+     * @param type  词缀类型（prefix/suffix/implicit/enchant）
+     */
     public ModLine(String text, String value, String type) {
         this.text = text;
         this.value = value;

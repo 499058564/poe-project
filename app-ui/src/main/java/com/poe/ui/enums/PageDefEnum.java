@@ -36,6 +36,14 @@ public enum PageDefEnum {
     /** 父页面 ID，{@code null} 表示一级菜单 */
     private final String parentPageId;
 
+    /**
+     * 页面定义枚举构造器。
+     *
+     * @param pageId       页面唯一标识
+     * @param i18nKey      国际化资源 key
+     * @param disabled     是否默认禁用
+     * @param parentPageId 父页面 ID，{@code null} 表示一级菜单
+     */
     PageDefEnum(String pageId, String i18nKey, boolean disabled, String parentPageId) {
         this.pageId = pageId;
         this.i18nKey = i18nKey;
@@ -43,16 +51,38 @@ public enum PageDefEnum {
         this.parentPageId = parentPageId;
     }
 
+    /**
+     * 获取页面唯一标识。
+     *
+     * @return 页面 ID
+     */
     public String pageId() { return pageId; }
 
+    /**
+     * 获取国际化资源 key。
+     *
+     * @return i18n key
+     */
     public String i18nKey() { return i18nKey; }
 
-    /** 该页面在导航中是否默认禁用 */
+    /**
+     * 该页面在导航中是否默认禁用。
+     *
+     * @return {@code true} 表示禁用
+     */
     public boolean disabled() { return disabled; }
 
-    /** 父页面 ID，{@code null} 表示一级菜单 */
+    /**
+     * 获取父页面 ID。
+     *
+     * @return 父页面 ID，{@code null} 表示一级菜单
+     */
     public String parentPageId() { return parentPageId; }
 
-    /** 是否为一级菜单（无父页面） */
+    /**
+     * 判断是否为一级菜单（无父页面）。
+     *
+     * @return {@code true} 表示顶级页面
+     */
     public boolean isTopLevel() { return parentPageId == null; }
 }

@@ -33,12 +33,21 @@ import java.util.stream.StreamSupport;
 public class ItemSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(ItemSearchService.class);
+    /** 共享 JSON 解析器实例 */
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    /** FTS5 全文搜索 DAO */
     private final SearchDao searchDao;
+    /** 物品数据访问对象 */
     private final ItemDao itemDao;
+    /** 翻译服务，用于详情页翻译 */
     private final TranslationService translationService;
 
+    /**
+     * @param searchDao          FTS5 全文搜索 DAO
+     * @param itemDao            物品数据访问对象
+     * @param translationService 翻译服务
+     */
     public ItemSearchService(SearchDao searchDao, ItemDao itemDao,
                              TranslationService translationService) {
         this.searchDao = searchDao;
@@ -132,6 +141,9 @@ public class ItemSearchService {
     /**
      * 解析 implicits JSON 字段为字符串列表。
      * JSON 格式：[{"text":"+20 to maximum Life"}, ...]
+     *
+     * @param implicitsJson 基底词缀 JSON 字符串
+     * @return 词缀文本列表，JSON 无效时返回空列表
      */
     List<String> parseImplicits(String implicitsJson) {
         if (StringUtils.isBlank(implicitsJson)) {
@@ -155,6 +167,9 @@ public class ItemSearchService {
     /**
      * 解析 requirements JSON 字段为属性名→值的映射。
      * JSON 格式：[{"name":"str","values":[["100"]]}, ...]
+     *
+     * @param requirementsJson 属性需求 JSON 字符串
+     * @return 属性名（str/dex/int）→ 需求值的映射，JSON 无效时返回空 Map
      */
     Map<String, Integer> parseRequirements(String requirementsJson) {
         if (StringUtils.isBlank(requirementsJson)) {

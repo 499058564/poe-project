@@ -14,8 +14,15 @@ import com.poe.cache.model.SkillGem;
  */
 public class SkillGemConverter implements DataConverter<SkillGem> {
 
+    /** JSON 序列化工具（预留，当前未使用） */
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 SkillGem 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 技能宝石实体，description / quality_stats / level_stats 固定为 null（来自其他表）
+     */
     @Override
     public SkillGem convert(JsonNode row) {
         SkillGem gem = new SkillGem();

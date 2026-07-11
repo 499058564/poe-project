@@ -24,6 +24,10 @@ public class PoeApplication extends Application {
 
     private static final Logger log = LoggerFactory.getLogger(PoeApplication.class);
 
+    /**
+     * 应用初始化回调，在 JavaFX 线程启动前执行。
+     * 输出当前 Java 和 JavaFX 版本信息，用于调试和日志记录。
+     */
     @Override
     public void init() {
         log.info("PoE Tool 正在启动...");
@@ -31,6 +35,12 @@ public class PoeApplication extends Application {
         log.info("JavaFX 版本: {}", System.getProperty("javafx.version"));
     }
 
+    /**
+     * JavaFX 应用启动入口。
+     * 创建主窗口、加载自定义 PoE 暗黑主题样式表并显示窗口。
+     *
+     * @param primaryStage JavaFX 主舞台，由框架注入
+     */
     @Override
     public void start(Stage primaryStage) {
         // 集成 AtlantaFX 暗黑主题
@@ -46,6 +56,11 @@ public class PoeApplication extends Application {
         mainWindow.show();
     }
 
+    /**
+     * 程序主入口，委托给 JavaFX {@link Application#launch(String...)}。
+     *
+     * @param args 命令行参数
+     */
     public static void main(String[] args) {
         launch(args);
     }

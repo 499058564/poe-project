@@ -74,6 +74,12 @@ public class TranslationDao {
 
     /**
      * 保存单条翻译（INSERT OR REPLACE）。
+     * <p>
+     * 若指定 (source, domain) 的翻译已存在则覆盖，否则新增。
+     *
+     * @param source 源文本
+     * @param target 翻译后的文本
+     * @param domain 领域（item/skill/passive/mod/map）
      */
     public void saveTranslation(String source, String target, String domain) {
         String sql = "INSERT OR REPLACE INTO translations (source, target, domain) VALUES (?, ?, ?)";
@@ -88,7 +94,13 @@ public class TranslationDao {
     }
 
     /**
-     * 批量保存翻译。
+     * 批量保存翻译（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     * 若指定 (source, domain) 的翻译已存在则覆盖，否则新增。
+     *
+     * @param translations 源文本 -> 翻译文本 的映射（非空）
+     * @param domain       领域
      */
     public void batchSave(Map<String, String> translations, String domain) {
         if (translations == null || translations.isEmpty()) {

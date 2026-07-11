@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * skill_gems 表数据访问对象。
+ * <p>
+ * 表使用 id 作为主键。
+ * 记录技能宝石的完整信息，包括类型、标签、属性需求、变体和版本信息。
  */
 public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
 
@@ -18,6 +21,11 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条技能宝石记录。
+     *
+     * @param gem 技能宝石实体
+     */
     @Override
     public void insert(SkillGem gem) {
         String sql = "INSERT INTO skill_gems (id, name, name_zh, gem_type, gem_tags, "
@@ -35,6 +43,13 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
         }
     }
 
+    /**
+     * 批量插入技能宝石记录（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     *
+     * @param gems 技能宝石实体列表（非空）
+     */
     @Override
     public void batchInsert(List<SkillGem> gems) {
         String sql = "INSERT INTO skill_gems (id, name, name_zh, gem_type, gem_tags, "
@@ -64,6 +79,12 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询技能宝石。
+     *
+     * @param id 技能宝石 ID
+     * @return 技能宝石实体（可能为空）
+     */
     @Override
     public Optional<SkillGem> findById(Integer id) {
         String sql = "SELECT * FROM skill_gems WHERE id = ?";
@@ -80,6 +101,11 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部技能宝石记录。
+     *
+     * @return 按 id 升序排列的技能宝石列表
+     */
     @Override
     public List<SkillGem> findAll() {
         String sql = "SELECT * FROM skill_gems ORDER BY id";
@@ -95,6 +121,11 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
         return gems;
     }
 
+    /**
+     * 根据主键删除技能宝石。
+     *
+     * @param id 技能宝石 ID
+     */
     @Override
     public void deleteById(Integer id) {
         String sql = "DELETE FROM skill_gems WHERE id = ?";
@@ -106,6 +137,11 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
         }
     }
 
+    /**
+     * 统计技能宝石记录总数。
+     *
+     * @return skill_gems 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM skill_gems";
@@ -120,6 +156,7 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 SkillGem 字段） */
     private void setParams(PreparedStatement ps, SkillGem gem) throws SQLException {
         int i = 1;
         ps.setInt(i++, gem.getId());
@@ -147,6 +184,7 @@ public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
         ps.setString(i++, gem.getVersion());
     }
 
+    /** 从 ResultSet 映射一行到 SkillGem 实体 */
     private SkillGem mapRow(ResultSet rs) throws SQLException {
         SkillGem gem = new SkillGem();
         gem.setId(rs.getInt("id"));
