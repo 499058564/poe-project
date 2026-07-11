@@ -22,6 +22,6 @@ Thumbs.db
 # ========== Submodules ==========
 
 # PoeCharm2 — Chinese translation data submodule
-# Managed via .gitmodules (ignore = untracked). Tracked as a gitlink only.
-# Build artifacts inside the submodule are governed by .gitmodules settings
-# and the submodule's own .gitignore.
+# Managed via .gitmodules (ignore = dirty). Tracked as a gitlink only.
+# Submodule is read-only from the parent project's perspective;
+# build artifacts are ignored by the submodule's own .gitignore.
