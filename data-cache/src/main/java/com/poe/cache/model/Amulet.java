@@ -6,9 +6,13 @@ package com.poe.cache.model;
  * 通过 _pageName 与 base_items 表关联。
  */
 public class Amulet {
+    /** Wiki 页面 ID */
     private Integer pageId;
+    /** Wiki 页面名称（_pageName），关联 base_items */
     private String pageName;
+    /** 是否为魔符（Talisman） */
     private boolean isTalisman;
+    /** 魔符层级（1-4） */
     private int talismanTier;
 
     public Amulet() {}

@@ -6,16 +6,27 @@ package com.poe.cache.model;
  * 通过 _pageName 与 base_items 表关联，包含护甲、闪避、护盾、结界等防御属性。
  */
 public class Armour {
+    /** Wiki 页面 ID */
     private Integer pageId;
+    /** Wiki 页面名称（_pageName），关联 base_items */
     private String pageName;
+    /** 护甲值下限 */
     private int armourMin;
+    /** 护甲值上限 */
     private int armourMax;
+    /** 闪避值下限 */
     private int evasionMin;
+    /** 闪避值上限 */
     private int evasionMax;
+    /** 能量护盾下限 */
     private int energyShieldMin;
+    /** 能量护盾上限 */
     private int energyShieldMax;
+    /** 结界值下限 */
     private int wardMin;
+    /** 结界值上限 */
     private int wardMax;
+    /** 移动速度惩罚（负值百分比，如 -3） */
     private int movementSpeed;
 
     public Armour() {}

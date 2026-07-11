@@ -8,6 +8,12 @@ import com.poe.cache.model.Jewel;
  */
 public class JewelConverter implements DataConverter<Jewel> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 Jewel 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 珠宝实体，jewel_limit / radius_html 缺失时返回 null
+     */
     @Override
     public Jewel convert(JsonNode row) {
         Jewel j = new Jewel();

@@ -6,15 +6,25 @@ package com.poe.cache.model;
  * 通过 _pageName 与 base_items 表关联。
  */
 public class GameMap {
+    /** Wiki 页面 ID */
     private Integer pageId;
+    /** Wiki 页面名称（_pageName），关联 base_items */
     private String pageName;
+    /** 区域内部 ID，对应游戏数据中的区域标识 */
     private String areaId;
+    /** 地图怪物等级 */
     private int areaLevel;
+    /** 地图 BOSS 角色名称 */
     private String guildCharacter;
+    /** 所属地图系列名称 */
     private String series;
+    /** 地图位阶（1-16，按 Atlas 排序） */
     private int tier;
+    /** 传奇版本区域 ID（如有） */
     private String uniqueAreaId;
+    /** 传奇版本怪物等级 */
     private int uniqueAreaLevel;
+    /** 传奇版本 BOSS 角色名称 */
     private String uniqueGuildCharacter;
 
     public GameMap() {}

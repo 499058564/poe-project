@@ -34,6 +34,12 @@ public class MainWindow {
 
     private static final Logger log = LoggerFactory.getLogger(MainWindow.class);
 
+    /**
+     * 构造主窗口，初始化 Sidebar、ContentArea、StatusBar 三大组件，
+     * 设置导航回调与默认页面，并将根布局挂载到 Scene 上。
+     *
+     * @param stage JavaFX 顶层舞台
+     */
     public MainWindow(Stage stage) {
         this.stage = stage;
         log.info("Creating main window: {}x{}", LayoutConstants.WINDOW_DEFAULT_WIDTH,
@@ -71,22 +77,43 @@ public class MainWindow {
         log.debug("Main window scene initialized");
     }
 
+    /**
+     * 获取主窗口 Scene，供外部注入样式表。
+     *
+     * @return 当前场景
+     */
     public Scene getScene() {
         return scene;
     }
 
+    /**
+     * 获取左侧导航侧边栏。
+     *
+     * @return Sidebar 实例
+     */
     public Sidebar getSidebar() {
         return sidebar;
     }
 
+    /**
+     * 获取中央多标签内容区。
+     *
+     * @return ContentArea 实例
+     */
     public ContentArea getContentArea() {
         return contentArea;
     }
 
+    /**
+     * 获取底部状态栏。
+     *
+     * @return StatusBar 实例
+     */
     public StatusBar getStatusBar() {
         return statusBar;
     }
 
+    /** 显示主窗口。 */
     public void show() {
         stage.show();
     }

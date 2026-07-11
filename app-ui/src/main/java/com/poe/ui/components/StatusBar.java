@@ -49,18 +49,39 @@ public class StatusBar extends HBox {
         getChildren().addAll(dataVersion, syncTime, spacer, status, syncProgress);
     }
 
+    /**
+     * 设置数据版本标签文本。
+     *
+     * @param version 数据版本号字符串
+     */
     public void setDataVersion(String version) {
         dataVersion.setText(Messages.get(StatusKeys.DATA_VERSION_PREFIX) + " " + version);
     }
 
+    /**
+     * 设置上次同步时间标签文本。
+     *
+     * @param time 同步时间字符串
+     */
     public void setSyncTime(String time) {
         syncTime.setText(Messages.get(StatusKeys.SYNC_TIME_PREFIX) + " " + time);
     }
 
+    /**
+     * 设置当前状态文本。
+     *
+     * @param text 状态信息（如"就绪"、"同步中"等）
+     */
     public void setStatus(String text) {
         status.setText(text);
     }
 
+    /**
+     * 更新同步进度条。
+     * 进度为 0 或 1 时自动隐藏进度条，其余值显示。
+     *
+     * @param progress 进度值，范围 [0, 1]
+     */
     public void setSyncProgress(double progress) {
         syncProgress.setProgress(progress);
         syncProgress.setVisible(progress > 0 && progress < 1);

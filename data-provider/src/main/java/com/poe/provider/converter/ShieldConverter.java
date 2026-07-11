@@ -8,6 +8,12 @@ import com.poe.cache.model.Shield;
  */
 public class ShieldConverter implements DataConverter<Shield> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 Shield 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 盾牌实体，block 缺失时使用默认值 0
+     */
     @Override
     public Shield convert(JsonNode row) {
         Shield s = new Shield();

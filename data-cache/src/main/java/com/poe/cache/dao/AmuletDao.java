@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * amulets 表数据访问对象。
+ * <p>
+ * 表使用 page_id 作为主键，通过 page_name 与 base_items 表关联。
+ * 额外字段 is_talisman / talisman_tier 用于标识护身符子类型。
  */
 public class AmuletDao implements CrudRepository<Amulet, Integer> {
 
@@ -18,6 +21,11 @@ public class AmuletDao implements CrudRepository<Amulet, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条护身符记录。
+     *
+     * @param a 护身符实体
+     */
     @Override
     public void insert(Amulet a) {
         String sql = "INSERT INTO amulets (page_id, page_name, is_talisman, talisman_tier) VALUES (?, ?, ?, ?)";
@@ -29,6 +37,13 @@ public class AmuletDao implements CrudRepository<Amulet, Integer> {
         }
     }
 
+    /**
+     * 批量插入护身符记录（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     *
+     * @param amulets 护身符实体列表（非空）
+     */
     @Override
     public void batchInsert(List<Amulet> amulets) {
         String sql = "INSERT INTO amulets (page_id, page_name, is_talisman, talisman_tier) VALUES (?, ?, ?, ?)";
@@ -52,6 +67,12 @@ public class AmuletDao implements CrudRepository<Amulet, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询护身符。
+     *
+     * @param pageId Wiki 页面 ID
+     * @return 护身符实体（可能为空）
+     */
     @Override
     public Optional<Amulet> findById(Integer pageId) {
         String sql = "SELECT * FROM amulets WHERE page_id = ?";
@@ -66,6 +87,11 @@ public class AmuletDao implements CrudRepository<Amulet, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部护身符记录。
+     *
+     * @return 按 page_id 升序排列的护身符列表
+     */
     @Override
     public List<Amulet> findAll() {
         List<Amulet> list = new ArrayList<>();
@@ -79,6 +105,11 @@ public class AmuletDao implements CrudRepository<Amulet, Integer> {
         return list;
     }
 
+    /**
+     * 根据主键删除护身符。
+     *
+     * @param pageId Wiki 页面 ID
+     */
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM amulets WHERE page_id = ?";
@@ -90,6 +121,11 @@ public class AmuletDao implements CrudRepository<Amulet, Integer> {
         }
     }
 
+    /**
+     * 统计护身符记录总数。
+     *
+     * @return amulets 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM amulets";
@@ -102,6 +138,7 @@ public class AmuletDao implements CrudRepository<Amulet, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 Amulet 字段） */
     private void setParams(PreparedStatement ps, Amulet a) throws SQLException {
         ps.setInt(1, a.getPageId());
         ps.setString(2, a.getPageName());
@@ -109,6 +146,7 @@ public class AmuletDao implements CrudRepository<Amulet, Integer> {
         ps.setInt(4, a.getTalismanTier());
     }
 
+    /** 从 ResultSet 映射一行到 Amulet 实体 */
     private Amulet mapRow(ResultSet rs) throws SQLException {
         Amulet a = new Amulet();
         a.setPageId(rs.getInt("page_id"));

@@ -8,6 +8,12 @@ import com.poe.cache.model.Armour;
  */
 public class ArmourConverter implements DataConverter<Armour> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 Armour 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 护甲实体，防御属性缺失时使用默认值 0
+     */
     @Override
     public Armour convert(JsonNode row) {
         Armour a = new Armour();

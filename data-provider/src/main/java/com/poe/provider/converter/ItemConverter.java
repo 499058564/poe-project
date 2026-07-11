@@ -14,8 +14,15 @@ import com.poe.common.util.JsonUtils;
  */
 public class ItemConverter implements DataConverter<Item> {
 
+    /** JSON 序列化工具，用于将数组字段转为 JSON 字符串 */
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 Item 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 物品实体，字段缺失时使用默认值（0 / "" / null）
+     */
     @Override
     public Item convert(JsonNode row) {
         Item item = new Item();
@@ -37,11 +44,16 @@ public class ItemConverter implements DataConverter<Item> {
         return item;
     }
 
-    // ---- helpers ----
+    // ---- 公开辅助方法（被其他 Converter 复用） ----
 
     /**
-     * Cargo _pageID 可能为空或过大（如部分派生物品），
-     * 此时使用 name 的 hashCode 作为 fallback。
+     * 解析 Cargo 的 _pageID 字符串为整数。
+     * <p>
+     * _pageID 可能为空或格式异常（如部分派生物品），
+     * 此时返回 0 作为 fallback。
+     *
+     * @param pageId _pageID 原始字符串
+     * @return 解析后的整数 ID，解析失败返回 0
      */
     static int parseId(String pageId) {
         try {
@@ -52,6 +64,7 @@ public class ItemConverter implements DataConverter<Item> {
         return 0;
     }
 
+    /** 安全解析 int 字段，空值或解析失败返回 0 */
     static int parseIntSafe(JsonNode node, String field) {
         String text = node.path(field).asText();
         if (text.isEmpty()) return 0;
@@ -62,16 +75,19 @@ public class ItemConverter implements DataConverter<Item> {
         }
     }
 
+    /** 安全解析 boolean 字段，支持 "1" / "true"（不区分大小写） */
     static boolean parseBooleanSafe(JsonNode node, String field) {
         String text = node.path(field).asText();
         return "1".equals(text) || "true".equalsIgnoreCase(text);
     }
 
+    /** 读取文本字段，空字符串返回 null */
     static String nullableText(JsonNode node, String field) {
         String text = node.path(field).asText();
         return (text == null || text.isEmpty()) ? null : text;
     }
 
+    /** 将 JSON 节点序列化为字符串，缺失或 null 节点返回 null */
     static String toJsonOrNull(JsonNode node) {
         if (node.isMissingNode() || node.isNull()) return null;
         try {
@@ -81,10 +97,12 @@ public class ItemConverter implements DataConverter<Item> {
         }
     }
 
+    /** null 或空字符串统一返回 null */
     static String nullToNull(String s) {
         return (s == null || s.isEmpty()) ? null : s;
     }
 
+    /** 将 Wiki 页面名的空格替换为下划线，用于拼接 wiki URL */
     static String escapeWikiPath(String pageName) {
         if (pageName == null || pageName.isEmpty()) return "";
         return pageName.replace(" ", "_");

@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * flasks 表数据访问对象。
+ * <p>
+ * 表使用 page_id 作为主键，通过 page_name 与 base_items 表关联。
+ * 记录药剂的充能、持续时间、生命/魔力恢复属性。
  */
 public class FlaskDao implements CrudRepository<Flask, Integer> {
 
@@ -18,6 +21,11 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条药剂记录。
+     *
+     * @param f 药剂实体
+     */
     @Override
     public void insert(Flask f) {
         String sql = "INSERT INTO flasks (page_id, page_name, charges_max, charges_per_use, duration, life, mana) "
@@ -30,6 +38,13 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
         }
     }
 
+    /**
+     * 批量插入药剂记录（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     *
+     * @param flasks 药剂实体列表（非空）
+     */
     @Override
     public void batchInsert(List<Flask> flasks) {
         String sql = "INSERT INTO flasks (page_id, page_name, charges_max, charges_per_use, duration, life, mana) "
@@ -54,6 +69,12 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询药剂。
+     *
+     * @param pageId Wiki 页面 ID
+     * @return 药剂实体（可能为空）
+     */
     @Override
     public Optional<Flask> findById(Integer pageId) {
         String sql = "SELECT * FROM flasks WHERE page_id = ?";
@@ -68,6 +89,11 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部药剂记录。
+     *
+     * @return 按 page_id 升序排列的药剂列表
+     */
     @Override
     public List<Flask> findAll() {
         List<Flask> list = new ArrayList<>();
@@ -81,6 +107,11 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
         return list;
     }
 
+    /**
+     * 根据主键删除药剂。
+     *
+     * @param pageId Wiki 页面 ID
+     */
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM flasks WHERE page_id = ?";
@@ -92,6 +123,11 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
         }
     }
 
+    /**
+     * 统计药剂记录总数。
+     *
+     * @return flasks 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM flasks";
@@ -104,6 +140,7 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 Flask 字段） */
     private void setParams(PreparedStatement ps, Flask f) throws SQLException {
         ps.setInt(1, f.getPageId());
         ps.setString(2, f.getPageName());
@@ -114,6 +151,7 @@ public class FlaskDao implements CrudRepository<Flask, Integer> {
         ps.setInt(7, f.getMana());
     }
 
+    /** 从 ResultSet 映射一行到 Flask 实体 */
     private Flask mapRow(ResultSet rs) throws SQLException {
         Flask f = new Flask();
         f.setPageId(rs.getInt("page_id"));

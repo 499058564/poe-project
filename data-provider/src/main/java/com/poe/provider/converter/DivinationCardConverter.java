@@ -10,6 +10,12 @@ import com.poe.cache.model.DivinationCard;
  */
 public class DivinationCardConverter implements DataConverter<DivinationCard> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 DivinationCard 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 命运卡实体，card_art / card_background 缺失时返回 null
+     */
     @Override
     public DivinationCard convert(JsonNode row) {
         DivinationCard dc = new DivinationCard();

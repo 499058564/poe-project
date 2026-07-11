@@ -38,7 +38,13 @@ public final class Messages {
         // 工具类不允许实例化
     }
 
-    /** 在所有子文件中查找并返回原始字符串。 */
+    /**
+     * 在所有子文件中查找并返回原始字符串。
+     *
+     * @param key i18n 资源键
+     * @return 对应语言的翻译文本
+     * @throws MissingResourceException 如果 key 在所有子文件中都不存在
+     */
     public static String get(String key) {
         for (ResourceBundle bundle : BUNDLES) {
             if (bundle.containsKey(key)) {
@@ -50,7 +56,13 @@ public final class Messages {
             Messages.class.getName(), key);
     }
 
-    /** 获取格式化字符串，使用 MessageFormat 替换占位符。 */
+    /**
+     * 获取格式化字符串，使用 {@link MessageFormat} 替换占位符。
+     *
+     * @param key  i18n 资源键
+     * @param args 格式化参数，替换模式中的 {0}, {1} 等占位符
+     * @return 格式化后的翻译文本
+     */
     public static String fmt(String key, Object... args) {
         return MessageFormat.format(get(key), args);
     }

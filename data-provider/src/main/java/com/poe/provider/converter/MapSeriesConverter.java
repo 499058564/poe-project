@@ -10,6 +10,12 @@ import com.poe.cache.model.MapSeries;
  */
 public class MapSeriesConverter implements DataConverter<MapSeries> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 MapSeries 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 地图系列实体，字段缺失时使用默认值（0 / null）
+     */
     @Override
     public MapSeries convert(JsonNode row) {
         MapSeries ms = new MapSeries();

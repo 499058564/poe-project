@@ -50,6 +50,11 @@ public class Sidebar extends VBox {
 
     private static final Logger log = LoggerFactory.getLogger(Sidebar.class);
 
+    /**
+     * 构造左侧导航侧边栏。
+     *
+     * @param pageDefs 页面定义数组，决定菜单结构（一级/二级层级）
+     */
     public Sidebar(PageDefEnum[] pageDefs) {
         this.pageDefs = pageDefs;
         getStyleClass().add(StyleClasses.SIDEBAR);
@@ -190,6 +195,11 @@ public class Sidebar extends VBox {
         parentBtn.setText("\u25BC " + getOriginalText(parentPageId)); // ▼
     }
 
+    /**
+     * 设置导航回调，当用户点击叶子节点按钮时触发。
+     *
+     * @param handler 接收被点击页面的 pageId
+     */
     public void setOnNavigate(Consumer<String> handler) {
         this.onNavigate = handler;
     }

@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * weapons 表数据访问对象。
+ * <p>
+ * 表使用 page_id 作为主键，通过 page_name 与 base_items 表关联。
+ * 记录武器的攻速、暴击率、武器范围和各类伤害范围。
  */
 public class WeaponDao implements CrudRepository<Weapon, Integer> {
 
@@ -18,6 +21,11 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条武器记录。
+     *
+     * @param w 武器实体
+     */
     @Override
     public void insert(Weapon w) {
         String sql = "INSERT INTO weapons (page_id, page_name, attack_speed, critical_strike_chance, "
@@ -33,6 +41,13 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
         }
     }
 
+    /**
+     * 批量插入武器记录（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     *
+     * @param weapons 武器实体列表（非空）
+     */
     @Override
     public void batchInsert(List<Weapon> weapons) {
         String sql = "INSERT INTO weapons (page_id, page_name, attack_speed, critical_strike_chance, "
@@ -60,6 +75,12 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询武器。
+     *
+     * @param pageId Wiki 页面 ID
+     * @return 武器实体（可能为空）
+     */
     @Override
     public Optional<Weapon> findById(Integer pageId) {
         String sql = "SELECT * FROM weapons WHERE page_id = ?";
@@ -74,6 +95,11 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部武器记录。
+     *
+     * @return 按 page_id 升序排列的武器列表
+     */
     @Override
     public List<Weapon> findAll() {
         List<Weapon> list = new ArrayList<>();
@@ -87,6 +113,11 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
         return list;
     }
 
+    /**
+     * 根据主键删除武器。
+     *
+     * @param pageId Wiki 页面 ID
+     */
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM weapons WHERE page_id = ?";
@@ -98,6 +129,11 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
         }
     }
 
+    /**
+     * 统计武器记录总数。
+     *
+     * @return weapons 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM weapons";
@@ -110,6 +146,7 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 Weapon 字段） */
     private void setParams(PreparedStatement ps, Weapon w) throws SQLException {
         ps.setInt(1, w.getPageId());
         ps.setString(2, w.getPageName());
@@ -128,6 +165,7 @@ public class WeaponDao implements CrudRepository<Weapon, Integer> {
         ps.setInt(15, w.getChaosDamageMax());
     }
 
+    /** 从 ResultSet 映射一行到 Weapon 实体 */
     private Weapon mapRow(ResultSet rs) throws SQLException {
         Weapon w = new Weapon();
         w.setPageId(rs.getInt("page_id"));

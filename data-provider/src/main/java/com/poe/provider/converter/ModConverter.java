@@ -13,6 +13,12 @@ import com.poe.cache.model.Mod;
  */
 public class ModConverter implements DataConverter<Mod> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 Mod 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 词缀实体，stats 序列化为 JSON 字符串，spawn_weights 固定为 null
+     */
     @Override
     public Mod convert(JsonNode row) {
         Mod mod = new Mod();

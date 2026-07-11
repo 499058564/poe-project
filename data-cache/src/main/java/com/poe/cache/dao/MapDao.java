@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * maps 表数据访问对象。
+ * <p>
+ * 表使用 page_id 作为主键，通过 page_name 与 base_items 表关联。
+ * 记录异界地图的区域等级、系列、阶级等信息，包括传奇版本独有的属性。
  */
 public class MapDao implements CrudRepository<GameMap, Integer> {
 
@@ -18,6 +21,11 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条地图记录。
+     *
+     * @param m 地图实体
+     */
     @Override
     public void insert(GameMap m) {
         String sql = "INSERT INTO maps (page_id, page_name, area_id, area_level, guild_character, "
@@ -31,6 +39,13 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         }
     }
 
+    /**
+     * 批量插入地图记录（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     *
+     * @param maps 地图实体列表（非空）
+     */
     @Override
     public void batchInsert(List<GameMap> maps) {
         String sql = "INSERT INTO maps (page_id, page_name, area_id, area_level, guild_character, "
@@ -56,6 +71,12 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询地图。
+     *
+     * @param pageId Wiki 页面 ID
+     * @return 地图实体（可能为空）
+     */
     @Override
     public Optional<GameMap> findById(Integer pageId) {
         String sql = "SELECT * FROM maps WHERE page_id = ?";
@@ -70,6 +91,11 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部地图记录。
+     *
+     * @return 按 page_id 升序排列的地图列表
+     */
     @Override
     public List<GameMap> findAll() {
         List<GameMap> list = new ArrayList<>();
@@ -83,6 +109,11 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         return list;
     }
 
+    /**
+     * 根据主键删除地图。
+     *
+     * @param pageId Wiki 页面 ID
+     */
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM maps WHERE page_id = ?";
@@ -94,6 +125,11 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         }
     }
 
+    /**
+     * 统计地图记录总数。
+     *
+     * @return maps 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM maps";
@@ -106,6 +142,7 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 GameMap 字段） */
     private void setParams(PreparedStatement ps, GameMap m) throws SQLException {
         ps.setInt(1, m.getPageId());
         ps.setString(2, m.getPageName());
@@ -119,6 +156,7 @@ public class MapDao implements CrudRepository<GameMap, Integer> {
         ps.setString(10, m.getUniqueGuildCharacter());
     }
 
+    /** 从 ResultSet 映射一行到 GameMap 实体 */
     private GameMap mapRow(ResultSet rs) throws SQLException {
         GameMap m = new GameMap();
         m.setPageId(rs.getInt("page_id"));

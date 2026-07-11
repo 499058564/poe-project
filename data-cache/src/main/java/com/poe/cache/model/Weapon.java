@@ -6,20 +6,35 @@ package com.poe.cache.model;
  * 通过 _pageName 与 base_items 表关联，存储武器专属的伤害、暴击、攻速等字段。
  */
 public class Weapon {
+    /** Wiki 页面 ID */
     private Integer pageId;
+    /** Wiki 页面名称（_pageName），关联 base_items */
     private String pageName;
+    /** 每秒攻击次数 */
     private double attackSpeed;
+    /** 基础暴击率 */
     private double criticalStrikeChance;
+    /** 武器攻击范围 */
     private double weaponRange;
+    /** 物理伤害下限 */
     private int physicalDamageMin;
+    /** 物理伤害上限 */
     private int physicalDamageMax;
+    /** 火焰伤害下限 */
     private int fireDamageMin;
+    /** 火焰伤害上限 */
     private int fireDamageMax;
+    /** 冰霜伤害下限 */
     private int coldDamageMin;
+    /** 冰霜伤害上限 */
     private int coldDamageMax;
+    /** 闪电伤害下限 */
     private int lightningDamageMin;
+    /** 闪电伤害上限 */
     private int lightningDamageMax;
+    /** 混沌伤害下限 */
     private int chaosDamageMin;
+    /** 混沌伤害上限 */
     private int chaosDamageMax;
 
     public Weapon() {}

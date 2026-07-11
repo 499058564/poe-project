@@ -8,6 +8,12 @@ import com.poe.cache.model.Flask;
  */
 public class FlaskConverter implements DataConverter<Flask> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 Flask 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 药剂实体，数值字段缺失时使用默认值（0 / 0.0）
+     */
     @Override
     public Flask convert(JsonNode row) {
         Flask f = new Flask();
@@ -21,6 +27,7 @@ public class FlaskConverter implements DataConverter<Flask> {
         return f;
     }
 
+    /** 安全解析 double 字段，空值或解析失败返回 0.0 */
     static double parseDoubleSafe(JsonNode node, String field) {
         String text = node.path(field).asText();
         if (text.isEmpty()) return 0.0;

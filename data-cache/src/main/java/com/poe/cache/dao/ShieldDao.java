@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * shields 表数据访问对象。
+ * <p>
+ * 表使用 page_id 作为主键，通过 page_name 与 base_items 表关联。
+ * 记录盾牌格挡率。
  */
 public class ShieldDao implements CrudRepository<Shield, Integer> {
 
@@ -18,6 +21,11 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条盾牌记录。
+     *
+     * @param s 盾牌实体
+     */
     @Override
     public void insert(Shield s) {
         String sql = "INSERT INTO shields (page_id, page_name, block) VALUES (?, ?, ?)";
@@ -29,6 +37,13 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
         }
     }
 
+    /**
+     * 批量插入盾牌记录（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     *
+     * @param shields 盾牌实体列表（非空）
+     */
     @Override
     public void batchInsert(List<Shield> shields) {
         String sql = "INSERT INTO shields (page_id, page_name, block) VALUES (?, ?, ?)";
@@ -52,6 +67,12 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询盾牌。
+     *
+     * @param pageId Wiki 页面 ID
+     * @return 盾牌实体（可能为空）
+     */
     @Override
     public Optional<Shield> findById(Integer pageId) {
         String sql = "SELECT * FROM shields WHERE page_id = ?";
@@ -66,6 +87,11 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部盾牌记录。
+     *
+     * @return 按 page_id 升序排列的盾牌列表
+     */
     @Override
     public List<Shield> findAll() {
         List<Shield> list = new ArrayList<>();
@@ -79,6 +105,11 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
         return list;
     }
 
+    /**
+     * 根据主键删除盾牌。
+     *
+     * @param pageId Wiki 页面 ID
+     */
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM shields WHERE page_id = ?";
@@ -90,6 +121,11 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
         }
     }
 
+    /**
+     * 统计盾牌记录总数。
+     *
+     * @return shields 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM shields";
@@ -102,12 +138,14 @@ public class ShieldDao implements CrudRepository<Shield, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 Shield 字段） */
     private void setParams(PreparedStatement ps, Shield s) throws SQLException {
         ps.setInt(1, s.getPageId());
         ps.setString(2, s.getPageName());
         ps.setInt(3, s.getBlock());
     }
 
+    /** 从 ResultSet 映射一行到 Shield 实体 */
     private Shield mapRow(ResultSet rs) throws SQLException {
         Shield s = new Shield();
         s.setPageId(rs.getInt("page_id"));

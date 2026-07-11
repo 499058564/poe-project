@@ -32,6 +32,14 @@ public class ItemDetail {
     /** PoE Wiki 页面 URL */
     private final String wikiUrl;
 
+    /**
+     * @param summary      物品摘要信息
+     * @param implicits    基底词缀列表
+     * @param requirements 属性需求映射（str/dex/int → 值）
+     * @param explicitMods 显式词缀行
+     * @param flavourText  装备背景文字
+     * @param wikiUrl      PoE Wiki 页面 URL
+     */
     public ItemDetail(ItemSummary summary, List<String> implicits,
                       Map<String, Integer> requirements, List<ModLine> explicitMods,
                       String flavourText, String wikiUrl) {

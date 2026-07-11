@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * map_series 表数据访问对象。
+ * <p>
+ * 表使用 page_id 作为主键，通过 page_name 与 base_items 表关联。
+ * 记录异界地图系列的名称、标识和排序序号。
  */
 public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
 
@@ -18,6 +21,11 @@ public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条地图系列记录。
+     *
+     * @param ms 地图系列实体
+     */
     @Override
     public void insert(MapSeries ms) {
         String sql = "INSERT INTO map_series (page_id, page_name, series_id, name, ordinal) VALUES (?, ?, ?, ?, ?)";
@@ -29,6 +37,13 @@ public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
         }
     }
 
+    /**
+     * 批量插入地图系列记录（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     *
+     * @param series 地图系列实体列表（非空）
+     */
     @Override
     public void batchInsert(List<MapSeries> series) {
         String sql = "INSERT INTO map_series (page_id, page_name, series_id, name, ordinal) VALUES (?, ?, ?, ?, ?)";
@@ -52,6 +67,12 @@ public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询地图系列。
+     *
+     * @param pageId Wiki 页面 ID
+     * @return 地图系列实体（可能为空）
+     */
     @Override
     public Optional<MapSeries> findById(Integer pageId) {
         String sql = "SELECT * FROM map_series WHERE page_id = ?";
@@ -66,6 +87,11 @@ public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部地图系列记录。
+     *
+     * @return 按 page_id 升序排列的地图系列列表
+     */
     @Override
     public List<MapSeries> findAll() {
         List<MapSeries> list = new ArrayList<>();
@@ -79,6 +105,11 @@ public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
         return list;
     }
 
+    /**
+     * 根据主键删除地图系列。
+     *
+     * @param pageId Wiki 页面 ID
+     */
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM map_series WHERE page_id = ?";
@@ -90,6 +121,11 @@ public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
         }
     }
 
+    /**
+     * 统计地图系列记录总数。
+     *
+     * @return map_series 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM map_series";
@@ -102,6 +138,7 @@ public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 MapSeries 字段） */
     private void setParams(PreparedStatement ps, MapSeries ms) throws SQLException {
         ps.setInt(1, ms.getPageId());
         ps.setString(2, ms.getPageName());
@@ -110,6 +147,7 @@ public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
         ps.setInt(5, ms.getOrdinal());
     }
 
+    /** 从 ResultSet 映射一行到 MapSeries 实体 */
     private MapSeries mapRow(ResultSet rs) throws SQLException {
         MapSeries ms = new MapSeries();
         ms.setPageId(rs.getInt("page_id"));

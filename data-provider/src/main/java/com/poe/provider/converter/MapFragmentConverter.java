@@ -8,6 +8,12 @@ import com.poe.cache.model.MapFragment;
  */
 public class MapFragmentConverter implements DataConverter<MapFragment> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 MapFragment 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 地图碎片实体，字段缺失时使用默认值 0
+     */
     @Override
     public MapFragment convert(JsonNode row) {
         MapFragment mf = new MapFragment();

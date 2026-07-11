@@ -6,8 +6,11 @@ package com.poe.cache.model;
  * 通过 _pageName 与 base_items 表关联。
  */
 public class MapFragment {
+    /** Wiki 页面 ID */
     private Integer pageId;
+    /** Wiki 页面名称（_pageName），关联 base_items */
     private String pageName;
+    /** 同种碎片一叠最大数量限制 */
     private int mapFragmentLimit;
 
     public MapFragment() {}

@@ -11,6 +11,12 @@ import com.poe.cache.model.Weapon;
  */
 public class WeaponConverter implements DataConverter<Weapon> {
 
+    /**
+     * 将 Cargo 单行 JSON 转换为 Weapon 实体。
+     *
+     * @param row Cargo 返回的 title 节点
+     * @return 武器实体，字段缺失时使用默认值（0 / 0.0）
+     */
     @Override
     public Weapon convert(JsonNode row) {
         Weapon w = new Weapon();
@@ -32,6 +38,7 @@ public class WeaponConverter implements DataConverter<Weapon> {
         return w;
     }
 
+    /** 安全解析 double 字段，空值或解析失败返回 0.0 */
     static double parseDoubleSafe(JsonNode node, String field) {
         String text = node.path(field).asText();
         if (text.isEmpty()) return 0.0;

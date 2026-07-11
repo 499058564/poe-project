@@ -259,12 +259,14 @@ public class DataSyncService {
 
     // ---- 数据库操作 ----
 
+    /** 清空目标表所有数据（DELETE，无 WHERE 条件）。 */
     private void clearTable(Connection conn, String tableName) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             stmt.executeUpdate("DELETE FROM " + tableName);
         }
     }
 
+    /** 根据 DAO 类型分发批量插入调用。 */
     @SuppressWarnings("unchecked")
     private void batchInsert(Connection conn, Object dao, List<Object> entities) throws SQLException {
         if (dao instanceof ItemDao) {
@@ -302,6 +304,7 @@ public class DataSyncService {
         }
     }
 
+    /** 查询本地表记录数，失败返回 -1（触发强制同步）。 */
     private int getLocalRecordCount(String tableName) {
         try {
             return getLocalRecordCount(dbManager.getConnection(), tableName);
@@ -311,6 +314,7 @@ public class DataSyncService {
         }
     }
 
+    /** 在给定连接上查询本地表记录数，表不存在时返回 -1。 */
     private int getLocalRecordCount(Connection conn, String tableName) {
         String sql = "SELECT COUNT(*) FROM " + tableName;
         try (Statement stmt = conn.createStatement();
@@ -322,6 +326,7 @@ public class DataSyncService {
         return -1;
     }
 
+    /** 写入或更新 data_version 表，记录同步时间与记录数。 */
     private void updateDataVersion(String tableName, int recordCount) {
         try {
             Connection conn = dbManager.getConnection();
@@ -354,6 +359,7 @@ public class DataSyncService {
 
     // ---- DAO / Converter 工厂 ----
 
+    /** 根据 Cargo 表名返回对应的 Converter 实例。 */
     @SuppressWarnings("unchecked")
     private static DataConverter<Object> getConverter(String cargoTable) {
         if ("items".equals(cargoTable)) {
@@ -390,6 +396,7 @@ public class DataSyncService {
         throw new IllegalArgumentException("No converter for: " + cargoTable);
     }
 
+    /** 根据 Cargo 表名创建对应的 DAO 实例。 */
     private static Object createDao(Connection conn, String cargoTable) {
         if ("items".equals(cargoTable)) {
             return new ItemDao(conn);

@@ -9,6 +9,9 @@ import java.util.Optional;
 
 /**
  * jewels 表数据访问对象。
+ * <p>
+ * 表使用 page_id 作为主键，通过 page_name 与 base_items 表关联。
+ * 记录珠宝的限制数量和影响范围 HTML。
  */
 public class JewelDao implements CrudRepository<Jewel, Integer> {
 
@@ -18,6 +21,11 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
         this.connection = connection;
     }
 
+    /**
+     * 插入单条珠宝记录。
+     *
+     * @param j 珠宝实体
+     */
     @Override
     public void insert(Jewel j) {
         String sql = "INSERT INTO jewels (page_id, page_name, jewel_limit, radius_html) VALUES (?, ?, ?, ?)";
@@ -29,6 +37,13 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
         }
     }
 
+    /**
+     * 批量插入珠宝记录（事务）。
+     * <p>
+     * 使用 JDBC batch + 事务保证原子性，失败自动回滚。
+     *
+     * @param jewels 珠宝实体列表（非空）
+     */
     @Override
     public void batchInsert(List<Jewel> jewels) {
         String sql = "INSERT INTO jewels (page_id, page_name, jewel_limit, radius_html) VALUES (?, ?, ?, ?)";
@@ -52,6 +67,12 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
         }
     }
 
+    /**
+     * 根据主键查询珠宝。
+     *
+     * @param pageId Wiki 页面 ID
+     * @return 珠宝实体（可能为空）
+     */
     @Override
     public Optional<Jewel> findById(Integer pageId) {
         String sql = "SELECT * FROM jewels WHERE page_id = ?";
@@ -66,6 +87,11 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
         return Optional.empty();
     }
 
+    /**
+     * 查询全部珠宝记录。
+     *
+     * @return 按 page_id 升序排列的珠宝列表
+     */
     @Override
     public List<Jewel> findAll() {
         List<Jewel> list = new ArrayList<>();
@@ -79,6 +105,11 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
         return list;
     }
 
+    /**
+     * 根据主键删除珠宝。
+     *
+     * @param pageId Wiki 页面 ID
+     */
     @Override
     public void deleteById(Integer pageId) {
         String sql = "DELETE FROM jewels WHERE page_id = ?";
@@ -90,6 +121,11 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
         }
     }
 
+    /**
+     * 统计珠宝记录总数。
+     *
+     * @return jewels 表行数
+     */
     @Override
     public int count() {
         String sql = "SELECT COUNT(*) FROM jewels";
@@ -102,6 +138,7 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
         return 0;
     }
 
+    /** 设置 PreparedStatement 参数（绑定 Jewel 字段） */
     private void setParams(PreparedStatement ps, Jewel j) throws SQLException {
         ps.setInt(1, j.getPageId());
         ps.setString(2, j.getPageName());
@@ -109,6 +146,7 @@ public class JewelDao implements CrudRepository<Jewel, Integer> {
         ps.setString(4, j.getRadiusHtml());
     }
 
+    /** 从 ResultSet 映射一行到 Jewel 实体 */
     private Jewel mapRow(ResultSet rs) throws SQLException {
         Jewel j = new Jewel();
         j.setPageId(rs.getInt("page_id"));
