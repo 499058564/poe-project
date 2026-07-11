@@ -38,8 +38,8 @@ class MigrationManagerTest {
         // 验证 schema_version 表存在
         assertTrue(tableExists("schema_version"));
 
-        // 验证 7 个迁移版本已记录
-        assertEquals(7, getMigrationCount());
+        // 验证 8 个迁移版本已记录
+        assertEquals(8, getMigrationCount());
 
         // 验证业务表已创建
         assertTrue(tableExists("base_items"));
@@ -49,6 +49,8 @@ class MigrationManagerTest {
         assertTrue(tableExists("data_version"));
         assertTrue(tableExists("translations"));
         assertTrue(tableExists("items_fts"));
+        assertTrue(tableExists("weapons"));
+        assertTrue(tableExists("armours"));
     }
 
     @Test
@@ -58,13 +60,13 @@ class MigrationManagerTest {
 
         // 首次运行
         mgr.migrate();
-        assertEquals(7, getMigrationCount());
+        assertEquals(8, getMigrationCount());
 
         // 二次运行
         mgr.migrate();
 
         // 版本数不变
-        assertEquals(7, getMigrationCount());
+        assertEquals(8, getMigrationCount());
     }
 
     @Test
@@ -77,9 +79,10 @@ class MigrationManagerTest {
         // 使用完整 MigrationManager 继续执行
         new MigrationManager(connection).migrate();
 
-        // 7 个迁移全部完成
-        assertEquals(7, getMigrationCount());
+        // 8 个迁移全部完成
+        assertEquals(8, getMigrationCount());
         assertTrue(tableExists("items_fts"), "v007 items_fts should be created");
+        assertTrue(tableExists("weapons"), "v008 weapons should be created");
     }
 
     @Test
@@ -107,9 +110,9 @@ class MigrationManagerTest {
 
         List<MigrationRecord> records = getMigrationRecords();
 
-        assertEquals(7, records.size());
+        assertEquals(8, records.size());
         assertEquals("v001_base_items.sql", records.get(0).description);
-        assertEquals("v007_items_fts.sql", records.get(6).description);
+        assertEquals("v008_equipment_subtables.sql", records.get(7).description);
         records.forEach(r -> assertNotNull(r.executedAt, "executed_at should not be null"));
     }
 
@@ -125,7 +128,7 @@ class MigrationManagerTest {
              ResultSet rs = stmt.executeQuery(
                  "SELECT COALESCE(MAX(version), 0) FROM schema_version")) {
             assertTrue(rs.next());
-            assertEquals(7, rs.getInt(1));
+            assertEquals(8, rs.getInt(1));
         } catch (SQLException e) {
             fail(e);
         }

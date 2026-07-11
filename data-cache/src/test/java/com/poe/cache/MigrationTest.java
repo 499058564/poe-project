@@ -25,6 +25,7 @@ class MigrationTest {
         "v005_data_version.sql",
         "v006_translations.sql",
         "v007_items_fts.sql",
+        "v008_equipment_subtables.sql",
     };
 
     /** 加载并执行所有迁移文件 */
@@ -57,11 +58,17 @@ class MigrationTest {
             // 验证 FTS 虚拟表
             assertTrue(tables.contains("items_fts"), "items_fts FTS table missing");
 
+            // 验证装备子表
+            assertTrue(tables.contains("weapons"), "weapons table missing");
+            assertTrue(tables.contains("armours"), "armours table missing");
+
             // 验证索引
             List<String> indices = listIndices(conn);
             assertTrue(indices.contains("idx_base_items_name"), "idx_base_items_name missing");
             assertTrue(indices.contains("idx_base_items_class"), "idx_base_items_class missing");
             assertTrue(indices.contains("idx_skill_gems_name"), "idx_skill_gems_name missing");
+            assertTrue(indices.contains("idx_weapons_page_name"), "idx_weapons_page_name missing");
+            assertTrue(indices.contains("idx_armours_page_name"), "idx_armours_page_name missing");
         }
     }
 

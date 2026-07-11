@@ -68,6 +68,32 @@ public class DataSyncService {
             "id,name,domain,generation_type,mod_groups,stat_text,"
             + "tags,required_level,mod_type,tier_text,"
             + "granted_buff_id,granted_buff_value,granted_skill"));
+        TABLE_CONFIGS.put("weapons", new TableConfig("weapons",
+            "attack_speed,critical_strike_chance,weapon_range,"
+            + "physical_damage_min,physical_damage_max,"
+            + "fire_damage_min,fire_damage_max,cold_damage_min,cold_damage_max,"
+            + "lightning_damage_min,lightning_damage_max,chaos_damage_min,chaos_damage_max"));
+        TABLE_CONFIGS.put("armours", new TableConfig("armours",
+            "armour_min,armour_max,evasion_min,evasion_max,"
+            + "energy_shield_min,energy_shield_max,ward_min,ward_max,movement_speed"));
+        TABLE_CONFIGS.put("shields", new TableConfig("shields", "block"));
+        TABLE_CONFIGS.put("amulets", new TableConfig("amulets",
+            "is_talisman,talisman_tier"));
+        TABLE_CONFIGS.put("flasks", new TableConfig("flasks",
+            "charges_max,charges_per_use,duration,life,mana"));
+        TABLE_CONFIGS.put("jewels", new TableConfig("jewels",
+            "jewel_limit,radius_html"));
+        TABLE_CONFIGS.put("stackables", new TableConfig("stackables",
+            "stack_size,stack_size_currency_tab"));
+        TABLE_CONFIGS.put("maps", new TableConfig("maps",
+            "area_id,area_level,guild_character,series,tier,"
+            + "unique_area_id,unique_area_level,unique_guild_character"));
+        TABLE_CONFIGS.put("map_fragments", new TableConfig("map_fragments",
+            "map_fragment_limit"));
+        TABLE_CONFIGS.put("map_series", new TableConfig("map_series",
+            "id,name,ordinal"));
+        TABLE_CONFIGS.put("divination_cards", new TableConfig("divination_cards",
+            "card_art,card_background"));
     }
 
     private final WikiApiClient wikiClient;
@@ -249,6 +275,28 @@ public class DataSyncService {
             ((PassiveSkillDao) dao).batchInsert((List<PassiveSkill>) (List<?>) entities);
         } else if (dao instanceof ModDao) {
             ((ModDao) dao).batchInsert((List<Mod>) (List<?>) entities);
+        } else if (dao instanceof WeaponDao) {
+            ((WeaponDao) dao).batchInsert((List<Weapon>) (List<?>) entities);
+        } else if (dao instanceof ArmourDao) {
+            ((ArmourDao) dao).batchInsert((List<Armour>) (List<?>) entities);
+        } else if (dao instanceof ShieldDao) {
+            ((ShieldDao) dao).batchInsert((List<Shield>) (List<?>) entities);
+        } else if (dao instanceof AmuletDao) {
+            ((AmuletDao) dao).batchInsert((List<Amulet>) (List<?>) entities);
+        } else if (dao instanceof FlaskDao) {
+            ((FlaskDao) dao).batchInsert((List<Flask>) (List<?>) entities);
+        } else if (dao instanceof JewelDao) {
+            ((JewelDao) dao).batchInsert((List<Jewel>) (List<?>) entities);
+        } else if (dao instanceof StackableDao) {
+            ((StackableDao) dao).batchInsert((List<Stackable>) (List<?>) entities);
+        } else if (dao instanceof MapDao) {
+            ((MapDao) dao).batchInsert((List<GameMap>) (List<?>) entities);
+        } else if (dao instanceof MapFragmentDao) {
+            ((MapFragmentDao) dao).batchInsert((List<MapFragment>) (List<?>) entities);
+        } else if (dao instanceof MapSeriesDao) {
+            ((MapSeriesDao) dao).batchInsert((List<MapSeries>) (List<?>) entities);
+        } else if (dao instanceof DivinationCardDao) {
+            ((DivinationCardDao) dao).batchInsert((List<DivinationCard>) (List<?>) entities);
         } else {
             throw new IllegalArgumentException("Unknown DAO: " + dao.getClass());
         }
@@ -316,6 +364,28 @@ public class DataSyncService {
             return (DataConverter<Object>) (DataConverter<?>) new PassiveSkillConverter();
         } else if ("mods".equals(cargoTable)) {
             return (DataConverter<Object>) (DataConverter<?>) new ModConverter();
+        } else if ("weapons".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new WeaponConverter();
+        } else if ("armours".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ArmourConverter();
+        } else if ("shields".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new ShieldConverter();
+        } else if ("amulets".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new AmuletConverter();
+        } else if ("flasks".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new FlaskConverter();
+        } else if ("jewels".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new JewelConverter();
+        } else if ("stackables".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new StackableConverter();
+        } else if ("maps".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MapConverter();
+        } else if ("map_fragments".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MapFragmentConverter();
+        } else if ("map_series".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MapSeriesConverter();
+        } else if ("divination_cards".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new DivinationCardConverter();
         }
         throw new IllegalArgumentException("No converter for: " + cargoTable);
     }
@@ -329,6 +399,28 @@ public class DataSyncService {
             return new PassiveSkillDao(conn);
         } else if ("mods".equals(cargoTable)) {
             return new ModDao(conn);
+        } else if ("weapons".equals(cargoTable)) {
+            return new WeaponDao(conn);
+        } else if ("armours".equals(cargoTable)) {
+            return new ArmourDao(conn);
+        } else if ("shields".equals(cargoTable)) {
+            return new ShieldDao(conn);
+        } else if ("amulets".equals(cargoTable)) {
+            return new AmuletDao(conn);
+        } else if ("flasks".equals(cargoTable)) {
+            return new FlaskDao(conn);
+        } else if ("jewels".equals(cargoTable)) {
+            return new JewelDao(conn);
+        } else if ("stackables".equals(cargoTable)) {
+            return new StackableDao(conn);
+        } else if ("maps".equals(cargoTable)) {
+            return new MapDao(conn);
+        } else if ("map_fragments".equals(cargoTable)) {
+            return new MapFragmentDao(conn);
+        } else if ("map_series".equals(cargoTable)) {
+            return new MapSeriesDao(conn);
+        } else if ("divination_cards".equals(cargoTable)) {
+            return new DivinationCardDao(conn);
         }
         throw new IllegalArgumentException("No DAO for: " + cargoTable);
     }

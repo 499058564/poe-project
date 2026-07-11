@@ -80,23 +80,29 @@ class DataSyncServiceTest {
     // ==================== 同步测试 ====================
 
     @Test
-    @DisplayName("全量同步 4 张核心表，数据应正确写入 SQLite")
+    @DisplayName("全量同步 15 张表，4 张核心表数据应正确写入 SQLite，其余跳过")
     void shouldSyncAllTablesAndInsertData() throws Exception {
-        // 为每张表设置 mock 响应
+        // 为 4 张核心表设置 mock 响应
         enqueueCargoResponse("items", 2, itemJson());
         enqueueCargoResponse("skill_gems", 1, skillGemJson());
         enqueueCargoResponse("passive_skills", 1, passiveSkillJson());
         enqueueCargoResponse("mods", 1, modJson());
+        // 其余 11 张表 count=0，自动跳过
+        enqueueEquipmentSubtableCountResponses();
 
         Map<String, SyncResult> results = syncService.syncAll();
 
-        assertEquals(4, results.size());
-        results.values().forEach(r -> {
-            assertFalse(r.isSkipped(), "Tables should not be skipped on first sync");
-            assertTrue(r.getSyncedRecords() > 0);
-        });
+        assertEquals(15, results.size());
+        // 核心表不应跳过
+        SyncResult itemsResult = results.get("items");
+        assertFalse(itemsResult.isSkipped(), "items should not be skipped");
+        assertTrue(itemsResult.getSyncedRecords() > 0);
+        // skill_gems, passive_skills, mods 同理
+        assertFalse(results.get("skill_gems").isSkipped());
+        assertFalse(results.get("passive_skills").isSkipped());
+        assertFalse(results.get("mods").isSkipped());
 
-        // 验证数据写入（不关闭共享连接，否则 :memory: 数据丢失）
+        // 验证数据写入
         Connection conn = DatabaseManager.getInstance().getConnection();
         try (Statement stmt = conn.createStatement()) {
 
@@ -173,12 +179,8 @@ class DataSyncServiceTest {
     @Test
     @DisplayName("hasUpdates 应在远程数据变化时返回 true")
     void shouldDetectRemoteUpdates() throws Exception {
-        // 本地 0 条，远程 10 条 → 有更新
-        enqueueCountResponse("items", 10);
-        enqueueCountResponse("skill_gems", 0);
-        enqueueCountResponse("passive_skills", 0);
-        enqueueCountResponse("mods", 0);
-
+        // items: 本地 0 条，远程 10 条 → 有更新
+        enqueueAllCountResponses(Map.of("items", 10));
         assertTrue(syncService.hasUpdates());
     }
 
@@ -189,26 +191,26 @@ class DataSyncServiceTest {
         enqueueCargoResponse("items", 5, itemJsonBatch(0, 5));
         syncService.syncTable("items");
 
-        // 再检查 — 为 hasUpdates() 的 4 个表各入队 COUNT 响应
-        enqueueCountResponse("items", 5);
-        enqueueCountResponse("skill_gems", 0);
-        enqueueCountResponse("passive_skills", 0);
-        enqueueCountResponse("mods", 0);
-
+        // 再检查 — 所有表 count=0（与本地一致）
+        enqueueAllCountResponses(Map.of());
         assertFalse(syncService.hasUpdates());
     }
 
     // ==================== 表验证 ====================
 
     @Test
-    @DisplayName("配置表数量应为 4 张核心表")
-    void shouldHaveFourCoreTables() {
+    @DisplayName("配置表数量应为 15 张表（4 核心 + 11 装备）")
+    void shouldHaveFifteenTables() throws Exception {
+        // 所有表 count=0，快速跳过
+        enqueueAllCountResponses(Map.of());
         Map<String, SyncResult> results = syncService.syncAll();
-        assertEquals(4, results.size());
+        assertEquals(15, results.size());
         assertTrue(results.containsKey("items"));
         assertTrue(results.containsKey("skill_gems"));
         assertTrue(results.containsKey("passive_skills"));
         assertTrue(results.containsKey("mods"));
+        assertTrue(results.containsKey("weapons"));
+        assertTrue(results.containsKey("divination_cards"));
     }
 
     // ==================== 断点续传 ====================
@@ -225,6 +227,8 @@ class DataSyncServiceTest {
         enqueueCargoResponse("skill_gems", 1, skillGemJson());
         enqueueCargoResponse("passive_skills", 1, passiveSkillJson());
         enqueueCargoResponse("mods", 1, modJson());
+        // 其余 11 张表 count=0
+        enqueueEquipmentSubtableCountResponses();
 
         Map<String, SyncResult> results = syncService.syncAll();
 
@@ -239,6 +243,32 @@ class DataSyncServiceTest {
     }
 
     // ==================== Helpers ====================
+
+    private static final String[] ALL_CARGO_TABLES = {
+        "items", "skill_gems", "passive_skills", "mods",
+        "weapons", "armours", "shields", "amulets", "flasks",
+        "jewels", "stackables", "maps", "map_fragments", "map_series", "divination_cards"
+    };
+
+    /**
+     * Enqueue count=0 responses for all 11 equipment subtables so they are skipped.
+     */
+    private void enqueueEquipmentSubtableCountResponses() {
+        String[] tables = {"weapons", "armours", "shields", "amulets", "flasks",
+            "jewels", "stackables", "maps", "map_fragments", "map_series", "divination_cards"};
+        for (String table : tables) {
+            enqueueCountResponse(table, 0);
+        }
+    }
+
+    /**
+     * Enqueue count responses for all 15 tables.
+     */
+    private void enqueueAllCountResponses(Map<String, Integer> counts) {
+        for (String table : ALL_CARGO_TABLES) {
+            enqueueCountResponse(table, counts.getOrDefault(table, 0));
+        }
+    }
 
     /**
      * 入队 Cargo 查询响应（含 COUNT 和 DATA 两个请求）。
