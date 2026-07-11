@@ -28,3 +28,11 @@ dependencies {
     // 日志实现
     runtimeOnly("ch.qos.logback:logback-classic:1.4.14")
 }
+
+// 确保 seed.db 被打包到 jar 资源中（如果存在）
+tasks.processResources {
+    val seedDb = rootProject.projectDir.resolve("app-ui/src/main/resources/seed.db")
+    if (seedDb.exists()) {
+        from(seedDb)
+    }
+}
