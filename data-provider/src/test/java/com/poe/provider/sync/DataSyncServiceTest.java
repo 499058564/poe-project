@@ -80,19 +80,19 @@ class DataSyncServiceTest {
     // ==================== 同步测试 ====================
 
     @Test
-    @DisplayName("全量同步 30 张表，4 张核心表数据应正确写入 SQLite，其余跳过")
+    @DisplayName("全量同步 41 张表，4 张核心表数据应正确写入 SQLite，其余跳过")
     void shouldSyncAllTablesAndInsertData() throws Exception {
         // 为 4 张核心表设置 mock 响应
         enqueueCargoResponse("items", 2, itemJson());
         enqueueCargoResponse("skill_gems", 1, skillGemJson());
         enqueueCargoResponse("passive_skills", 1, passiveSkillJson());
         enqueueCargoResponse("mods", 1, modJson());
-        // 其余 26 张表 count=0，自动跳过
+        // 其余 37 张表 count=0，自动跳过
         enqueueEquipmentSubtableCountResponses();
 
         Map<String, SyncResult> results = syncService.syncAll();
 
-        assertEquals(30, results.size());
+        assertEquals(41, results.size());
         // 核心表不应跳过
         SyncResult itemsResult = results.get("items");
         assertFalse(itemsResult.isSkipped(), "items should not be skipped");
@@ -199,12 +199,12 @@ class DataSyncServiceTest {
     // ==================== 表验证 ====================
 
     @Test
-    @DisplayName("配置表数量应为 30 张表（4 核心 + 11 装备 + 15 词缀/工艺/经济）")
+    @DisplayName("配置表数量应为 41 张表（4 核心 + 11 装备 + 15 词缀/工艺/经济 + 11 技能/天赋/职业）")
     void shouldHaveFifteenTables() throws Exception {
         // 所有表 count=0，快速跳过
         enqueueAllCountResponses(Map.of());
         Map<String, SyncResult> results = syncService.syncAll();
-        assertEquals(30, results.size());
+        assertEquals(41, results.size());
         assertTrue(results.containsKey("items"));
         assertTrue(results.containsKey("skill_gems"));
         assertTrue(results.containsKey("passive_skills"));
@@ -227,7 +227,7 @@ class DataSyncServiceTest {
         enqueueCargoResponse("skill_gems", 1, skillGemJson());
         enqueueCargoResponse("passive_skills", 1, passiveSkillJson());
         enqueueCargoResponse("mods", 1, modJson());
-        // 其余 26 张表 count=0
+        // 其余 37 张表 count=0
         enqueueEquipmentSubtableCountResponses();
 
         Map<String, SyncResult> results = syncService.syncAll();
@@ -251,7 +251,10 @@ class DataSyncServiceTest {
         "mod_stats", "mod_spawn_weights", "mod_generation_weights", "mod_sell_prices",
         "item_mods", "item_stats", "item_buffs",
         "crafting_bench_options", "crafting_bench_options_costs", "essences", "fossils", "fossil_weights",
-        "vendor_rewards", "item_sell_prices", "item_purchase_costs"
+        "vendor_rewards", "item_sell_prices", "item_purchase_costs",
+        "skill", "skill_levels", "skill_stats_per_level", "skill_quality", "skill_quality_stats", "gem_levels",
+        "passive_skill_connections", "mastery_effects", "mastery_groups",
+        "character_classes", "ascendancy_classes"
     };
 
     /**
@@ -263,7 +266,10 @@ class DataSyncServiceTest {
             "mod_stats", "mod_spawn_weights", "mod_generation_weights", "mod_sell_prices",
             "item_mods", "item_stats", "item_buffs",
             "crafting_bench_options", "crafting_bench_options_costs", "essences", "fossils", "fossil_weights",
-            "vendor_rewards", "item_sell_prices", "item_purchase_costs"};
+            "vendor_rewards", "item_sell_prices", "item_purchase_costs",
+            "skill", "skill_levels", "skill_stats_per_level", "skill_quality", "skill_quality_stats", "gem_levels",
+            "passive_skill_connections", "mastery_effects", "mastery_groups",
+            "character_classes", "ascendancy_classes"};
         for (String table : tables) {
             enqueueCountResponse(table, 0);
         }
