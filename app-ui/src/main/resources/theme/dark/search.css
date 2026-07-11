@@ -1,0 +1,193 @@
+/* ============================================================
+ * PoE Tool – Dark Theme – Search Page
+ * ItemSearchView component styles.
+ * ============================================================ */
+
+/* ---- Search Bar ---- */
+.search-bar {
+    -fx-padding: 10 16 8 16;
+    -fx-spacing: 8;
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2a2a4a;
+    -fx-border-width: 0 0 1 0;
+}
+
+.search-bar .text-field {
+    -fx-pref-width: 320;
+    -fx-pref-height: 32;
+}
+
+.search-bar .combo-box {
+    -fx-pref-width: 140;
+    -fx-pref-height: 32;
+    -fx-background-color: #30304b;
+    -fx-text-fill: #d0d0d0;
+}
+
+.search-bar .combo-box .list-cell {
+    -fx-text-fill: #d0d0d0;
+    -fx-background-color: #30304b;
+}
+
+.search-bar .combo-box .list-view {
+    -fx-background-color: #30304b;
+}
+
+.search-bar .combo-box .combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #565674;
+}
+
+.search-bar .combo-box > .arrow-button {
+    -fx-background-color: #353550;
+}
+
+.search-bar .combo-box > .arrow-button > .arrow {
+    -fx-background-color: #d4a853;
+}
+
+.search-btn {
+    -fx-pref-height: 32;
+    -fx-font-weight: bold;
+}
+
+/* ---- Result List ---- */
+.result-list {
+    -fx-background-color: #16213e;
+    -fx-border-color: transparent;
+}
+
+.result-cell {
+    -fx-background-color: #1a1a2e;
+    -fx-padding: 8 12 8 12;
+    -fx-border-color: #2a2a4a;
+    -fx-border-width: 0 0 1 0;
+}
+
+.result-cell:selected {
+    -fx-background-color: #3a3a5c;
+}
+
+.result-cell:hover {
+    -fx-background-color: #30305a;
+}
+
+.result-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.result-name-normal { -fx-text-fill: #c8c8c8; }
+.result-name-magic  { -fx-text-fill: #8888ff; }
+.result-name-rare   { -fx-text-fill: #ffff77; }
+.result-name-unique { -fx-text-fill: #af6025; }
+.result-name-gem    { -fx-text-fill: #1aa29b; }
+.result-name-currency { -fx-text-fill: #aa9e82; }
+
+.result-subtitle {
+    -fx-font-size: 11px;
+    -fx-text-fill: #888888;
+    -fx-font-style: italic;
+}
+
+.result-level {
+    -fx-font-size: 11px;
+    -fx-text-fill: #a0a0a0;
+}
+
+/* ---- Detail Panel ---- */
+.detail-panel {
+    -fx-padding: 16;
+    -fx-background-color: #16213e;
+    -fx-border-color: #2a2a4a;
+    -fx-border-width: 0 0 0 1;
+    -fx-spacing: 12;
+}
+
+.detail-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.detail-title-normal { -fx-text-fill: #c8c8c8; }
+.detail-title-magic  { -fx-text-fill: #8888ff; }
+.detail-title-rare   { -fx-text-fill: #ffff77; }
+.detail-title-unique { -fx-text-fill: #af6025; }
+
+.detail-section-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #d4a853;
+    -fx-padding: 8 0 4 0;
+}
+
+.detail-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #c0c0c0;
+}
+
+.detail-flavour {
+    -fx-font-size: 12px;
+    -fx-text-fill: #af6025;
+    -fx-font-style: italic;
+    -fx-padding: 8 0 0 0;
+}
+
+.detail-class {
+    -fx-font-size: 12px;
+    -fx-text-fill: #a0a0a0;
+}
+
+.detail-req-grid {
+    -fx-hgap: 16;
+    -fx-vgap: 4;
+}
+
+.detail-req-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #c0c0c0;
+}
+
+.detail-req-value {
+    -fx-font-size: 12px;
+    -fx-text-fill: #8888ff;
+}
+
+.detail-implicit {
+    -fx-font-size: 12px;
+    -fx-text-fill: #8888ff;
+    -fx-padding: 2 0 2 0;
+}
+
+/* ---- Pagination Bar ---- */
+.pagination-bar {
+    -fx-padding: 8 16 8 16;
+    -fx-alignment: CENTER;
+    -fx-spacing: 12;
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2a2a4a;
+    -fx-border-width: 1 0 0 0;
+}
+
+.pagination-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #a0a0a0;
+}
+
+/* ---- Status Messages ---- */
+.search-status {
+    -fx-font-size: 14px;
+    -fx-text-fill: #888888;
+    -fx-padding: 40;
+}
+
+.search-status-error {
+    -fx-font-size: 14px;
+    -fx-text-fill: #ff6666;
+    -fx-padding: 40;
+}
+
+/* ---- Loading ---- */
+.search-loading {
+    -fx-padding: 40;
+}

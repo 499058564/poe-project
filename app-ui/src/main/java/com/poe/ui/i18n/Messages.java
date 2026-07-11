@@ -22,6 +22,7 @@ public final class Messages {
         "i18n/nav",
         "i18n/status",
         "i18n/placeholder",
+        "i18n/search",
     };
 
     /** 对应 BUNDLE_NAMES 加载的 ResourceBundle 实例 */

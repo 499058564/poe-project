@@ -4,6 +4,7 @@ import com.poe.ui.constants.StyleClasses;
 import com.poe.ui.enums.PageDefEnum;
 import com.poe.ui.i18n.Messages;
 import com.poe.ui.i18n.keys.PlaceholderKeys;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * 多标签内容区。
@@ -22,6 +24,7 @@ import java.util.Map;
  *   <li>关闭 Tab 时自动清理缓存。</li>
  * </ul>
  * 页面定义由外部通过构造参数注入（{@link PageDefEnum}）。
+ * 可选设置 {@link #setPageFactory(Function)} 为特定 pageId 提供真实页面节点。
  */
 public class ContentArea extends TabPane {
 
@@ -30,6 +33,9 @@ public class ContentArea extends TabPane {
 
     /** 已打开的标签页（保持插入顺序） */
     private final Map<String, Tab> tabMap = new LinkedHashMap<>();
+
+    /** 页面工厂：pageId → content Node，null 时使用占位页 */
+    private Function<String, Node> pageFactory;
 
     private static final Logger log = LoggerFactory.getLogger(ContentArea.class);
 
@@ -42,6 +48,16 @@ public class ContentArea extends TabPane {
         this.pageDefs = pageDefs;
         getStyleClass().add(StyleClasses.CONTENT_AREA);
         setTabClosingPolicy(TabClosingPolicy.ALL_TABS);
+    }
+
+    /**
+     * 设置页面工厂，用于为特定 pageId 提供真实页面节点。
+     * 未设置工厂或工厂返回 null 的页面回退到占位页。
+     *
+     * @param pageFactory pageId → content Node 映射函数
+     */
+    public void setPageFactory(Function<String, Node> pageFactory) {
+        this.pageFactory = pageFactory;
     }
 
     /**
@@ -66,7 +82,8 @@ public class ContentArea extends TabPane {
 
         log.debug("Open new tab: {}", pageId);
         String title = resolveTitle(pageId);
-        Tab tab = new Tab(title, createPlaceholder(pageId));
+        Node content = createContent(pageId);
+        Tab tab = new Tab(title, content);
 
         tab.setOnCloseRequest(e -> {
             log.debug("Close tab: {}", pageId);
@@ -101,6 +118,17 @@ public class ContentArea extends TabPane {
             }
         }
         return pageId;
+    }
+
+    /** 根据 pageId 创建页面内容：优先使用工厂，否则回退到占位页。 */
+    private Node createContent(String pageId) {
+        if (pageFactory != null) {
+            Node node = pageFactory.apply(pageId);
+            if (node != null) {
+                return node;
+            }
+        }
+        return createPlaceholder(pageId);
     }
 
     private StackPane createPlaceholder(String pageId) {

@@ -1,10 +1,10 @@
 plugins {
-    java
+    `java-library`
 }
 
 dependencies {
-    implementation(project(":common"))
-    implementation(project(":data-cache"))
+    api(project(":common"))
+    api(project(":data-cache"))
 
     // Guava EventBus (for app-core orchestration)
     implementation("com.google.guava:guava:33.0.0-jre")

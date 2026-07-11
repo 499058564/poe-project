@@ -18,6 +18,7 @@ application {
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":app-core"))
 
     // JavaFX 主题库
     implementation("io.github.mkpaz:atlantafx-base:2.0.1")
@@ -27,6 +28,9 @@ dependencies {
 
     // 日志实现
     runtimeOnly("ch.qos.logback:logback-classic:1.4.14")
+
+    // 测试依赖
+    testImplementation("org.testfx:testfx-junit5:4.0.18")
 }
 
 // 确保 seed.db 被打包到 jar 资源中（如果存在）

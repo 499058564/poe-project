@@ -1,5 +1,11 @@
 package com.poe.ui.window;
 
+import com.poe.cache.dao.ItemDao;
+import com.poe.cache.dao.SearchDao;
+import com.poe.cache.dao.TranslationDao;
+import com.poe.cache.manager.DatabaseManager;
+import com.poe.core.service.ItemSearchService;
+import com.poe.core.service.TranslationService;
 import com.poe.ui.components.ContentArea;
 import com.poe.ui.components.Sidebar;
 import com.poe.ui.components.StatusBar;
@@ -8,6 +14,7 @@ import com.poe.ui.constants.PageIds;
 import com.poe.ui.enums.PageDefEnum;
 import com.poe.ui.i18n.Messages;
 import com.poe.ui.i18n.keys.AppKeys;
+import com.poe.ui.page.ItemSearchView;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
@@ -17,7 +24,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 应用主窗口。
  * 组合 Sidebar + ContentArea + StatusBar 三大区域，
- * 负责导航回调、默认页面打开与场景创建。
+ * 负责导航回调、默认页面打开、服务初始化与场景创建。
  */
 public class MainWindow {
 
@@ -51,8 +58,26 @@ public class MainWindow {
         stage.setMinHeight(LayoutConstants.WINDOW_MIN_HEIGHT);
         stage.centerOnScreen();
 
+        // Initialize backend services
+        ItemSearchService searchService = initializeServices();
+
         sidebar = new Sidebar(PageDefEnum.values());
         contentArea = new ContentArea(PageDefEnum.values());
+
+        // Wire page factory — map page IDs to real pages
+        contentArea.setPageFactory(pageId -> {
+            switch (pageId) {
+                case PageIds.ITEM_BASE:
+                    return new ItemSearchView(searchService);
+                case PageIds.ITEM_UNIQUE:
+                    return new ItemSearchView(searchService);
+                case PageIds.ITEM_CURRENCY:
+                    return new ItemSearchView(searchService);
+                default:
+                    return null; // fall back to placeholder
+            }
+        });
+
         statusBar = new StatusBar();
 
         // 导航回调：侧边栏点击 → 内容区打开对应 Tab
@@ -75,6 +100,31 @@ public class MainWindow {
         this.scene = new Scene(root);
         stage.setScene(scene);
         log.debug("Main window scene initialized");
+    }
+
+    /**
+     * Initialize backend services: DatabaseManager, DAOs, TranslationService, ItemSearchService.
+     *
+     * @return initialized ItemSearchService
+     */
+    private ItemSearchService initializeServices() {
+        try {
+            DatabaseManager dbManager = DatabaseManager.getInstance();
+            // Trigger connection to ensure DB is initialized
+            var conn = dbManager.getConnection();
+
+            TranslationDao translationDao = new TranslationDao(conn);
+            TranslationService translationService = new TranslationService(translationDao);
+
+            SearchDao searchDao = new SearchDao(conn);
+            ItemDao itemDao = new ItemDao(conn);
+
+            log.info("Backend services initialized successfully");
+            return new ItemSearchService(searchDao, itemDao, translationService);
+        } catch (Exception e) {
+            log.error("Failed to initialize backend services", e);
+            return null;
+        }
     }
 
     /**
