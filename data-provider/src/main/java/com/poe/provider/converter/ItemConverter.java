@@ -81,6 +81,17 @@ public class ItemConverter implements DataConverter<Item> {
         return "1".equals(text) || "true".equalsIgnoreCase(text);
     }
 
+    /** 安全解析 double 字段，空值或解析失败返回 0.0 */
+    static double parseDoubleSafe(JsonNode node, String field) {
+        String text = node.path(field).asText();
+        if (text.isEmpty()) return 0.0;
+        try {
+            return Double.parseDouble(text);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
+    }
+
     /** 读取文本字段，空字符串返回 null */
     static String nullableText(JsonNode node, String field) {
         String text = node.path(field).asText();

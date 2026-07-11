@@ -95,6 +95,45 @@ public class DataSyncService {
         TABLE_CONFIGS.put("divination_cards", new TableConfig("divination_cards",
             "card_art,card_background"));
 
+        // ---- 怪物 ----
+        TABLE_CONFIGS.put("monsters", new TableConfig("monsters",
+            "attack_speed,critical_strike_chance,damage_multiplier,endgame_mod_ids,"
+            + "experience_multiplier,health_multiplier,is_boss,maximum_attack_distance,"
+            + "metadata_id,minimum_attack_distance,mod_ids,model_size_multiplier,"
+            + "monster_type_id,name,part1_mod_ids,part2_mod_ids,rarity,rarity_id,"
+            + "size,skill_ids,tags"));
+        TABLE_CONFIGS.put("monster_types", new TableConfig("monster_types",
+            "armour_multiplier,damage_spread,energy_shield_multiplier,"
+            + "evasion_multiplier,id,monster_resistance_id,tags"));
+        TABLE_CONFIGS.put("monster_base_stats", new TableConfig("monster_base_stats",
+            "accuracy,armour,damage,evasion,experience,level,life,summon_life"));
+        TABLE_CONFIGS.put("monster_life_scaling", new TableConfig("monster_life_scaling",
+            "level,magic,rare"));
+        TABLE_CONFIGS.put("monster_map_multipliers", new TableConfig("monster_map_multipliers",
+            "boss_damage,boss_item_quantity,boss_item_rarity,boss_life,damage,level,life"));
+        TABLE_CONFIGS.put("monster_resistances", new TableConfig("monster_resistances",
+            "id,maps_chaos,maps_cold,maps_fire,maps_lightning,"
+            + "part1_chaos,part1_cold,part1_fire,part1_lightning,"
+            + "part2_chaos,part2_cold,part2_fire,part2_lightning"));
+        // ---- 区域 ----
+        TABLE_CONFIGS.put("areas", new TableConfig("areas",
+            "act,area_level,area_type_tags,boss_monster_ids,connection_ids,"
+            + "entry_npc,entry_text,flavour_text,has_waypoint,id,infobox_html,"
+            + "is_hideout_area,is_labyrinth_airlock_area,is_labyrinth_area,"
+            + "is_labyrinth_boss_area,is_legacy_map_area,is_map_area,is_town_area,"
+            + "is_unique_map_area,is_vaal_area,level_restriction_max,loading_screen,"
+            + "main_page,mainpage_categories,modifier_ids,monster_ids,name,"
+            + "parent_area_id,release_version,removal_version,screenshot,stat_text,"
+            + "strongbox_max_count,strongbox_spawn_chance,strongbox_weight_magic,"
+            + "strongbox_weight_normal,strongbox_weight_rare,strongbox_weight_unique,"
+            + "tags,vaal_area_ids,vaal_area_spawn_chance"));
+        // ---- 异界图鉴 ----
+        TABLE_CONFIGS.put("atlas_nodes", new TableConfig("atlas_nodes",
+            "area_id,connections,div_cards,id,is_off_atlas,"
+            + "region_connections_0,region_connections_1,region_connections_2,"
+            + "region_connections_3,region_connections_4,region_id,region_minimum,"
+            + "series_id,tier_0,tier_1,tier_2,tier_3,tier_4"));
+
         // ---- 词缀子表 ----
         TABLE_CONFIGS.put("mod_stats", new TableConfig("mod_stats",
             "id,min,max"));
@@ -433,6 +472,22 @@ public class DataSyncService {
             ((CharacterClassDao) dao).batchInsert((List<CharacterClass>) (List<?>) entities);
         } else if (dao instanceof AscendancyClassDao) {
             ((AscendancyClassDao) dao).batchInsert((List<AscendancyClass>) (List<?>) entities);
+        } else if (dao instanceof MonsterDao) {
+            ((MonsterDao) dao).batchInsert((List<Monster>) (List<?>) entities);
+        } else if (dao instanceof MonsterTypeDao) {
+            ((MonsterTypeDao) dao).batchInsert((List<MonsterType>) (List<?>) entities);
+        } else if (dao instanceof MonsterBaseStatDao) {
+            ((MonsterBaseStatDao) dao).batchInsert((List<MonsterBaseStat>) (List<?>) entities);
+        } else if (dao instanceof MonsterLifeScalingDao) {
+            ((MonsterLifeScalingDao) dao).batchInsert((List<MonsterLifeScaling>) (List<?>) entities);
+        } else if (dao instanceof MonsterMapMultiplierDao) {
+            ((MonsterMapMultiplierDao) dao).batchInsert((List<MonsterMapMultiplier>) (List<?>) entities);
+        } else if (dao instanceof MonsterResistanceDao) {
+            ((MonsterResistanceDao) dao).batchInsert((List<MonsterResistance>) (List<?>) entities);
+        } else if (dao instanceof AreaDao) {
+            ((AreaDao) dao).batchInsert((List<Area>) (List<?>) entities);
+        } else if (dao instanceof AtlasNodeDao) {
+            ((AtlasNodeDao) dao).batchInsert((List<AtlasNode>) (List<?>) entities);
         } else {
             throw new IllegalArgumentException("Unknown DAO: " + dao.getClass());
         }
@@ -578,6 +633,22 @@ public class DataSyncService {
             return (DataConverter<Object>) (DataConverter<?>) new CharacterClassConverter();
         } else if ("ascendancy_classes".equals(cargoTable)) {
             return (DataConverter<Object>) (DataConverter<?>) new AscendancyClassConverter();
+        } else if ("monsters".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MonsterConverter();
+        } else if ("monster_types".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MonsterTypeConverter();
+        } else if ("monster_base_stats".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MonsterBaseStatConverter();
+        } else if ("monster_life_scaling".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MonsterLifeScalingConverter();
+        } else if ("monster_map_multipliers".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MonsterMapMultiplierConverter();
+        } else if ("monster_resistances".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new MonsterResistanceConverter();
+        } else if ("areas".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new AreaConverter();
+        } else if ("atlas_nodes".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new AtlasNodeConverter();
         }
         throw new IllegalArgumentException("No converter for: " + cargoTable);
     }
@@ -666,6 +737,22 @@ public class DataSyncService {
             return new CharacterClassDao(conn);
         } else if ("ascendancy_classes".equals(cargoTable)) {
             return new AscendancyClassDao(conn);
+        } else if ("monsters".equals(cargoTable)) {
+            return new MonsterDao(conn);
+        } else if ("monster_types".equals(cargoTable)) {
+            return new MonsterTypeDao(conn);
+        } else if ("monster_base_stats".equals(cargoTable)) {
+            return new MonsterBaseStatDao(conn);
+        } else if ("monster_life_scaling".equals(cargoTable)) {
+            return new MonsterLifeScalingDao(conn);
+        } else if ("monster_map_multipliers".equals(cargoTable)) {
+            return new MonsterMapMultiplierDao(conn);
+        } else if ("monster_resistances".equals(cargoTable)) {
+            return new MonsterResistanceDao(conn);
+        } else if ("areas".equals(cargoTable)) {
+            return new AreaDao(conn);
+        } else if ("atlas_nodes".equals(cargoTable)) {
+            return new AtlasNodeDao(conn);
         }
         throw new IllegalArgumentException("No DAO for: " + cargoTable);
     }
