@@ -38,8 +38,8 @@ class MigrationManagerTest {
         // 验证 schema_version 表存在
         assertTrue(tableExists("schema_version"));
 
-        // 验证 11 个迁移版本已记录
-        assertEquals(11, getMigrationCount());
+        // 验证 12 个迁移版本已记录
+        assertEquals(12, getMigrationCount());
 
         // 验证业务表已创建
         assertTrue(tableExists("base_items"));
@@ -60,13 +60,13 @@ class MigrationManagerTest {
 
         // 首次运行
         mgr.migrate();
-        assertEquals(11, getMigrationCount());
+        assertEquals(12, getMigrationCount());
 
         // 二次运行
         mgr.migrate();
 
         // 版本数不变
-        assertEquals(11, getMigrationCount());
+        assertEquals(12, getMigrationCount());
     }
 
     @Test
@@ -79,8 +79,8 @@ class MigrationManagerTest {
         // 使用完整 MigrationManager 继续执行
         new MigrationManager(connection).migrate();
 
-        // 11 个迁移全部完成
-        assertEquals(11, getMigrationCount());
+        // 12 个迁移全部完成
+        assertEquals(12, getMigrationCount());
         assertTrue(tableExists("items_fts"), "v007 items_fts should be created");
         assertTrue(tableExists("weapons"), "v008 weapons should be created");
     }
@@ -110,9 +110,9 @@ class MigrationManagerTest {
 
         List<MigrationRecord> records = getMigrationRecords();
 
-        assertEquals(11, records.size());
+        assertEquals(12, records.size());
         assertEquals("v001_base_items.sql", records.get(0).description);
-        assertEquals("v011_monster_world_atlas.sql", records.get(10).description);
+        assertEquals("v012_league_mechanics.sql", records.get(11).description);
         records.forEach(r -> assertNotNull(r.executedAt, "executed_at should not be null"));
     }
 
@@ -128,7 +128,7 @@ class MigrationManagerTest {
              ResultSet rs = stmt.executeQuery(
                  "SELECT COALESCE(MAX(version), 0) FROM schema_version")) {
             assertTrue(rs.next());
-            assertEquals(11, rs.getInt(1));
+            assertEquals(12, rs.getInt(1));
         } catch (SQLException e) {
             fail(e);
         }

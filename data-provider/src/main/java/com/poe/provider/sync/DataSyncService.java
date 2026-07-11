@@ -134,6 +134,82 @@ public class DataSyncService {
             + "region_connections_3,region_connections_4,region_id,region_minimum,"
             + "series_id,tier_0,tier_1,tier_2,tier_3,tier_4"));
 
+        // ---- Delve ----
+        TABLE_CONFIGS.put("delve_level_scaling", new TableConfig("delve_level_scaling",
+            "darkness_resistance,depth,light_radius,monster_damage,"
+            + "monster_level,monster_life,sulphite_cost"));
+        TABLE_CONFIGS.put("delve_resources_per_level", new TableConfig("delve_resources_per_level",
+            "area_level,sulphite"));
+        TABLE_CONFIGS.put("delve_upgrades", new TableConfig("delve_upgrades",
+            "cost,level,type"));
+        TABLE_CONFIGS.put("delve_upgrade_stats", new TableConfig("delve_upgrade_stats",
+            "id,level,type,value"));
+
+        // ---- Heist ----
+        TABLE_CONFIGS.put("heist_areas", new TableConfig("heist_areas",
+            "area_ids,blueprint_id,contract_id,id,job_ids,reward_text"));
+        TABLE_CONFIGS.put("heist_jobs", new TableConfig("heist_jobs",
+            "id,name"));
+        TABLE_CONFIGS.put("heist_npcs", new TableConfig("heist_npcs",
+            "id,job_id,name,stat_text"));
+        TABLE_CONFIGS.put("heist_npc_skills", new TableConfig("heist_npc_skills",
+            "job_id,level,npc_id"));
+        TABLE_CONFIGS.put("heist_npc_stats", new TableConfig("heist_npc_stats",
+            "npc_id,stat_id,value"));
+        TABLE_CONFIGS.put("heist_equipment", new TableConfig("heist_equipment",
+            "required_job_id,required_job_level"));
+
+        // ---- Blight ----
+        TABLE_CONFIGS.put("blight_crafting_recipes", new TableConfig("blight_crafting_recipes",
+            "id,modifier_id,passive_id,type"));
+        TABLE_CONFIGS.put("blight_crafting_recipes_items", new TableConfig("blight_crafting_recipes_items",
+            "item_id,ordinal,recipe_id"));
+        TABLE_CONFIGS.put("blight_items", new TableConfig("blight_items",
+            "tier"));
+        TABLE_CONFIGS.put("blight_towers", new TableConfig("blight_towers",
+            "cost,description,icon,id,name,radius,tier"));
+
+        // ---- Harvest ----
+        TABLE_CONFIGS.put("harvest_crafting_options", new TableConfig("harvest_crafting_options",
+            "cost_primal,cost_rancour,cost_sacred,cost_vivid,cost_wild,"
+            + "effect,effect_html,id,ordinal"));
+        TABLE_CONFIGS.put("harvest_plant_boosters", new TableConfig("harvest_plant_boosters",
+            "additional_crafting_options,extra_chances,lifeforce,radius"));
+        TABLE_CONFIGS.put("harvest_seeds", new TableConfig("harvest_seeds",
+            "consumed_primal_lifeforce_percentage,consumed_vivid_lifeforce_percentage,"
+            + "consumed_wild_lifeforce_percentage,effect,granted_craft_option_ids,"
+            + "growth_cycles,required_nearby_seed_amount,required_nearby_seed_tier,"
+            + "tier,type,type_id"));
+
+        // ---- Synthesis ----
+        TABLE_CONFIGS.put("synthesis_areas", new TableConfig("synthesis_areas",
+            "id,max_level,min_level,name,size,weight"));
+        TABLE_CONFIGS.put("synthesis_corrupted_mods", new TableConfig("synthesis_corrupted_mods",
+            "item_class_id,mod_ids"));
+        TABLE_CONFIGS.put("synthesis_global_mods", new TableConfig("synthesis_global_mods",
+            "max_level,min_level,mod_id,weight"));
+        TABLE_CONFIGS.put("synthesis_mods", new TableConfig("synthesis_mods",
+            "item_class_ids,mod_ids,stat_id,stat_text,stat_value"));
+
+        // ---- Bestiary ----
+        TABLE_CONFIGS.put("bestiary_recipes", new TableConfig("bestiary_recipes",
+            "game_mode,header,id,notes,subheader"));
+        TABLE_CONFIGS.put("bestiary_recipe_components", new TableConfig("bestiary_recipe_components",
+            "amount,component_id,recipe_id"));
+
+        // ---- Incursion ----
+        TABLE_CONFIGS.put("incursion_rooms", new TableConfig("incursion_rooms",
+            "architect_metadata_id,architect_name,description,flavour_text,"
+            + "icon,id,min_level,modifier_ids,name,stat_text,tier,upgrade_room_id"));
+
+        // ---- Pantheon ----
+        TABLE_CONFIGS.put("pantheon", new TableConfig("pantheon",
+            "id,is_major_god"));
+        TABLE_CONFIGS.put("pantheon_souls", new TableConfig("pantheon_souls",
+            "id,item_id,name,ordinal,stat_text,target_area_id,target_monster_id"));
+        TABLE_CONFIGS.put("pantheon_stats", new TableConfig("pantheon_stats",
+            "id,ordinal,pantheon_id,pantheon_ordinal,value"));
+
         // ---- 词缀子表 ----
         TABLE_CONFIGS.put("mod_stats", new TableConfig("mod_stats",
             "id,min,max"));
@@ -488,6 +564,60 @@ public class DataSyncService {
             ((AreaDao) dao).batchInsert((List<Area>) (List<?>) entities);
         } else if (dao instanceof AtlasNodeDao) {
             ((AtlasNodeDao) dao).batchInsert((List<AtlasNode>) (List<?>) entities);
+        } else if (dao instanceof DelveLevelScalingDao) {
+            ((DelveLevelScalingDao) dao).batchInsert((List<DelveLevelScaling>) (List<?>) entities);
+        } else if (dao instanceof DelveResourcesPerLevelDao) {
+            ((DelveResourcesPerLevelDao) dao).batchInsert((List<DelveResourcesPerLevel>) (List<?>) entities);
+        } else if (dao instanceof DelveUpgradesDao) {
+            ((DelveUpgradesDao) dao).batchInsert((List<DelveUpgrades>) (List<?>) entities);
+        } else if (dao instanceof DelveUpgradeStatsDao) {
+            ((DelveUpgradeStatsDao) dao).batchInsert((List<DelveUpgradeStats>) (List<?>) entities);
+        } else if (dao instanceof HeistAreasDao) {
+            ((HeistAreasDao) dao).batchInsert((List<HeistAreas>) (List<?>) entities);
+        } else if (dao instanceof HeistJobsDao) {
+            ((HeistJobsDao) dao).batchInsert((List<HeistJobs>) (List<?>) entities);
+        } else if (dao instanceof HeistNpcsDao) {
+            ((HeistNpcsDao) dao).batchInsert((List<HeistNpcs>) (List<?>) entities);
+        } else if (dao instanceof HeistNpcSkillsDao) {
+            ((HeistNpcSkillsDao) dao).batchInsert((List<HeistNpcSkills>) (List<?>) entities);
+        } else if (dao instanceof HeistNpcStatsDao) {
+            ((HeistNpcStatsDao) dao).batchInsert((List<HeistNpcStats>) (List<?>) entities);
+        } else if (dao instanceof HeistEquipmentDao) {
+            ((HeistEquipmentDao) dao).batchInsert((List<HeistEquipment>) (List<?>) entities);
+        } else if (dao instanceof BlightCraftingRecipesDao) {
+            ((BlightCraftingRecipesDao) dao).batchInsert((List<BlightCraftingRecipes>) (List<?>) entities);
+        } else if (dao instanceof BlightCraftingRecipesItemsDao) {
+            ((BlightCraftingRecipesItemsDao) dao).batchInsert((List<BlightCraftingRecipesItems>) (List<?>) entities);
+        } else if (dao instanceof BlightItemsDao) {
+            ((BlightItemsDao) dao).batchInsert((List<BlightItems>) (List<?>) entities);
+        } else if (dao instanceof BlightTowersDao) {
+            ((BlightTowersDao) dao).batchInsert((List<BlightTowers>) (List<?>) entities);
+        } else if (dao instanceof HarvestCraftingOptionsDao) {
+            ((HarvestCraftingOptionsDao) dao).batchInsert((List<HarvestCraftingOptions>) (List<?>) entities);
+        } else if (dao instanceof HarvestPlantBoostersDao) {
+            ((HarvestPlantBoostersDao) dao).batchInsert((List<HarvestPlantBoosters>) (List<?>) entities);
+        } else if (dao instanceof HarvestSeedsDao) {
+            ((HarvestSeedsDao) dao).batchInsert((List<HarvestSeeds>) (List<?>) entities);
+        } else if (dao instanceof SynthesisAreasDao) {
+            ((SynthesisAreasDao) dao).batchInsert((List<SynthesisAreas>) (List<?>) entities);
+        } else if (dao instanceof SynthesisCorruptedModsDao) {
+            ((SynthesisCorruptedModsDao) dao).batchInsert((List<SynthesisCorruptedMods>) (List<?>) entities);
+        } else if (dao instanceof SynthesisGlobalModsDao) {
+            ((SynthesisGlobalModsDao) dao).batchInsert((List<SynthesisGlobalMods>) (List<?>) entities);
+        } else if (dao instanceof SynthesisModsDao) {
+            ((SynthesisModsDao) dao).batchInsert((List<SynthesisMods>) (List<?>) entities);
+        } else if (dao instanceof BestiaryRecipesDao) {
+            ((BestiaryRecipesDao) dao).batchInsert((List<BestiaryRecipes>) (List<?>) entities);
+        } else if (dao instanceof BestiaryRecipeComponentsDao) {
+            ((BestiaryRecipeComponentsDao) dao).batchInsert((List<BestiaryRecipeComponents>) (List<?>) entities);
+        } else if (dao instanceof IncursionRoomsDao) {
+            ((IncursionRoomsDao) dao).batchInsert((List<IncursionRooms>) (List<?>) entities);
+        } else if (dao instanceof PantheonDao) {
+            ((PantheonDao) dao).batchInsert((List<Pantheon>) (List<?>) entities);
+        } else if (dao instanceof PantheonSoulsDao) {
+            ((PantheonSoulsDao) dao).batchInsert((List<PantheonSouls>) (List<?>) entities);
+        } else if (dao instanceof PantheonStatsDao) {
+            ((PantheonStatsDao) dao).batchInsert((List<PantheonStats>) (List<?>) entities);
         } else {
             throw new IllegalArgumentException("Unknown DAO: " + dao.getClass());
         }
@@ -649,6 +779,60 @@ public class DataSyncService {
             return (DataConverter<Object>) (DataConverter<?>) new AreaConverter();
         } else if ("atlas_nodes".equals(cargoTable)) {
             return (DataConverter<Object>) (DataConverter<?>) new AtlasNodeConverter();
+        } else if ("delve_level_scaling".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new DelveLevelScalingConverter();
+        } else if ("delve_resources_per_level".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new DelveResourcesPerLevelConverter();
+        } else if ("delve_upgrades".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new DelveUpgradesConverter();
+        } else if ("delve_upgrade_stats".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new DelveUpgradeStatsConverter();
+        } else if ("heist_areas".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HeistAreasConverter();
+        } else if ("heist_jobs".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HeistJobsConverter();
+        } else if ("heist_npcs".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HeistNpcsConverter();
+        } else if ("heist_npc_skills".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HeistNpcSkillsConverter();
+        } else if ("heist_npc_stats".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HeistNpcStatsConverter();
+        } else if ("heist_equipment".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HeistEquipmentConverter();
+        } else if ("blight_crafting_recipes".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new BlightCraftingRecipesConverter();
+        } else if ("blight_crafting_recipes_items".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new BlightCraftingRecipesItemsConverter();
+        } else if ("blight_items".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new BlightItemsConverter();
+        } else if ("blight_towers".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new BlightTowersConverter();
+        } else if ("harvest_crafting_options".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HarvestCraftingOptionsConverter();
+        } else if ("harvest_plant_boosters".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HarvestPlantBoostersConverter();
+        } else if ("harvest_seeds".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new HarvestSeedsConverter();
+        } else if ("synthesis_areas".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SynthesisAreasConverter();
+        } else if ("synthesis_corrupted_mods".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SynthesisCorruptedModsConverter();
+        } else if ("synthesis_global_mods".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SynthesisGlobalModsConverter();
+        } else if ("synthesis_mods".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new SynthesisModsConverter();
+        } else if ("bestiary_recipes".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new BestiaryRecipesConverter();
+        } else if ("bestiary_recipe_components".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new BestiaryRecipeComponentsConverter();
+        } else if ("incursion_rooms".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new IncursionRoomsConverter();
+        } else if ("pantheon".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new PantheonConverter();
+        } else if ("pantheon_souls".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new PantheonSoulsConverter();
+        } else if ("pantheon_stats".equals(cargoTable)) {
+            return (DataConverter<Object>) (DataConverter<?>) new PantheonStatsConverter();
         }
         throw new IllegalArgumentException("No converter for: " + cargoTable);
     }
@@ -753,6 +937,60 @@ public class DataSyncService {
             return new AreaDao(conn);
         } else if ("atlas_nodes".equals(cargoTable)) {
             return new AtlasNodeDao(conn);
+        } else if ("delve_level_scaling".equals(cargoTable)) {
+            return new DelveLevelScalingDao(conn);
+        } else if ("delve_resources_per_level".equals(cargoTable)) {
+            return new DelveResourcesPerLevelDao(conn);
+        } else if ("delve_upgrades".equals(cargoTable)) {
+            return new DelveUpgradesDao(conn);
+        } else if ("delve_upgrade_stats".equals(cargoTable)) {
+            return new DelveUpgradeStatsDao(conn);
+        } else if ("heist_areas".equals(cargoTable)) {
+            return new HeistAreasDao(conn);
+        } else if ("heist_jobs".equals(cargoTable)) {
+            return new HeistJobsDao(conn);
+        } else if ("heist_npcs".equals(cargoTable)) {
+            return new HeistNpcsDao(conn);
+        } else if ("heist_npc_skills".equals(cargoTable)) {
+            return new HeistNpcSkillsDao(conn);
+        } else if ("heist_npc_stats".equals(cargoTable)) {
+            return new HeistNpcStatsDao(conn);
+        } else if ("heist_equipment".equals(cargoTable)) {
+            return new HeistEquipmentDao(conn);
+        } else if ("blight_crafting_recipes".equals(cargoTable)) {
+            return new BlightCraftingRecipesDao(conn);
+        } else if ("blight_crafting_recipes_items".equals(cargoTable)) {
+            return new BlightCraftingRecipesItemsDao(conn);
+        } else if ("blight_items".equals(cargoTable)) {
+            return new BlightItemsDao(conn);
+        } else if ("blight_towers".equals(cargoTable)) {
+            return new BlightTowersDao(conn);
+        } else if ("harvest_crafting_options".equals(cargoTable)) {
+            return new HarvestCraftingOptionsDao(conn);
+        } else if ("harvest_plant_boosters".equals(cargoTable)) {
+            return new HarvestPlantBoostersDao(conn);
+        } else if ("harvest_seeds".equals(cargoTable)) {
+            return new HarvestSeedsDao(conn);
+        } else if ("synthesis_areas".equals(cargoTable)) {
+            return new SynthesisAreasDao(conn);
+        } else if ("synthesis_corrupted_mods".equals(cargoTable)) {
+            return new SynthesisCorruptedModsDao(conn);
+        } else if ("synthesis_global_mods".equals(cargoTable)) {
+            return new SynthesisGlobalModsDao(conn);
+        } else if ("synthesis_mods".equals(cargoTable)) {
+            return new SynthesisModsDao(conn);
+        } else if ("bestiary_recipes".equals(cargoTable)) {
+            return new BestiaryRecipesDao(conn);
+        } else if ("bestiary_recipe_components".equals(cargoTable)) {
+            return new BestiaryRecipeComponentsDao(conn);
+        } else if ("incursion_rooms".equals(cargoTable)) {
+            return new IncursionRoomsDao(conn);
+        } else if ("pantheon".equals(cargoTable)) {
+            return new PantheonDao(conn);
+        } else if ("pantheon_souls".equals(cargoTable)) {
+            return new PantheonSoulsDao(conn);
+        } else if ("pantheon_stats".equals(cargoTable)) {
+            return new PantheonStatsDao(conn);
         }
         throw new IllegalArgumentException("No DAO for: " + cargoTable);
     }
