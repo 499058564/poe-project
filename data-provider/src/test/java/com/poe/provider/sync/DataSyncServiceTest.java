@@ -87,12 +87,12 @@ class DataSyncServiceTest {
         enqueueCargoResponse("skill_gems", 1, skillGemJson());
         enqueueCargoResponse("passive_skills", 1, passiveSkillJson());
         enqueueCargoResponse("mods", 1, modJson());
-        // 其余 45 张表 count=0，自动跳过
+        // 其余 72 张表 count=0，自动跳过
         enqueueEquipmentSubtableCountResponses();
 
         Map<String, SyncResult> results = syncService.syncAll();
 
-        assertEquals(49, results.size());
+        assertEquals(76, results.size());
         // 核心表不应跳过
         SyncResult itemsResult = results.get("items");
         assertFalse(itemsResult.isSkipped(), "items should not be skipped");
@@ -199,12 +199,12 @@ class DataSyncServiceTest {
     // ==================== 表验证 ====================
 
     @Test
-    @DisplayName("配置表数量应为 49 张表（4 核心 + 11 装备 + 15 词缀/工艺/经济 + 11 技能/天赋/职业 + 8 怪物/区域/异界）")
+    @DisplayName("配置表数量应为 76 张表（4 核心 + 11 装备 + 15 词缀/工艺/经济 + 11 技能/天赋/职业 + 8 怪物/区域/异界 + 27 联盟机制）")
     void shouldHaveFifteenTables() throws Exception {
         // 所有表 count=0，快速跳过
         enqueueAllCountResponses(Map.of());
         Map<String, SyncResult> results = syncService.syncAll();
-        assertEquals(49, results.size());
+        assertEquals(76, results.size());
         assertTrue(results.containsKey("items"));
         assertTrue(results.containsKey("skill_gems"));
         assertTrue(results.containsKey("passive_skills"));
@@ -227,7 +227,7 @@ class DataSyncServiceTest {
         enqueueCargoResponse("skill_gems", 1, skillGemJson());
         enqueueCargoResponse("passive_skills", 1, passiveSkillJson());
         enqueueCargoResponse("mods", 1, modJson());
-        // 其余 45 张表 count=0
+        // 其余 72 张表 count=0
         enqueueEquipmentSubtableCountResponses();
 
         Map<String, SyncResult> results = syncService.syncAll();
@@ -256,7 +256,15 @@ class DataSyncServiceTest {
         "passive_skill_connections", "mastery_effects", "mastery_groups",
         "character_classes", "ascendancy_classes",
         "monsters", "monster_types", "monster_base_stats", "monster_life_scaling",
-        "monster_map_multipliers", "monster_resistances", "areas", "atlas_nodes"
+        "monster_map_multipliers", "monster_resistances", "areas", "atlas_nodes",
+        "delve_level_scaling", "delve_resources_per_level", "delve_upgrades", "delve_upgrade_stats",
+        "heist_areas", "heist_jobs", "heist_npcs", "heist_npc_skills", "heist_npc_stats", "heist_equipment",
+        "blight_crafting_recipes", "blight_crafting_recipes_items", "blight_items", "blight_towers",
+        "harvest_crafting_options", "harvest_plant_boosters", "harvest_seeds",
+        "synthesis_areas", "synthesis_corrupted_mods", "synthesis_global_mods", "synthesis_mods",
+        "bestiary_recipes", "bestiary_recipe_components",
+        "incursion_rooms",
+        "pantheon", "pantheon_souls", "pantheon_stats"
     };
 
     /**
@@ -273,7 +281,15 @@ class DataSyncServiceTest {
             "passive_skill_connections", "mastery_effects", "mastery_groups",
             "character_classes", "ascendancy_classes",
             "monsters", "monster_types", "monster_base_stats", "monster_life_scaling",
-            "monster_map_multipliers", "monster_resistances", "areas", "atlas_nodes"};
+            "monster_map_multipliers", "monster_resistances", "areas", "atlas_nodes",
+            "delve_level_scaling", "delve_resources_per_level", "delve_upgrades", "delve_upgrade_stats",
+            "heist_areas", "heist_jobs", "heist_npcs", "heist_npc_skills", "heist_npc_stats", "heist_equipment",
+            "blight_crafting_recipes", "blight_crafting_recipes_items", "blight_items", "blight_towers",
+            "harvest_crafting_options", "harvest_plant_boosters", "harvest_seeds",
+            "synthesis_areas", "synthesis_corrupted_mods", "synthesis_global_mods", "synthesis_mods",
+            "bestiary_recipes", "bestiary_recipe_components",
+            "incursion_rooms",
+            "pantheon", "pantheon_souls", "pantheon_stats"};
         for (String table : tables) {
             enqueueCountResponse(table, 0);
         }
