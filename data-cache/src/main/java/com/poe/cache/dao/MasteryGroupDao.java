@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.MasteryGroup;
 
 import java.sql.*;
@@ -14,9 +15,9 @@ import java.util.Optional;
  */
 public class MasteryGroupDao implements CrudRepository<MasteryGroup, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public MasteryGroupDao(javax.sql.DataSource dataSource) {
+    public MasteryGroupDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

@@ -33,17 +33,7 @@ class DataSyncServiceTest {
         mockServer = new MockWebServer();
         mockServer.start();
 
-        // 配置 DatabaseManager 使用内存数据库
-        DatabaseManager.testMode = true;
-        DatabaseManager.testDbPath = ":memory:";
         DatabaseManager.reset();
-
-        // 初始化表结构
-        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
-            // migration runs automatically on first getConnection()
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
 
         // 使用 MockWebServer 地址的 WikiApiClient
         OkHttpClient httpClient = new OkHttpClient.Builder()

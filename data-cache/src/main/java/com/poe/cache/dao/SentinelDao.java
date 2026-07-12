@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Sentinel;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class SentinelDao implements CrudRepository<Sentinel, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public SentinelDao(javax.sql.DataSource dataSource) {
+    public SentinelDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

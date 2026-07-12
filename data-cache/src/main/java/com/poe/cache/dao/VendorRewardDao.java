@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.VendorReward;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class VendorRewardDao implements CrudRepository<VendorReward, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public VendorRewardDao(javax.sql.DataSource dataSource) {
+    public VendorRewardDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

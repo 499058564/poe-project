@@ -61,8 +61,6 @@ public class TranslationService {
         this.translationDao = translationDao;
     }
 
-    // ── 翻译查询 ──
-
     /**
      * 单条翻译。优先级：自定义翻译 → DB → 原文。
      *

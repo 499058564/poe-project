@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Guide;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class GuideDao implements CrudRepository<Guide, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public GuideDao(javax.sql.DataSource dataSource) {
+    public GuideDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

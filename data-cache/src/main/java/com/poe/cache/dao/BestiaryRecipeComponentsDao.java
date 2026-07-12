@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.BestiaryRecipeComponents;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class BestiaryRecipeComponentsDao implements CrudRepository<BestiaryRecipeComponents, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public BestiaryRecipeComponentsDao(javax.sql.DataSource dataSource) {
+    public BestiaryRecipeComponentsDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

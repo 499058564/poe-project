@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.MasteryEffect;
 
 import java.sql.*;
@@ -14,9 +15,9 @@ import java.util.Optional;
  */
 public class MasteryEffectDao implements CrudRepository<MasteryEffect, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public MasteryEffectDao(javax.sql.DataSource dataSource) {
+    public MasteryEffectDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

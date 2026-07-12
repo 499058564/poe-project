@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.PantheonStats;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class PantheonStatsDao implements CrudRepository<PantheonStats, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public PantheonStatsDao(javax.sql.DataSource dataSource) {
+    public PantheonStatsDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

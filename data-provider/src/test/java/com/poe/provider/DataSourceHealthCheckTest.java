@@ -30,11 +30,6 @@ class DataSourceHealthCheckTest {
     private GggApiClient gggClient;
     private PoeNinjaClient ninjaClient;
 
-    @BeforeAll
-    static void setUpMode() {
-        DatabaseManager.testMode = true;
-    }
-
     @BeforeEach
     void setUp() throws IOException {
         mockGgg = new MockWebServer();
@@ -57,7 +52,6 @@ class DataSourceHealthCheckTest {
             Paths.get("nonexistent_pob_path"));
 
         DatabaseManager.reset();
-        DatabaseManager.testDbPath = ":memory:";
 
         healthCheck = new DataSourceHealthCheck(
             gggClient, ninjaClient, pobExtractor,
@@ -68,13 +62,6 @@ class DataSourceHealthCheckTest {
     void tearDown() throws IOException {
         mockGgg.shutdown();
         mockNinja.shutdown();
-    }
-
-    @AfterAll
-    static void tearDownMode() {
-        DatabaseManager.reset();
-        DatabaseManager.testMode = false;
-        DatabaseManager.testDbPath = null;
     }
 
     // ==================== checkAll() ====================

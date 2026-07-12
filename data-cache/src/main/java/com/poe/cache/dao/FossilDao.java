@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Fossil;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class FossilDao implements CrudRepository<Fossil, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public FossilDao(javax.sql.DataSource dataSource) {
+    public FossilDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

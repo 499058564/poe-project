@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.CosmeticItem;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class CosmeticItemDao implements CrudRepository<CosmeticItem, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public CosmeticItemDao(javax.sql.DataSource dataSource) {
+    public CosmeticItemDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

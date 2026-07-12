@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Stackable;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class StackableDao implements CrudRepository<Stackable, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public StackableDao(javax.sql.DataSource dataSource) {
+    public StackableDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Weapon;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class WeaponDao implements CrudRepository<Weapon, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public WeaponDao(javax.sql.DataSource dataSource) {
+    public WeaponDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

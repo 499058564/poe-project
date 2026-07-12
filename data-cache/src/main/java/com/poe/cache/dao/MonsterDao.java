@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Monster;
 
 import java.sql.*;
@@ -14,9 +15,9 @@ import java.util.Optional;
  */
 public class MonsterDao implements CrudRepository<Monster, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public MonsterDao(javax.sql.DataSource dataSource) {
+    public MonsterDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

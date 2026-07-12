@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.HarvestCraftingOptions;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class HarvestCraftingOptionsDao implements CrudRepository<HarvestCraftingOptions, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public HarvestCraftingOptionsDao(javax.sql.DataSource dataSource) {
+    public HarvestCraftingOptionsDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

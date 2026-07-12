@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Mod;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class ModDao implements CrudRepository<Mod, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public ModDao(javax.sql.DataSource dataSource) {
+    public ModDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.HeistNpcStats;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class HeistNpcStatsDao implements CrudRepository<HeistNpcStats, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public HeistNpcStatsDao(javax.sql.DataSource dataSource) {
+    public HeistNpcStatsDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

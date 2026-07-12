@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.ItemSellPrice;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class ItemSellPriceDao implements CrudRepository<ItemSellPrice, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public ItemSellPriceDao(javax.sql.DataSource dataSource) {
+    public ItemSellPriceDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

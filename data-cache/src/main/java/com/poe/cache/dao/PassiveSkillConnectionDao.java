@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.PassiveSkillConnection;
 
 import java.sql.*;
@@ -14,9 +15,9 @@ import java.util.Optional;
  */
 public class PassiveSkillConnectionDao implements CrudRepository<PassiveSkillConnection, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public PassiveSkillConnectionDao(javax.sql.DataSource dataSource) {
+    public PassiveSkillConnectionDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

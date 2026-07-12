@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.MonsterLifeScaling;
 
 import java.sql.*;
@@ -14,9 +15,9 @@ import java.util.Optional;
  */
 public class MonsterLifeScalingDao implements CrudRepository<MonsterLifeScaling, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public MonsterLifeScalingDao(javax.sql.DataSource dataSource) {
+    public MonsterLifeScalingDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

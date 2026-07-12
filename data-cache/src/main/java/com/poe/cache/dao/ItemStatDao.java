@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.ItemStat;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class ItemStatDao implements CrudRepository<ItemStat, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public ItemStatDao(javax.sql.DataSource dataSource) {
+    public ItemStatDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

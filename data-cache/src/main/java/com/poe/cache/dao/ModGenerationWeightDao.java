@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.ModGenerationWeight;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class ModGenerationWeightDao implements CrudRepository<ModGenerationWeight, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public ModGenerationWeightDao(javax.sql.DataSource dataSource) {
+    public ModGenerationWeightDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

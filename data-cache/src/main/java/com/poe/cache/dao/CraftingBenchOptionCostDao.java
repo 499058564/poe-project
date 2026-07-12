@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.CraftingBenchOptionCost;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class CraftingBenchOptionCostDao implements CrudRepository<CraftingBenchOptionCost, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public CraftingBenchOptionCostDao(javax.sql.DataSource dataSource) {
+    public CraftingBenchOptionCostDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

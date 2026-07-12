@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.ItemBuff;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class ItemBuffDao implements CrudRepository<ItemBuff, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public ItemBuffDao(javax.sql.DataSource dataSource) {
+    public ItemBuffDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

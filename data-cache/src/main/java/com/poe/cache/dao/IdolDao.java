@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Idol;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class IdolDao implements CrudRepository<Idol, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public IdolDao(javax.sql.DataSource dataSource) {
+    public IdolDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

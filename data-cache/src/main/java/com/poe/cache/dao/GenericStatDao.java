@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.GenericStat;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class GenericStatDao implements CrudRepository<GenericStat, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public GenericStatDao(javax.sql.DataSource dataSource) {
+    public GenericStatDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

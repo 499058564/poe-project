@@ -26,11 +26,6 @@ class VersionDetectorTest {
     private VersionDetector detector;
     private GggApiClient gggClient;
 
-    @BeforeAll
-    static void setUpMode() {
-        DatabaseManager.testMode = true;
-    }
-
     @BeforeEach
     void setUp() throws IOException {
         mockServer = new MockWebServer();
@@ -45,20 +40,12 @@ class VersionDetectorTest {
             mockServer.url("/").toString());
 
         DatabaseManager.reset();
-        DatabaseManager.testDbPath = ":memory:";
         detector = new VersionDetector(gggClient, DatabaseManager.getInstance());
     }
 
     @AfterEach
     void tearDown() throws IOException {
         mockServer.shutdown();
-    }
-
-    @AfterAll
-    static void tearDownMode() {
-        DatabaseManager.reset();
-        DatabaseManager.testMode = false;
-        DatabaseManager.testDbPath = null;
     }
 
     // ==================== GGG API 检测 ====================

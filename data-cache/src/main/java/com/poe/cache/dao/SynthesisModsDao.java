@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.SynthesisMods;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class SynthesisModsDao implements CrudRepository<SynthesisMods, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public SynthesisModsDao(javax.sql.DataSource dataSource) {
+    public SynthesisModsDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

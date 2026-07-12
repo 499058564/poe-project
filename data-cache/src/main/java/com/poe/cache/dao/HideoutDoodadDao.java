@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.HideoutDoodad;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class HideoutDoodadDao implements CrudRepository<HideoutDoodad, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public HideoutDoodadDao(javax.sql.DataSource dataSource) {
+    public HideoutDoodadDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

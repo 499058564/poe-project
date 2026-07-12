@@ -13,23 +13,10 @@ class DataCoordinatorTest {
 
     private DataCoordinator coordinator;
 
-    @BeforeAll
-    static void setUpMode() {
-        DatabaseManager.testMode = true;
-    }
-
     @BeforeEach
     void setUp() {
         DatabaseManager.reset();
-        DatabaseManager.testDbPath = ":memory:";
         coordinator = new DataCoordinator(DatabaseManager.getInstance());
-    }
-
-    @AfterAll
-    static void tearDownMode() {
-        DatabaseManager.reset();
-        DatabaseManager.testMode = false;
-        DatabaseManager.testDbPath = null;
     }
 
     // ==================== 表分类 ====================

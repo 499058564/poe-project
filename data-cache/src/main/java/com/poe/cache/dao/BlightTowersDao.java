@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.BlightTowers;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class BlightTowersDao implements CrudRepository<BlightTowers, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public BlightTowersDao(javax.sql.DataSource dataSource) {
+    public BlightTowersDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.BlightCraftingRecipes;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class BlightCraftingRecipesDao implements CrudRepository<BlightCraftingRecipes, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public BlightCraftingRecipesDao(javax.sql.DataSource dataSource) {
+    public BlightCraftingRecipesDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

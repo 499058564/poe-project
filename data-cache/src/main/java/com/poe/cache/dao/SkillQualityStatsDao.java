@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.SkillQualityStats;
 
 import java.sql.*;
@@ -14,9 +15,9 @@ import java.util.Optional;
  */
 public class SkillQualityStatsDao implements CrudRepository<SkillQualityStats, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public SkillQualityStatsDao(javax.sql.DataSource dataSource) {
+    public SkillQualityStatsDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

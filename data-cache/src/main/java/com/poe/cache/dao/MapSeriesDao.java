@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.MapSeries;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class MapSeriesDao implements CrudRepository<MapSeries, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public MapSeriesDao(javax.sql.DataSource dataSource) {
+    public MapSeriesDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

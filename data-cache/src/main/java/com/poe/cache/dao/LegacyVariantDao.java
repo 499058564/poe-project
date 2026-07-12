@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.LegacyVariant;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class LegacyVariantDao implements CrudRepository<LegacyVariant, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public LegacyVariantDao(javax.sql.DataSource dataSource) {
+    public LegacyVariantDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.CorpseItem;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class CorpseItemDao implements CrudRepository<CorpseItem, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public CorpseItemDao(javax.sql.DataSource dataSource) {
+    public CorpseItemDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

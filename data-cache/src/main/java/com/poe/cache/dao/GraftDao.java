@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Graft;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class GraftDao implements CrudRepository<Graft, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public GraftDao(javax.sql.DataSource dataSource) {
+    public GraftDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Amulet;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class AmuletDao implements CrudRepository<Amulet, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public AmuletDao(javax.sql.DataSource dataSource) {
+    public AmuletDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

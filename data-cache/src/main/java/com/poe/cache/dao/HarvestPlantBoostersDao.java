@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.HarvestPlantBoosters;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class HarvestPlantBoostersDao implements CrudRepository<HarvestPlantBoosters, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public HarvestPlantBoostersDao(javax.sql.DataSource dataSource) {
+    public HarvestPlantBoostersDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.ItemMod;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class ItemModDao implements CrudRepository<ItemMod, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public ItemModDao(javax.sql.DataSource dataSource) {
+    public ItemModDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

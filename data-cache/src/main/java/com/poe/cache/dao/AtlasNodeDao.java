@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.AtlasNode;
 
 import java.sql.*;
@@ -14,9 +15,9 @@ import java.util.Optional;
  */
 public class AtlasNodeDao implements CrudRepository<AtlasNode, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public AtlasNodeDao(javax.sql.DataSource dataSource) {
+    public AtlasNodeDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

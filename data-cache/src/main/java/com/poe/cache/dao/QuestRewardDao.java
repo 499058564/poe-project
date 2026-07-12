@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.QuestReward;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class QuestRewardDao implements CrudRepository<QuestReward, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public QuestRewardDao(javax.sql.DataSource dataSource) {
+    public QuestRewardDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

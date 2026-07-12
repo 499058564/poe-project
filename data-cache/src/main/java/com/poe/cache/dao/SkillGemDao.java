@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.SkillGem;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class SkillGemDao implements CrudRepository<SkillGem, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public SkillGemDao(javax.sql.DataSource dataSource) {
+    public SkillGemDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

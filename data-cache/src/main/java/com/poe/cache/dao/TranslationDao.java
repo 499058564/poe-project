@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 
@@ -11,9 +12,9 @@ import java.util.*;
  */
 public class TranslationDao {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public TranslationDao(javax.sql.DataSource dataSource) {
+    public TranslationDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

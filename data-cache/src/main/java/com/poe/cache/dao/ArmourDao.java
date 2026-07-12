@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Armour;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class ArmourDao implements CrudRepository<Armour, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public ArmourDao(javax.sql.DataSource dataSource) {
+    public ArmourDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

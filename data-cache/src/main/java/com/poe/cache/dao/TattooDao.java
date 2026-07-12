@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Tattoo;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class TattooDao implements CrudRepository<Tattoo, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public TattooDao(javax.sql.DataSource dataSource) {
+    public TattooDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

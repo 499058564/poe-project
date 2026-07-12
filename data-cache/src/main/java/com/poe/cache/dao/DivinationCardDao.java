@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.DivinationCard;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class DivinationCardDao implements CrudRepository<DivinationCard, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public DivinationCardDao(javax.sql.DataSource dataSource) {
+    public DivinationCardDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

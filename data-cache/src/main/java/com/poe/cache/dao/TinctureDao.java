@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Tincture;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class TinctureDao implements CrudRepository<Tincture, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public TinctureDao(javax.sql.DataSource dataSource) {
+    public TinctureDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

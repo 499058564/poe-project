@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.GameMap;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class MapDao implements CrudRepository<GameMap, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public MapDao(javax.sql.DataSource dataSource) {
+    public MapDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

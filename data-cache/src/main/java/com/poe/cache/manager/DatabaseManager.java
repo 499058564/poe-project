@@ -16,7 +16,8 @@ import java.sql.SQLException;
  * 连接池配置：最大 5 个连接，WAL 模式，支持并发读。
  * 内存数据库模式自动降级为单连接池（{@code file::memory:?cache=shared}）。
  * <p>
- * 通过 {@link #testMode} / {@link #testDbPath} 支持测试时注入内存数据库。
+ * 自动检测 JUnit 测试环境（Gradle / Maven / IDE），检测到时默认使用内存数据库。
+ * 通过 {@link #testMode} / {@link #testDbPath} 支持手动覆盖测试数据库配置。
  * 通过 {@link #DatabaseManager(String)} 构造函数支持自定义路径（如 SeedDbBuilder）。
  */
 public class DatabaseManager {
@@ -35,9 +36,13 @@ public class DatabaseManager {
     private final String dbPath;
     private final Object poolLock = new Object();
 
-    // 测试模式：设为 true 后 getConnection() 使用 testDbPath 而非默认磁盘路径
+    // 测试模式：设为 true 后 getConnection() 使用 testDbPath 而非默认磁盘路径。
+    // 保留为手动覆盖项，通常不需要设置——框架会自动检测测试环境并使用内存数据库。
     public static volatile boolean testMode = false;
     public static String testDbPath = null;
+
+    /** 自动检测结果缓存，延迟初始化。 */
+    private static Boolean autoTestDetected = null;
 
     private DatabaseManager() {
         this.dbPath = DB_PATH;
@@ -123,17 +128,55 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * 自动检测当前是否运行在测试环境中。
+     * <p>检测顺序：Gradle test worker 属性 → Maven Surefire 属性 → JUnit 堆栈。
+     * 结果缓存，全局仅计算一次。
+     */
+    private static synchronized boolean isTestEnvironment() {
+        if (autoTestDetected == null) {
+            if (System.getProperty("org.gradle.test.worker") != null) {
+                autoTestDetected = true;
+            } else if (System.getProperty("surefire.test.class.path") != null) {
+                autoTestDetected = true;
+            } else {
+                for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+                    if (e.getClassName().startsWith("org.junit.")) {
+                        autoTestDetected = true;
+                        break;
+                    }
+                }
+                if (autoTestDetected == null) {
+                    autoTestDetected = false;
+                }
+            }
+        }
+        return autoTestDetected;
+    }
+
     private boolean isInMemory() {
-        String path = testMode && testDbPath != null ? testDbPath : dbPath;
-        return ":memory:".equals(path);
+        // 手动 testMode + testDbPath 优先
+        if (testMode && testDbPath != null) {
+            return ":memory:".equals(testDbPath);
+        }
+        // 自动检测到测试环境时默认使用内存数据库
+        if (isTestEnvironment()) {
+            return true;
+        }
+        return ":memory:".equals(dbPath);
     }
 
     private String getDbUrl() {
+        // 手动 testMode + testDbPath 优先
         if (testMode && testDbPath != null) {
             if (":memory:".equals(testDbPath)) {
                 return "jdbc:sqlite:file::memory:?cache=shared";
             }
             return "jdbc:sqlite:" + testDbPath;
+        }
+        // 自动检测到测试环境时默认使用内存数据库
+        if (isTestEnvironment()) {
+            return "jdbc:sqlite:file::memory:?cache=shared";
         }
         return "jdbc:sqlite:" + dbPath;
     }

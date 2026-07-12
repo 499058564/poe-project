@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Flask;
 
 import java.sql.*;
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public class FlaskDao implements CrudRepository<Flask, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public FlaskDao(javax.sql.DataSource dataSource) {
+    public FlaskDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

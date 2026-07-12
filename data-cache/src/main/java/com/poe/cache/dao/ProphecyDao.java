@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.Prophecy;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class ProphecyDao implements CrudRepository<Prophecy, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public ProphecyDao(javax.sql.DataSource dataSource) {
+    public ProphecyDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

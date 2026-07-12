@@ -1,5 +1,6 @@
 package com.poe.cache.dao;
 
+import javax.sql.DataSource;
 import com.poe.cache.model.DelveUpgradeStats;
 
 import java.sql.*;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class DelveUpgradeStatsDao implements CrudRepository<DelveUpgradeStats, Integer> {
 
-    private final javax.sql.DataSource dataSource;
+    private final DataSource dataSource;
 
-    public DelveUpgradeStatsDao(javax.sql.DataSource dataSource) {
+    public DelveUpgradeStatsDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
