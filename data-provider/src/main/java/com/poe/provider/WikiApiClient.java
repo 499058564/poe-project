@@ -23,8 +23,9 @@ import java.time.Duration;
  *
  * <h3>限流与重试</h3>
  * <ul>
- *   <li>请求速率限制为 5 req/s（通过 Guava {@link RateLimiter} 实现）</li>
- *   <li>请求失败时自动重试最多 3 次，采用指数退避（1s → 2s → 4s）</li>
+ *   <li>请求速率限制为 2 req/s（通过 Guava {@link RateLimiter} 实现）</li>
+ *   <li>请求失败时自动重试最多 3 次，普通错误退避 1s→2s→4s</li>
+ *   <li>Cloudflare 429 限流使用更激进的退避：5s→15s→45s</li>
  *   <li>连接超时 10 秒，读取超时 30 秒</li>
  * </ul>
  */
@@ -38,8 +39,11 @@ public class WikiApiClient {
     /** 最大重试次数。 */
     private static final int MAX_RETRIES = 3;
 
-    /** 指数退避延迟（毫秒）：1s, 2s, 4s。 */
+    /** 普通错误退避延迟（毫秒）：1s, 2s, 4s。 */
     private static final long[] RETRY_DELAYS_MS = {1000, 2000, 4000};
+
+    /** 429 限流专用退避延迟（毫秒）：5s, 15s, 45s，更激进的冷却。 */
+    private static final long[] RATE_LIMIT_DELAYS_MS = {5000, 15000, 45000};
 
     private final OkHttpClient httpClient;
     private final RateLimiter rateLimiter;
@@ -51,15 +55,16 @@ public class WikiApiClient {
      * <ul>
      *   <li>连接超时：10 秒</li>
      *   <li>读取超时：30 秒</li>
-     *   <li>限流速率：5 req/s</li>
+     *   <li>限流速率：2 req/s</li>
      * </ul>
      */
     public WikiApiClient() {
         this.httpClient = new OkHttpClient.Builder()
             .connectTimeout(Duration.ofSeconds(10))
             .readTimeout(Duration.ofSeconds(30))
+            .protocols(java.util.Collections.singletonList(okhttp3.Protocol.HTTP_1_1))
             .build();
-        this.rateLimiter = RateLimiter.create(5.0);
+        this.rateLimiter = RateLimiter.create(2.0);
         this.objectMapper = new ObjectMapper();
         this.baseUrl = WIKI_API;
     }
@@ -104,7 +109,7 @@ public class WikiApiClient {
 
         Request request = new Request.Builder()
             .url(url)
-            .header("Accept-Encoding", "gzip")
+            .header("User-Agent", "PoEProject/1.0 (poe-tool)")
             .build();
 
         String json = executeWithRetry(request);
@@ -153,7 +158,7 @@ public class WikiApiClient {
 
         Request request = new Request.Builder()
             .url(url)
-            .header("Accept-Encoding", "gzip")
+            .header("User-Agent", "PoEProject/1.0 (poe-tool)")
             .build();
 
         String json = executeWithRetry(request);
@@ -198,8 +203,8 @@ public class WikiApiClient {
                         return body.string();
                     }
 
-                    // 5xx 服务端错误 → 可重试
-                    if (response.code() >= 500) {
+                    // 429 限流或 5xx 服务端错误 → 可重试
+                    if (response.code() == 429 || response.code() >= 500) {
                         String errorBody = response.body() != null ? response.body().string() : "";
                         throw new IOException("Server error " + response.code() + ": " + errorBody);
                     }
@@ -214,7 +219,9 @@ public class WikiApiClient {
                 lastException = e;
 
                 if (attempt < MAX_RETRIES) {
-                    long delay = RETRY_DELAYS_MS[attempt];
+                    // 429 限流使用更长的退避延迟
+                    boolean isRateLimit = e.getMessage() != null && e.getMessage().contains("429");
+                    long delay = isRateLimit ? RATE_LIMIT_DELAYS_MS[attempt] : RETRY_DELAYS_MS[attempt];
                     log.warn("Request failed (attempt {}/{}), retrying in {}ms: {}",
                         attempt + 1, MAX_RETRIES, delay, e.getMessage());
                     try {

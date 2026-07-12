@@ -33,7 +33,8 @@ import java.util.*;
  * </ol>
  *
  * <h3>限流</h3>
- * 依赖 {@link WikiApiClient} 内部的 5 req/s 限流和 3 次重试。
+ * 依赖 {@link WikiApiClient} 内部的 2 req/s 限流和 3 次重试。
+ * 表间有 15 秒冷却避免 Cloudflare 累积限流，失败的表会在重试轮次中再尝试一次。
  *
  * <h3>断点续传</h3>
  * 通过 {@link SyncCheckpoint} 记录当前进度，异常中断后可从上次偏移量继续。
@@ -49,7 +50,7 @@ public class DataSyncService {
     private static final Map<String, TableConfig> TABLE_CONFIGS = new LinkedHashMap<>();
     static {
         TABLE_CONFIGS.put("items", new TableConfig("base_items",
-            "_pageName,name,class_id,class,size_x,size_y,"
+            "name,class_id,class,size_x,size_y,"
             + "drop_level,flavour_text,base_item,base_item_id,"
             + "rarity,rarity_id,release_version,required_level,"
             + "required_dexterity,required_intelligence,required_strength,"
@@ -272,7 +273,7 @@ public class DataSyncService {
         TABLE_CONFIGS.put("skill_stats_per_level", new TableConfig("skill_stats_per_level",
             "id,level,value"));
         TABLE_CONFIGS.put("skill_quality", new TableConfig("skill_quality",
-            "set_id,stat_text,weight"));
+            "set_id,stat_text"));
         TABLE_CONFIGS.put("skill_quality_stats", new TableConfig("skill_quality_stats",
             "id,set_id,value"));
         TABLE_CONFIGS.put("gem_levels", new TableConfig("gem_levels",
@@ -345,32 +346,84 @@ public class DataSyncService {
     private final WikiApiClient wikiClient;
     private final DatabaseManager dbManager;
 
+    /** 表间冷却时间（毫秒），生产环境默认 5s，测试可通过 setter 设为 0。 */
+    private long interTableDelayMs = 5_000;
+
+    /** 失败表额外冷却时间（毫秒），生产环境默认 15s。 */
+    private long failureDelayMs = 15_000;
+
+    /** 重试轮次前冷却时间（毫秒），生产环境默认 30s。 */
+    private long retryCooldownMs = 30_000;
+
     public DataSyncService(WikiApiClient wikiClient, DatabaseManager dbManager) {
         this.wikiClient = wikiClient;
         this.dbManager = dbManager;
     }
 
+    /** 设置表间间隔（毫秒），0 表示无延迟。供测试使用。 */
+    public void setInterTableDelayMs(long interTableDelayMs) {
+        this.interTableDelayMs = interTableDelayMs;
+    }
+
+    /** 设置失败表额外冷却（毫秒），0 表示无延迟。供测试使用。 */
+    public void setFailureDelayMs(long failureDelayMs) {
+        this.failureDelayMs = failureDelayMs;
+    }
+
+    /** 设置重试轮次前冷却（毫秒），0 表示无延迟。供测试使用。 */
+    public void setRetryCooldownMs(long retryCooldownMs) {
+        this.retryCooldownMs = retryCooldownMs;
+    }
+
     // ==================== 公开方法 ====================
+
+    private static void sleep(long millis) {
+        if (millis <= 0) return;
+        try { Thread.sleep(millis); } catch (InterruptedException ignored) { }
+    }
 
     /**
      * 全量同步所有已配置的表。
      * <p>
      * 单个表同步失败不影响其他表，异常信息记录在 SyncResult 中。
+     * 失败的表会在第一轮结束后重试一次，以应对 Cloudflare 临时限流。
      *
      * @return 每个表的同步结果映射（Cargo表名 → SyncResult）
      */
     public Map<String, SyncResult> syncAll() throws SQLException {
         Map<String, SyncResult> results = new LinkedHashMap<>();
+        List<String> failedTables = new ArrayList<>();
+
+        // 第一轮：顺序同步全部表，表间冷却避免 Cloudflare 累积限流
         for (String tableName : TABLE_CONFIGS.keySet()) {
             try {
                 results.put(tableName, syncTable(tableName));
+                sleep(interTableDelayMs);
             } catch (Exception e) {
-                log.error("Sync failed for table '{}': {}", tableName, e.getMessage());
-                // 仍然记录失败结果，不阻断其他表
+                log.error("Sync failed for table '{}': {}", tableName, e.getMessage(), e);
                 Instant now = Instant.now();
                 results.put(tableName, SyncResult.of(0, now, now));
+                failedTables.add(tableName);
+                sleep(failureDelayMs);
             }
         }
+
+        // 第二轮：重试失败的表（仅重试一次）
+        if (!failedTables.isEmpty()) {
+            log.info("Retrying {} failed table(s)...", failedTables.size());
+            sleep(retryCooldownMs);
+
+            for (String tableName : failedTables) {
+                try {
+                    log.info("Retry syncing '{}'...", tableName);
+                    results.put(tableName, syncTable(tableName));
+                    sleep(interTableDelayMs);
+                } catch (Exception e) {
+                    log.error("Retry failed for table '{}': {}", tableName, e.getMessage());
+                }
+            }
+        }
+
         return results;
     }
 
@@ -466,8 +519,8 @@ public class DataSyncService {
         clearTable(ds, config.sqliteTable);
 
         for (int offset = 0; offset < totalCount; offset += BATCH_SIZE) {
-            // 分批拉取（需要含 _pageID 用于主键映射）
-            String fields = "_pageID," + config.fields;
+            // 分批拉取
+            String fields = config.fields;
             JsonNode root = wikiClient.queryCargoTable(cargoTable, fields, offset, BATCH_SIZE);
             JsonNode rows = root.path("cargoquery");
             if (!rows.isArray()) break;
@@ -476,9 +529,15 @@ public class DataSyncService {
             int batchSize = rows.size();
             List<Object> batch = new ArrayList<>(batchSize);
             DataConverter<Object> converter = getConverter(cargoTable);
+            int idx = 0;
             for (JsonNode row : rows) {
                 Object entity = converter.convert(row.path("title"));
-                if (entity != null) batch.add(entity);
+                if (entity != null) {
+                    // Cargo API 不支持 _pageID/_pageName 查询，为实体分配序列 ID
+                    assignSequentialId(entity, offset + idx + 1);
+                    batch.add(entity);
+                    idx++;
+                }
             }
 
             // 事务写入
@@ -496,6 +555,29 @@ public class DataSyncService {
         }
 
         return totalSynced;
+    }
+
+    /** Cached setPageId/setId methods per class to avoid repeated reflection. */
+    private static final Map<Class<?>, java.lang.reflect.Method> ID_SETTER_CACHE = new java.util.HashMap<>();
+
+    /**
+     * 为实体分配顺序 ID。
+     * 优先查找 setPageId(Integer/int)，其次 setId(Integer/int)。都不存在则静默跳过。
+     */
+    private static void assignSequentialId(Object entity, int id) {
+        Class<?> clazz = entity.getClass();
+        java.lang.reflect.Method method = ID_SETTER_CACHE.computeIfAbsent(clazz, c -> {
+            try { return c.getMethod("setPageId", Integer.class); } catch (NoSuchMethodException e1) { }
+            try { return c.getMethod("setPageId", int.class); } catch (NoSuchMethodException e2) { }
+            try { return c.getMethod("setId", Integer.class); } catch (NoSuchMethodException e3) { }
+            try { return c.getMethod("setId", int.class); } catch (NoSuchMethodException e4) { }
+            return null;
+        });
+        if (method != null) {
+            try {
+                method.invoke(entity, id);
+            } catch (Exception ignored) { }
+        }
     }
 
     // ---- 数据库操作 ----

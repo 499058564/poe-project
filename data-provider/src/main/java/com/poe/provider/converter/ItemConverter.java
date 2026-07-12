@@ -27,18 +27,24 @@ public class ItemConverter implements DataConverter<Item> {
     public Item convert(JsonNode row) {
         Item item = new Item();
 
+        // _pageID/_pageName may not be available via Cargo API (cause MWException);
+        // use name hash as fallback id and construct wiki_url from name.
+        String name = row.path("name").asText();
         item.setId(parseId(row.path("_pageID").asText()));
-        item.setName(row.path("name").asText());
+        if (item.getId() == 0) {
+            item.setId(name.isEmpty() ? 0 : Math.abs(name.hashCode()));
+        }
+        item.setName(name);
         item.setNameZh(null);
         item.setItemClass(row.path("class_id").asText());
         item.setInventoryWidth(parseIntSafe(row, "size_x"));
         item.setInventoryHeight(parseIntSafe(row, "size_y"));
-        item.setRequirements(null); // Cargo 无对应字段，来自其他表
-        item.setImplicits(null);     // Cargo implicit_stat_text 字段存在但格式不同
-        item.setProperties(null);    // Cargo 无直接对应
+        item.setRequirements(null);
+        item.setImplicits(null);
+        item.setProperties(null);
         item.setFlavourText(nullToNull(row.path("flavour_text").asText()));
         item.setDropLevel(parseIntSafe(row, "drop_level"));
-        item.setWikiUrl("https://www.poewiki.net/wiki/" + escapeWikiPath(row.path("_pageName").asText()));
+        item.setWikiUrl("https://www.poewiki.net/wiki/" + escapeWikiPath(name));
         item.setVersion("");
 
         return item;

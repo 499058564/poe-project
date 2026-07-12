@@ -33,10 +33,4 @@ dependencies {
     testImplementation("org.testfx:testfx-junit5:4.0.18")
 }
 
-// 确保 seed.db 被打包到 jar 资源中（如果存在）
-tasks.processResources {
-    val seedDb = rootProject.projectDir.resolve("app-ui/src/main/resources/seed.db")
-    if (seedDb.exists()) {
-        from(seedDb)
-    }
-}
+// seed.db 已在 src/main/resources/ 中，由默认 processResources 自动打包

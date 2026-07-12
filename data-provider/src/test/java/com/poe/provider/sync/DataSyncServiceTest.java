@@ -46,6 +46,11 @@ class DataSyncServiceTest {
 
         syncService = new DataSyncService(wikiClient, DatabaseManager.getInstance());
 
+        // 测试环境关闭表间延迟
+        syncService.setInterTableDelayMs(0);
+        syncService.setFailureDelayMs(0);
+        syncService.setRetryCooldownMs(0);
+
         // 注册事件收集器
         receivedEvents.clear();
         AppEventBus.register(this);

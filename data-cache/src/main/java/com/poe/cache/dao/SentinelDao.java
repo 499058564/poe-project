@@ -43,7 +43,7 @@ public class SentinelDao implements CrudRepository<Sentinel, Integer> {
             "empowerment_range_colour, empowerment_range_maximum, empowerment_range_minimum, empowerment_range_text, " +
             "empowers, empowers_html, empowers_range_average, empowers_range_colour, empowers_range_maximum, " +
             "empowers_range_minimum, empowers_range_text, monster, monster_level) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection()) {
                         conn.setAutoCommit(false);
             try (PreparedStatement ps = conn.prepareStatement(sql)) {

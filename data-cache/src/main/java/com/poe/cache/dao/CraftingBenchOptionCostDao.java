@@ -36,7 +36,7 @@ public class CraftingBenchOptionCostDao implements CrudRepository<CraftingBenchO
 
     @Override
     public void batchInsert(List<CraftingBenchOptionCost> entities) {
-        String sql = "INSERT INTO crafting_bench_options_costs (page_id, page_name, option_id, " +
+        String sql = "INSERT OR REPLACE INTO crafting_bench_options_costs (page_id, page_name, option_id, " +
             "amount, currency_name) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection()) {
                         conn.setAutoCommit(false);

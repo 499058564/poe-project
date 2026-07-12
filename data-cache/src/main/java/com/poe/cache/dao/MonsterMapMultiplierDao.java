@@ -46,7 +46,7 @@ public class MonsterMapMultiplierDao implements CrudRepository<MonsterMapMultipl
      */
     @Override
     public void batchInsert(List<MonsterMapMultiplier> entities) {
-        String sql = "INSERT INTO monster_map_multipliers (level, boss_damage, boss_item_quantity, "
+        String sql = "INSERT OR REPLACE INTO monster_map_multipliers (level, boss_damage, boss_item_quantity, "
             + "boss_item_rarity, boss_life, damage, life) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection()) {
