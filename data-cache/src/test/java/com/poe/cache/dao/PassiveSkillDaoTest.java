@@ -32,6 +32,7 @@ class PassiveSkillDaoTest {
         "v005_data_version.sql",
         "v006_translations.sql",
         "v007_items_fts.sql",
+        "v016_passive_mods_extend.sql",
     };
 
     @BeforeEach

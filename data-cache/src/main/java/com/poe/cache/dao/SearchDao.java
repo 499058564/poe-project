@@ -60,7 +60,7 @@ public class SearchDao {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             int idx = 1;
-            ps.setString(idx++, keyword);
+            ps.setString(idx++, sanitizeFts5Query(keyword));
             if (itemClass != null) {
                 ps.setString(idx++, itemClass);
             }
@@ -111,7 +111,7 @@ public class SearchDao {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             int idx = 1;
-            ps.setString(idx++, keyword);
+            ps.setString(idx++, sanitizeFts5Query(keyword));
             if (itemClass != null) {
                 ps.setString(idx++, itemClass);
             }
@@ -124,5 +124,24 @@ public class SearchDao {
             throw new RuntimeException("Failed to count search results for: " + keyword, e);
         }
         return 0;
+    }
+
+    /**
+     * 对 FTS5 MATCH 查询字符串进行安全处理。
+     * 普通查询用双引号包裹形成短语查询，使单引号、括号等特殊字符
+     * 被视为字面文本。包含 {@code *} 的查询（前缀匹配）原样放行，
+     * 仅转义其中的双引号以保护查询语法。
+     *
+     * @param query 原始查询字符串
+     * @return 经过转义的安全查询串
+     */
+    private String sanitizeFts5Query(String query) {
+        if (query == null || query.isEmpty()) {
+            return query;
+        }
+        if (query.contains("*")) {
+            return query.replace("\"", "\"\"");
+        }
+        return "\"" + query.replace("\"", "\"\"") + "\"";
     }
 }

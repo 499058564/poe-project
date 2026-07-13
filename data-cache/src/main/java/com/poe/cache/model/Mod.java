@@ -28,6 +28,14 @@ public class Mod {
     private String spawnWeights;
     /** 出现所需的最低物品等级 */
     private int requiredLevel;
+    /** Cargo: tier_text，词缀层级文本（如 "of the Order"） */
+    private String tierText;
+    /** Cargo: granted_buff_id，授予的增益 ID */
+    private String grantedBuffId;
+    /** Cargo: granted_buff_value，授予的增益值 */
+    private int grantedBuffValue;
+    /** Cargo: granted_skill，授予的技能 */
+    private String grantedSkill;
     /** 数据所属游戏版本号，如 "3.24" */
     private String version;
 
@@ -71,6 +79,18 @@ public class Mod {
 
     public int getRequiredLevel() { return requiredLevel; }
     public void setRequiredLevel(int requiredLevel) { this.requiredLevel = requiredLevel; }
+
+    public String getTierText() { return tierText; }
+    public void setTierText(String tierText) { this.tierText = tierText; }
+
+    public String getGrantedBuffId() { return grantedBuffId; }
+    public void setGrantedBuffId(String grantedBuffId) { this.grantedBuffId = grantedBuffId; }
+
+    public int getGrantedBuffValue() { return grantedBuffValue; }
+    public void setGrantedBuffValue(int grantedBuffValue) { this.grantedBuffValue = grantedBuffValue; }
+
+    public String getGrantedSkill() { return grantedSkill; }
+    public void setGrantedSkill(String grantedSkill) { this.grantedSkill = grantedSkill; }
 
     public String getVersion() { return version; }
     public void setVersion(String version) { this.version = version; }

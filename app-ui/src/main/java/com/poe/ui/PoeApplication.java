@@ -1,6 +1,7 @@
 package com.poe.ui;
 
 import atlantafx.base.theme.PrimerDark;
+import com.poe.core.db.DatabaseInitializer;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import com.poe.ui.window.MainWindow;
@@ -8,6 +9,7 @@ import com.poe.ui.theme.ThemeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
@@ -26,13 +28,18 @@ public class PoeApplication extends Application {
 
     /**
      * 应用初始化回调，在 JavaFX 线程启动前执行。
-     * 输出当前 Java 和 JavaFX 版本信息，用于调试和日志记录。
+     * 确保数据库文件就绪：首次启动从 classpath 复制 seed.db。
      */
     @Override
     public void init() {
         log.info("PoE Tool 正在启动...");
         log.info("Java 版本: {}", System.getProperty("java.version"));
         log.info("JavaFX 版本: {}", System.getProperty("javafx.version"));
+
+        // 初始化数据库：首次启动从 seed.db 复制，后续启动直接使用已有库
+        // 使用 PoeApplication.class 确保从 app-ui 模块的 classpath 加载 seed.db
+        Path appDir = Path.of(System.getProperty("user.home"), ".poe-tool");
+        new DatabaseInitializer(appDir, PoeApplication.class).initialize();
     }
 
     /**

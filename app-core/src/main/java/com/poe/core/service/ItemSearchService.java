@@ -135,8 +135,10 @@ public class ItemSearchService {
             0.0
         );
 
-        List<String> implicits = parseImplicits(item.getImplicits());
-        Map<String, Integer> requirements = parseRequirements(item.getRequirements());
+        List<String> implicits = item.getImplicitStatText() != null
+            ? List.of(item.getImplicitStatText())
+            : Collections.emptyList();
+        Map<String, Integer> requirements = buildRequirements(item);
 
         return new ItemDetail(
             summary,
@@ -146,6 +148,15 @@ public class ItemSearchService {
             item.getFlavourText(),
             item.getWikiUrl()
         );
+    }
+
+    private Map<String, Integer> buildRequirements(Item item) {
+        Map<String, Integer> reqs = new LinkedHashMap<>();
+        if (item.getRequiredStrength() > 0) reqs.put("str", item.getRequiredStrength());
+        if (item.getRequiredDexterity() > 0) reqs.put("dex", item.getRequiredDexterity());
+        if (item.getRequiredIntelligence() > 0) reqs.put("int", item.getRequiredIntelligence());
+        if (item.getRequiredLevel() > 0) reqs.put("level", item.getRequiredLevel());
+        return reqs;
     }
 
     /**

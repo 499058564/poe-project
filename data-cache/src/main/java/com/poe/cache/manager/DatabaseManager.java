@@ -32,7 +32,8 @@ public class DatabaseManager {
     private static final int MAX_LIFETIME_MS = 1_800_000;
 
     private static DatabaseManager instance;
-    private HikariDataSource dataSource;
+    private DataSource dataSource;
+    private volatile boolean poolClosed = true;
     private final String dbPath;
     private final Object poolLock = new Object();
 
@@ -84,9 +85,9 @@ public class DatabaseManager {
      * @return HikariCP 数据源
      */
     public DataSource getDataSource() throws SQLException {
-        if (dataSource == null || dataSource.isClosed()) {
+        if (dataSource == null || poolClosed) {
             synchronized (poolLock) {
-                if (dataSource == null || dataSource.isClosed()) {
+                if (dataSource == null || poolClosed) {
                     initPool();
                 }
             }
@@ -116,14 +117,17 @@ public class DatabaseManager {
             );
         }
 
-        dataSource = new HikariDataSource(config);
+        HikariDataSource pool = new HikariDataSource(config);
+        dataSource = SqlLoggingDataSource.wrap(pool);
+        poolClosed = false;
 
         // 使用池中首个连接执行迁移（仅一次）
         try (Connection conn = dataSource.getConnection()) {
             new MigrationManager(conn).migrate();
         } catch (RuntimeException e) {
-            dataSource.close();
+            pool.close();
             dataSource = null;
+            poolClosed = true;
             throw new RuntimeException("Failed to run migrations", e);
         }
     }
@@ -133,7 +137,7 @@ public class DatabaseManager {
      * <p>检测顺序：Gradle test worker 属性 → Maven Surefire 属性 → JUnit 堆栈。
      * 结果缓存，全局仅计算一次。
      */
-    private static synchronized boolean isTestEnvironment() {
+    static synchronized boolean isTestEnvironment() {
         if (autoTestDetected == null) {
             if (System.getProperty("org.gradle.test.worker") != null) {
                 autoTestDetected = true;
@@ -187,9 +191,9 @@ public class DatabaseManager {
      * 仅执行未运行过的脚本，支持幂等重复调用。
      */
     public void init() {
-        if (dataSource == null || dataSource.isClosed()) {
+        if (dataSource == null || poolClosed) {
             synchronized (poolLock) {
-                if (dataSource == null || dataSource.isClosed()) {
+                if (dataSource == null || poolClosed) {
                     try {
                         initPool();
                     } catch (SQLException e) {
@@ -221,8 +225,12 @@ public class DatabaseManager {
      */
     public synchronized void close() {
         if (dataSource != null) {
-            dataSource.close();
+            try {
+                dataSource.unwrap(com.zaxxer.hikari.HikariDataSource.class).close();
+            } catch (SQLException ignored) {
+            }
             dataSource = null;
+            poolClosed = true;
         }
     }
 

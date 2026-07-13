@@ -21,10 +21,14 @@ public final class SeedDbInspector {
         // utility class
     }
 
-    /** 一组通常不会为空的"核心"表名 */
+    /**
+     * 一组通常不会为空的"核心"表名。
+     * <p>注意：{@code base_items} / {@code items_fts} 未列入，因为 PoE Wiki 的
+     * {@code items} Cargo 表存在服务端 {@code MWException} 崩溃问题，暂时无法同步。
+     */
     public static final Set<String> DEFAULT_CORE_TABLES = Set.of(
-        "base_items", "skill_gems", "passive_skills", "mods",
-        "translations", "data_version", "items_fts"
+        "skill_gems", "passive_skills", "mods",
+        "translations", "data_version"
     );
 
     // ---- 表发现 ----

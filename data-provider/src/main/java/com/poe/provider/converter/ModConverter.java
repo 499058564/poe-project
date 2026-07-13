@@ -34,6 +34,10 @@ public class ModConverter implements DataConverter<Mod> {
         mod.setSpawnTags(ItemConverter.nullableText(row, "tags"));
         mod.setSpawnWeights(null); // Cargo 无 spawn_weights
         mod.setRequiredLevel(ItemConverter.parseIntSafe(row, "required_level"));
+        mod.setTierText(ItemConverter.nullableText(row, "tier_text"));
+        mod.setGrantedBuffId(ItemConverter.nullableText(row, "granted_buff_id"));
+        mod.setGrantedBuffValue(ItemConverter.parseIntSafe(row, "granted_buff_value"));
+        mod.setGrantedSkill(ItemConverter.nullableText(row, "granted_skill"));
         mod.setVersion("");
 
         return mod;

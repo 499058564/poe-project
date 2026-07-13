@@ -35,6 +35,12 @@ public class PassiveSkillConverter implements DataConverter<PassiveSkill> {
         ps.setX(0.0); // Cargo 无 x/y 字段，需从 POB tree.json 补充
         ps.setY(0.0);
         ps.setConnections(row.path("connections").asText()); // Cargo: 逗号分隔
+        ps.setMultipleChoice(parseBool(row, "is_multiple_choice"));
+        ps.setMultipleChoiceOption(parseBool(row, "is_multiple_choice_option"));
+        ps.setMasteryId(ItemConverter.nullableText(row, "mastery_id"));
+        ps.setFlavourText(ItemConverter.nullableText(row, "flavour_text"));
+        ps.setSkillPoints(ItemConverter.parseIntSafe(row, "skill_points"));
+        ps.setBuffId(ItemConverter.nullableText(row, "buff_id"));
         ps.setVersion("");
 
         return ps;

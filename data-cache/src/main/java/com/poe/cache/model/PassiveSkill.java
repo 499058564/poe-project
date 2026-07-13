@@ -31,6 +31,18 @@ public class PassiveSkill {
     private double y;
     /** JSON: 相邻天赋 ID 数组，如 [1234, 5678] */
     private String connections;
+    /** Cargo: is_multiple_choice，是否为多选天赋 */
+    private boolean multipleChoice;
+    /** Cargo: is_multiple_choice_option，是否为多选天赋选项 */
+    private boolean multipleChoiceOption;
+    /** Cargo: mastery_id，专精 ID */
+    private String masteryId;
+    /** Cargo: flavour_text，风味文本 */
+    private String flavourText;
+    /** Cargo: skill_points，所需天赋点数 */
+    private int skillPoints;
+    /** Cargo: buff_id，关联的增益 ID */
+    private String buffId;
     /** 数据所属游戏版本号，如 "3.24" */
     private String version;
 
@@ -77,6 +89,24 @@ public class PassiveSkill {
 
     public String getConnections() { return connections; }
     public void setConnections(String connections) { this.connections = connections; }
+
+    public boolean isMultipleChoice() { return multipleChoice; }
+    public void setMultipleChoice(boolean multipleChoice) { this.multipleChoice = multipleChoice; }
+
+    public boolean isMultipleChoiceOption() { return multipleChoiceOption; }
+    public void setMultipleChoiceOption(boolean multipleChoiceOption) { this.multipleChoiceOption = multipleChoiceOption; }
+
+    public String getMasteryId() { return masteryId; }
+    public void setMasteryId(String masteryId) { this.masteryId = masteryId; }
+
+    public String getFlavourText() { return flavourText; }
+    public void setFlavourText(String flavourText) { this.flavourText = flavourText; }
+
+    public int getSkillPoints() { return skillPoints; }
+    public void setSkillPoints(int skillPoints) { this.skillPoints = skillPoints; }
+
+    public String getBuffId() { return buffId; }
+    public void setBuffId(String buffId) { this.buffId = buffId; }
 
     public String getVersion() { return version; }
     public void setVersion(String version) { this.version = version; }

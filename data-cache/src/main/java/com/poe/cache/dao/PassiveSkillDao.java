@@ -30,8 +30,10 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
     @Override
     public void insert(PassiveSkill skill) {
         String sql = "INSERT INTO passive_skills (id, name, name_zh, class, ascendancy, stats, " +
-            "is_keystone, is_notable, is_jewel_socket, x, y, connections, version) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "is_keystone, is_notable, is_jewel_socket, x, y, connections, " +
+            "is_multiple_choice, is_multiple_choice_option, mastery_id, " +
+            "flavour_text, skill_points, buff_id, version) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, skill);
             ps.executeUpdate();
@@ -47,8 +49,10 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
     @Override
     public void batchInsert(List<PassiveSkill> skills) {
         String sql = "INSERT INTO passive_skills (id, name, name_zh, class, ascendancy, stats, " +
-            "is_keystone, is_notable, is_jewel_socket, x, y, connections, version) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "is_keystone, is_notable, is_jewel_socket, x, y, connections, " +
+            "is_multiple_choice, is_multiple_choice_option, mastery_id, " +
+            "flavour_text, skill_points, buff_id, version) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection()) {
                         conn.setAutoCommit(false);
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -162,7 +166,13 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         ps.setDouble(10, skill.getX());
         ps.setDouble(11, skill.getY());
         ps.setString(12, skill.getConnections());
-        ps.setString(13, skill.getVersion());
+        ps.setInt(13, skill.isMultipleChoice() ? 1 : 0);
+        ps.setInt(14, skill.isMultipleChoiceOption() ? 1 : 0);
+        ps.setString(15, skill.getMasteryId());
+        ps.setString(16, skill.getFlavourText());
+        ps.setInt(17, skill.getSkillPoints());
+        ps.setString(18, skill.getBuffId());
+        ps.setString(19, skill.getVersion());
     }
 
     /** 从 ResultSet 映射一行到 PassiveSkill 实体 */
@@ -180,6 +190,12 @@ public class PassiveSkillDao implements CrudRepository<PassiveSkill, Integer> {
         skill.setX(rs.getDouble("x"));
         skill.setY(rs.getDouble("y"));
         skill.setConnections(rs.getString("connections"));
+        skill.setMultipleChoice(rs.getInt("is_multiple_choice") != 0);
+        skill.setMultipleChoiceOption(rs.getInt("is_multiple_choice_option") != 0);
+        skill.setMasteryId(rs.getString("mastery_id"));
+        skill.setFlavourText(rs.getString("flavour_text"));
+        skill.setSkillPoints(rs.getInt("skill_points"));
+        skill.setBuffId(rs.getString("buff_id"));
         skill.setVersion(rs.getString("version"));
         return skill;
     }

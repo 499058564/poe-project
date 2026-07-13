@@ -40,6 +40,7 @@ class ItemSearchServiceTest {
         "v001_base_items.sql",
         "v007_items_fts.sql",
         "v006_translations.sql",
+        "v015_items_extend.sql",
     };
 
     @BeforeEach
@@ -191,7 +192,7 @@ class ItemSearchServiceTest {
         assertTrue(reqs.get("str") > 0);
     }
 
-    // ── parseImplicits / parseRequirements 单元测试 ──
+    // ── parseImplicits / parseRequirements 单元测试（旧方法，仍保留向后兼容）──
 
     @Test
     @DisplayName("parseImplicits extracts text fields from JSON array")
@@ -233,29 +234,27 @@ class ItemSearchServiceTest {
 
     private void insertTestData() throws Exception {
         try (Statement stmt = connection.createStatement()) {
-            // base_items 含 implicits、requirements
             stmt.executeUpdate(
-                "INSERT INTO base_items (id, name, name_zh, class, drop_level, wiki_url, " +
-                "requirements, implicits, version) VALUES " +
-                "(1, 'Iron Hat', '铁盔', 'Helmet', 10, 'https://poewiki.net/wiki/Iron_Hat', " +
-                "'[{\"name\":\"str\",\"values\":[[\"50\"]]}]', " +
-                "'[{\"text\":\"+20 to maximum Life\"},{\"text\":\"+10 to Strength\"}]', '3.24')"
+                "INSERT INTO base_items (id, name, name_zh, class, class_id, drop_level, wiki_url, " +
+                "implicit_stat_text, required_level, required_strength, required_dexterity, version) VALUES " +
+                "(1, 'Iron Hat', '铁盔', 'Helmet', 'Helmet', 10, 'https://poewiki.net/wiki/Iron_Hat', " +
+                "'+20 to maximum Life\n+10 to Strength', 10, 50, 30, '3.24')"
             );
             stmt.executeUpdate(
-                "INSERT INTO base_items (id, name, name_zh, class, drop_level, version) VALUES " +
-                "(2, 'Mageblood', '法师之血', 'Belt', 94, '3.24')"
+                "INSERT INTO base_items (id, name, name_zh, class, class_id, drop_level, version) VALUES " +
+                "(2, 'Mageblood', '法师之血', 'Belt', 'Belt', 94, '3.24')"
             );
             stmt.executeUpdate(
-                "INSERT INTO base_items (id, name, name_zh, class, drop_level, version) VALUES " +
-                "(3, 'Iron Ring', '铁戒指', 'Ring', 1, '3.24')"
+                "INSERT INTO base_items (id, name, name_zh, class, class_id, drop_level, version) VALUES " +
+                "(3, 'Iron Ring', '铁戒指', 'Ring', 'Ring', 1, '3.24')"
             );
             stmt.executeUpdate(
-                "INSERT INTO base_items (id, name, name_zh, class, drop_level, version) VALUES " +
-                "(4, 'Gold Ring', '金戒指', 'Ring', 1, '3.24')"
+                "INSERT INTO base_items (id, name, name_zh, class, class_id, drop_level, version) VALUES " +
+                "(4, 'Gold Ring', '金戒指', 'Ring', 'Ring', 1, '3.24')"
             );
             stmt.executeUpdate(
-                "INSERT INTO base_items (id, name, name_zh, class, drop_level, version) VALUES " +
-                "(5, 'Staff of Power', '力量法杖', 'Weapon', 30, '3.24')"
+                "INSERT INTO base_items (id, name, name_zh, class, class_id, drop_level, version) VALUES " +
+                "(5, 'Staff of Power', '力量法杖', 'Weapon', 'Weapon', 30, '3.24')"
             );
             // 重建 FTS 索引
             stmt.executeUpdate("INSERT INTO items_fts(items_fts) VALUES ('rebuild')");

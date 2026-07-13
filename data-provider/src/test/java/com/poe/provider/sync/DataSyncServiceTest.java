@@ -148,12 +148,12 @@ class DataSyncServiceTest {
     void shouldSendProgressEvents() throws Exception {
         receivedEvents.clear();
 
-        // 设置 600 条数据（会分 2 批，每批 500）
+        // 设置 600 条数据（items batchSize=100，会分 6 批）
         enqueueCountResponse("items", 600);
-        // 第一批 500
-        enqueueDataResponse(itemJsonBatch(0, 500));
-        // 第二批 100
-        enqueueDataResponse(itemJsonBatch(500, 100));
+        // 6 批各 100 条
+        for (int i = 0; i < 6; i++) {
+            enqueueDataResponse(itemJsonBatch(i * 100, 100));
+        }
 
         syncService.syncTable("items");
 
@@ -167,7 +167,7 @@ class DataSyncServiceTest {
 
         assertEquals(1, startCount, "Should have 1 start event");
         assertEquals(1, completeCount, "Should have 1 complete event");
-        assertTrue(progressCount >= 2, "Should have at least 2 progress events (2 batches)");
+        assertTrue(progressCount >= 6, "Should have at least 6 progress events (6 batches)");
     }
 
     // ==================== hasUpdates 测试 ====================

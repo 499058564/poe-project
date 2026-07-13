@@ -33,6 +33,7 @@ class ItemDaoTest {
         "v005_data_version.sql",
         "v006_translations.sql",
         "v007_items_fts.sql",
+        "v015_items_extend.sql",
     };
 
     @BeforeEach
@@ -70,8 +71,8 @@ class ItemDaoTest {
         item.setName("Tabula Rasa");
         item.setNameZh("白袍");
         item.setItemClass("Body Armour");
-        item.setInventoryWidth(2);
-        item.setInventoryHeight(3);
+        item.setSizeX(2);
+        item.setSizeY(3);
         item.setDropLevel(1);
         item.setVersion("3.24");
         item.setFlavourText("The easiest armour to find, yet the most difficult to wear.");
@@ -82,8 +83,8 @@ class ItemDaoTest {
         assertTrue(found.isPresent());
         assertEquals("Tabula Rasa", found.get().getName());
         assertEquals("白袍", found.get().getNameZh());
-        assertEquals(2, found.get().getInventoryWidth());
-        assertEquals(3, found.get().getInventoryHeight());
+        assertEquals(2, found.get().getSizeX());
+        assertEquals(3, found.get().getSizeY());
     }
 
     @Test

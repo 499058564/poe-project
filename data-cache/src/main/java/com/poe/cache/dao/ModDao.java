@@ -30,8 +30,9 @@ public class ModDao implements CrudRepository<Mod, Integer> {
     @Override
     public void insert(Mod mod) {
         String sql = "INSERT INTO mods (id, name, name_zh, mod_type, domain, generation_type, " +
-            "mod_group, stats, spawn_tags, spawn_weights, required_level, version) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "mod_group, stats, spawn_tags, spawn_weights, required_level, " +
+            "tier_text, granted_buff_id, granted_buff_value, granted_skill, version) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             setParams(ps, mod);
             ps.executeUpdate();
@@ -47,8 +48,9 @@ public class ModDao implements CrudRepository<Mod, Integer> {
     @Override
     public void batchInsert(List<Mod> mods) {
         String sql = "INSERT INTO mods (id, name, name_zh, mod_type, domain, generation_type, " +
-            "mod_group, stats, spawn_tags, spawn_weights, required_level, version) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "mod_group, stats, spawn_tags, spawn_weights, required_level, " +
+            "tier_text, granted_buff_id, granted_buff_value, granted_skill, version) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection()) {
                         conn.setAutoCommit(false);
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -161,7 +163,11 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         ps.setString(9, mod.getSpawnTags());
         ps.setString(10, mod.getSpawnWeights());
         ps.setInt(11, mod.getRequiredLevel());
-        ps.setString(12, mod.getVersion());
+        ps.setString(12, mod.getTierText());
+        ps.setString(13, mod.getGrantedBuffId());
+        ps.setInt(14, mod.getGrantedBuffValue());
+        ps.setString(15, mod.getGrantedSkill());
+        ps.setString(16, mod.getVersion());
     }
 
     /** 从 ResultSet 映射一行到 Mod 实体 */
@@ -178,6 +184,10 @@ public class ModDao implements CrudRepository<Mod, Integer> {
         mod.setSpawnTags(rs.getString("spawn_tags"));
         mod.setSpawnWeights(rs.getString("spawn_weights"));
         mod.setRequiredLevel(rs.getInt("required_level"));
+        mod.setTierText(rs.getString("tier_text"));
+        mod.setGrantedBuffId(rs.getString("granted_buff_id"));
+        mod.setGrantedBuffValue(rs.getInt("granted_buff_value"));
+        mod.setGrantedSkill(rs.getString("granted_skill"));
         mod.setVersion(rs.getString("version"));
         return mod;
     }

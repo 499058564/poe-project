@@ -45,6 +45,10 @@ public class WikiApiClient {
     /** 429 限流专用退避延迟（毫秒）：5s, 15s, 45s，更激进的冷却。 */
     private static final long[] RATE_LIMIT_DELAYS_MS = {5000, 15000, 45000};
 
+    /** Cloudflare 质询页面特征标记，用于检测 HTTP 200 但返回 HTML 质询页的情况。 */
+    private static final String CF_CHALLENGE_MARKER = "_cf_chl_opt";
+    private static final String CF_CHALLENGE_TITLE = "<title>Just a moment...</title>";
+
     private final OkHttpClient httpClient;
     private final RateLimiter rateLimiter;
     private final ObjectMapper objectMapper;
@@ -200,7 +204,38 @@ public class WikiApiClient {
                         if (body == null) {
                             throw new IOException("Empty response body");
                         }
-                        return body.string();
+                        String responseBody = body.string();
+
+                        // 检测 Cloudflare 质询页面（HTTP 200 但返回 HTML 质询）
+                        if (responseBody.contains(CF_CHALLENGE_MARKER)
+                                || responseBody.contains(CF_CHALLENGE_TITLE)) {
+                            throw new IOException("Cloudflare challenge page (treat as 429): "
+                                    + responseBody.substring(0, Math.min(200, responseBody.length())));
+                        }
+
+                        // 快速验证 JSON 完整性：检测截断响应
+                        if (responseBody.startsWith("{")) {
+                            try {
+                                objectMapper.readTree(responseBody);
+                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                                String msg = e.getMessage();
+                                // 截断响应（Unexpected end-of-input）→ 可重试
+                                if (msg != null && (msg.contains("Unexpected end-of-input")
+                                        || msg.contains("EOF") || msg.contains("end-of-input"))) {
+                                    throw new IOException("Truncated JSON response (likely connection cut): "
+                                            + msg);
+                                }
+                                // 其他 JSON 错误 → 可能是 CF HTML 页面未被标记检测到
+                                if (responseBody.contains("<html") || responseBody.contains("<!DOCTYPE")) {
+                                    throw new IOException("HTML response disguised as JSON: "
+                                            + responseBody.substring(0, Math.min(200, responseBody.length())));
+                                }
+                                // 真正的 JSON 格式错误 → 不重试，直接失败
+                                throw new DataSyncException("Invalid JSON response: " + msg, e);
+                            }
+                        }
+
+                        return responseBody;
                     }
 
                     // 429 限流或 5xx 服务端错误 → 可重试

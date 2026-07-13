@@ -50,11 +50,27 @@ public class DataSyncService {
     private static final Map<String, TableConfig> TABLE_CONFIGS = new LinkedHashMap<>();
     static {
         TABLE_CONFIGS.put("items", new TableConfig("base_items",
-            "name,class_id,class,size_x,size_y,"
-            + "drop_level,flavour_text,base_item,base_item_id,"
-            + "rarity,rarity_id,release_version,required_level,"
+            // Full 78 fields from Wiki items Cargo table (smaller batch to avoid Cargo MWException)
+            "name,name_list,metadata_id,_pageName,"
+            + "class_id,class,frame_type,rarity,rarity_id,"
+            + "base_item,base_item_id,base_item_page,"
+            + "size_x,size_y,inventory_icon,"
+            + "required_level,required_level_base,"
             + "required_dexterity,required_intelligence,required_strength,"
-            + "description,tags,inventory_icon"));
+            + "required_level_range_average,required_level_range_colour,required_level_range_maximum,required_level_range_minimum,required_level_range_text,"
+            + "required_dexterity_range_average,required_dexterity_range_colour,required_dexterity_range_maximum,required_dexterity_range_minimum,required_dexterity_range_text,"
+            + "required_intelligence_range_average,required_intelligence_range_colour,required_intelligence_range_maximum,required_intelligence_range_minimum,required_intelligence_range_text,"
+            + "required_strength_range_average,required_strength_range_colour,required_strength_range_maximum,required_strength_range_minimum,required_strength_range_text,"
+            + "required_level_html,required_dexterity_html,required_intelligence_html,required_strength_html,"
+            + "drop_enabled,drop_level,drop_level_maximum,"
+            + "is_account_bound,is_corrupted,is_drop_restricted,is_eater_of_worlds_item,is_fractured,is_in_game,is_replica,is_searing_exarch_item,is_synthesised,is_unmodifiable,is_veiled,"
+            + "stat_text,explicit_stat_text,implicit_stat_text,"
+            + "drop_text,drop_areas,drop_areas_html,drop_monsters,drop_rarity_ids,"
+            + "tags,acquisition_tags,influences,"
+            + "description,flavour_text,help_text,"
+            + "html,infobox_html,metabox_html,"
+            + "alternate_art_inventory_icons,"
+            + "quality,release_version,removal_version", 100));
         TABLE_CONFIGS.put("skill_gems", new TableConfig("skill_gems",
             "skill_id,gem_tags,primary_attribute,max_level,"
             + "is_vaal_skill_gem,support_gem_letter,support_gem_letter_html,"
@@ -128,7 +144,7 @@ public class DataSyncService {
             + "parent_area_id,release_version,removal_version,screenshot,stat_text,"
             + "strongbox_max_count,strongbox_spawn_chance,strongbox_weight_magic,"
             + "strongbox_weight_normal,strongbox_weight_rare,strongbox_weight_unique,"
-            + "tags,vaal_area_ids,vaal_area_spawn_chance"));
+            + "tags,vaal_area_ids,vaal_area_spawn_chance", 200));
         // ---- 异界图鉴 ----
         TABLE_CONFIGS.put("atlas_nodes", new TableConfig("atlas_nodes",
             "area_id,connections,div_cards,id,is_off_atlas,"
@@ -518,10 +534,10 @@ public class DataSyncService {
         // 先清空旧数据
         clearTable(ds, config.sqliteTable);
 
-        for (int offset = 0; offset < totalCount; offset += BATCH_SIZE) {
+        for (int offset = 0; offset < totalCount; offset += config.batchSize) {
             // 分批拉取
             String fields = config.fields;
-            JsonNode root = wikiClient.queryCargoTable(cargoTable, fields, offset, BATCH_SIZE);
+            JsonNode root = wikiClient.queryCargoTable(cargoTable, fields, offset, config.batchSize);
             JsonNode rows = root.path("cargoquery");
             if (!rows.isArray()) break;
 
@@ -551,7 +567,7 @@ public class DataSyncService {
             AppEventBus.postAsync(new DataSyncProgressEvent(cargoTable,
                 Math.min(totalSynced, totalCount), totalCount));
 
-            if (rows.size() < BATCH_SIZE) break; // 最后一批
+            if (rows.size() < config.batchSize) break; // 最后一批
         }
 
         return totalSynced;
@@ -1214,10 +1230,16 @@ public class DataSyncService {
     static class TableConfig {
         final String sqliteTable;
         final String fields;
+        final int batchSize;
 
         TableConfig(String sqliteTable, String fields) {
+            this(sqliteTable, fields, BATCH_SIZE);
+        }
+
+        TableConfig(String sqliteTable, String fields, int batchSize) {
             this.sqliteTable = sqliteTable;
             this.fields = fields;
+            this.batchSize = batchSize;
         }
     }
 }
