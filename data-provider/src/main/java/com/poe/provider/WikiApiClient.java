@@ -92,7 +92,7 @@ public class WikiApiClient {
     // ==================== 公开方法 ====================
 
     /**
-     * 查询 Cargo 表数据。
+     * 查询 Cargo 表数据（offset 分页）。
      *
      * @param tableName 表名，如 "items"、"skill_gems"
      * @param fields    需要的字段，逗号分隔，如 "_pageName,name,class"
@@ -102,15 +102,81 @@ public class WikiApiClient {
      * @throws DataSyncException 网络错误或 API 返回错误时抛出
      */
     public JsonNode queryCargoTable(String tableName, String fields, int offset, int limit) {
-        HttpUrl url = HttpUrl.parse(baseUrl).newBuilder()
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(baseUrl).newBuilder()
             .addQueryParameter("action", "cargoquery")
             .addQueryParameter("format", "json")
             .addQueryParameter("tables", tableName)
             .addQueryParameter("fields", fields)
             .addQueryParameter("offset", String.valueOf(offset))
-            .addQueryParameter("limit", String.valueOf(limit))
-            .build();
+            .addQueryParameter("limit", String.valueOf(limit));
 
+        return executeCargoQuery(urlBuilder.build());
+    }
+
+    /**
+     * 查询 Cargo 表数据（键值游标分页）。
+     * <p>
+     * 使用 {@code WHERE keyField >= lastKey ORDER BY keyField} 替代 offset 分页，
+     * 避免深度 offset 导致 MySQL 查询超时（如 items 表 offset>=2000 时触发 500 错误）。
+     *
+     * @param tableName 表名
+     * @param fields    需要的字段，逗号分隔
+     * @param keyField  游标字段名（如 "name"）
+     * @param lastKey   上一批最后一个键值（首次传空字符串表示无下限）
+     * @param limit     每批数量（最大 500）
+     * @return 解析后的 JSON 响应根节点
+     * @throws DataSyncException 网络错误或 API 返回错误时抛出
+     */
+    public JsonNode queryCargoTableByKey(String tableName, String fields,
+                                          String keyField, String lastKey, int limit) {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(baseUrl).newBuilder()
+            .addQueryParameter("action", "cargoquery")
+            .addQueryParameter("format", "json")
+            .addQueryParameter("tables", tableName)
+            .addQueryParameter("fields", fields)
+            .addQueryParameter("order_by", keyField + " ASC")
+            .addQueryParameter("limit", String.valueOf(limit));
+
+        if (lastKey != null && !lastKey.isEmpty()) {
+            // Cargo where 参数接受 SQL WHERE 片段
+            // 对键值中的特殊字符做 URL 编码，防止破坏查询
+            String escapedKey = lastKey.replace("\"", "\\\"");
+            urlBuilder.addQueryParameter("where",
+                keyField + ">=\"" + escapedKey + "\"");
+        }
+
+        return executeCargoQuery(urlBuilder.build());
+    }
+
+    /**
+     * 查询 Cargo 表数据（键值游标分页，严格大于模式）。
+     * <p>
+     * 与 {@link #queryCargoTableByKey} 类似，但使用 {@code >} 而非 {@code >=}，
+     * 用于跳过重复键值的所有剩余行。
+     */
+    public JsonNode queryCargoTableByKeyGt(String tableName, String fields,
+                                            String keyField, String lastKey, int limit) {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(baseUrl).newBuilder()
+            .addQueryParameter("action", "cargoquery")
+            .addQueryParameter("format", "json")
+            .addQueryParameter("tables", tableName)
+            .addQueryParameter("fields", fields)
+            .addQueryParameter("order_by", keyField + " ASC")
+            .addQueryParameter("limit", String.valueOf(limit));
+
+        if (lastKey != null && !lastKey.isEmpty()) {
+            String escapedKey = lastKey.replace("\"", "\\\"");
+            urlBuilder.addQueryParameter("where",
+                keyField + ">\"" + escapedKey + "\"");
+        }
+
+        return executeCargoQuery(urlBuilder.build());
+    }
+
+    /**
+     * 执行 Cargo 查询请求的公共逻辑。
+     */
+    private JsonNode executeCargoQuery(HttpUrl url) {
         Request request = new Request.Builder()
             .url(url)
             .header("User-Agent", "PoEProject/1.0 (poe-tool)")

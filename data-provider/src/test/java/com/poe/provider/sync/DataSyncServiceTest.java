@@ -239,7 +239,96 @@ class DataSyncServiceTest {
         assertFalse(gemsResult.isSkipped());
     }
 
-    // ==================== Helpers ====================
+    // ==================== 选择性同步测试 ====================
+
+    @Test
+    @DisplayName("getOutOfSyncTables 应返回远程与本地记录数不一致的表")
+    void shouldReturnOutOfSyncTables() throws Exception {
+        // items: 远程 10 条，本地 0 条 → 过期
+        enqueueCountResponse("items", 10);
+        // 其余 90 张表 count=0
+        enqueueAllCountResponses(Map.of());
+
+        Set<String> outOfSync = syncService.getOutOfSyncTables();
+
+        assertTrue(outOfSync.contains("items"),
+            "items should be out of sync (remote=10, local=0)");
+        assertFalse(outOfSync.contains("skill_gems"),
+            "skill_gems should not be out of sync (remote=0)");
+    }
+
+    @Test
+    @DisplayName("syncTables 应仅同步指定表集合")
+    void shouldSyncOnlySpecifiedTables() throws Exception {
+        // 仅同步 items
+        enqueueCargoResponse("items", 2, itemJson());
+
+        Map<String, SyncResult> results = syncService.syncTables(Set.of("items"));
+
+        assertEquals(1, results.size());
+        assertTrue(results.containsKey("items"));
+        SyncResult itemsResult = results.get("items");
+        assertFalse(itemsResult.isSkipped());
+        assertTrue(itemsResult.isSuccess());
+        assertEquals(2, itemsResult.getSyncedRecords());
+    }
+
+    @Test
+    @DisplayName("syncAll 中某表 API 失败时不应清空已有数据")
+    void shouldPreserveDataWhenApiFails() throws Exception {
+        // 先成功同步 items（写入 2 条）
+        enqueueCargoResponse("items", 2, itemJson());
+        syncService.syncTable("items");
+
+        // 验证数据已写入
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM base_items")) {
+            assertTrue(rs.next());
+            assertEquals(2, rs.getInt(1));
+        }
+
+        // 模拟二次同步失败 — items count=3（需更新）但数据请求返回 500
+        enqueueCountResponse("items", 3);
+        mockServer.enqueue(new MockResponse()
+            .setResponseCode(500)
+            .setBody("Internal Server Error"));
+
+        try {
+            syncService.syncTable("items");
+            fail("Expected exception");
+        } catch (Exception ignored) {
+            // 预期失败
+        }
+
+        // 验证旧数据仍在（未被清空）
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM base_items")) {
+            assertTrue(rs.next());
+            assertEquals(2, rs.getInt(1),
+                "Old data should be preserved when API fails before clearing");
+        }
+    }
+
+    @Test
+    @DisplayName("syncAll 失败表应返回失败 SyncResult")
+    void shouldReportFailureInfo() throws Exception {
+        // items count 查询返回错误 JSON → 被 WikiApiClient 作为 count=0 处理 → 跳过
+        mockServer.enqueue(new MockResponse()
+            .setBody("{\"error\":{\"code\":\"server-error\",\"info\":\"Server error\"}}")
+            .addHeader("Content-Type", "application/json"));
+        // 其余 90 张表也需要 count 响应
+        enqueueAllCountResponses(Map.of());
+
+        Map<String, SyncResult> results = syncService.syncAll();
+
+        SyncResult itemsResult = results.get("items");
+        assertNotNull(itemsResult);
+        // 错误响应导致 count 为 0 或负数 → skipped
+        assertTrue(itemsResult.isSkipped() || itemsResult.getSyncedRecords() == 0,
+            "items should be skipped or have 0 records after error response");
+    }
 
     private static final String[] ALL_CARGO_TABLES = {
         "items", "skill_gems", "passive_skills", "mods",

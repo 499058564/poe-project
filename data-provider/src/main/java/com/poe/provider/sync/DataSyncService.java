@@ -50,7 +50,9 @@ public class DataSyncService {
     private static final Map<String, TableConfig> TABLE_CONFIGS = new LinkedHashMap<>();
     static {
         TABLE_CONFIGS.put("items", new TableConfig("base_items",
-            // Full 78 fields from Wiki items Cargo table (smaller batch to avoid Cargo MWException)
+            // Full 78 fields from Wiki items Cargo table
+            // Uses key-based cursor pagination (WHERE name >= lastKey ORDER BY name)
+            // to avoid deep-offset MWException on this 11798-row composite table
             "name,name_list,metadata_id,_pageName,"
             + "class_id,class,frame_type,rarity,rarity_id,"
             + "base_item,base_item_id,base_item_page,"
@@ -70,7 +72,7 @@ public class DataSyncService {
             + "description,flavour_text,help_text,"
             + "html,infobox_html,metabox_html,"
             + "alternate_art_inventory_icons,"
-            + "quality,release_version,removal_version", 100));
+            + "quality,release_version,removal_version", 100, "name"));
         TABLE_CONFIGS.put("skill_gems", new TableConfig("skill_gems",
             "skill_id,gem_tags,primary_attribute,max_level,"
             + "is_vaal_skill_gem,support_gem_letter,support_gem_letter_html,"
@@ -417,8 +419,7 @@ public class DataSyncService {
                 sleep(interTableDelayMs);
             } catch (Exception e) {
                 log.error("Sync failed for table '{}': {}", tableName, e.getMessage(), e);
-                Instant now = Instant.now();
-                results.put(tableName, SyncResult.of(0, now, now));
+                results.put(tableName, SyncResult.failed(tableName, e.getMessage()));
                 failedTables.add(tableName);
                 sleep(failureDelayMs);
             }
@@ -436,6 +437,7 @@ public class DataSyncService {
                     sleep(interTableDelayMs);
                 } catch (Exception e) {
                     log.error("Retry failed for table '{}': {}", tableName, e.getMessage());
+                    // 保留第一轮的失败结果
                 }
             }
         }
@@ -490,7 +492,7 @@ public class DataSyncService {
 
         // 7. 发布完成事件
         Instant finishedAt = Instant.now();
-        SyncResult result = SyncResult.of(synced, startedAt, finishedAt);
+        SyncResult result = SyncResult.success(cargoTable, synced, startedAt, finishedAt);
         AppEventBus.postAsync(new DataSyncCompleteEvent(
             cargoTable, result.getSyncedRecords(), result.getDurationMs()));
 
@@ -520,22 +522,135 @@ public class DataSyncService {
         return false;
     }
 
+    /**
+     * 获取所有需要同步的表名集合。
+     * <p>
+     * 逐表查询远程 COUNT(*) 并与本地 {@code data_version} 对比。
+     * 只返回远程 > 0 且本地记录数不一致的表，避免不必要的全量 COUNT 请求。
+     *
+     * @return 需要同步的 Cargo 表名集合
+     */
+    public Set<String> getOutOfSyncTables() {
+        Set<String> outOfSync = new LinkedHashSet<>();
+        try (Connection conn = dbManager.getConnection()) {
+            for (Map.Entry<String, TableConfig> entry : TABLE_CONFIGS.entrySet()) {
+                String cargoTable = entry.getKey();
+                try {
+                    int remote = wikiClient.queryCargoTableCount(cargoTable);
+                    if (remote <= 0) continue;
+                    int local = getLocalRecordCount(conn, entry.getValue().sqliteTable);
+                    if (remote != local) {
+                        outOfSync.add(cargoTable);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to check count for '{}', marking as out-of-sync: {}",
+                        cargoTable, e.getMessage());
+                    outOfSync.add(cargoTable);
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Failed to get out-of-sync tables", e);
+        }
+        return outOfSync;
+    }
+
+    /**
+     * 仅同步指定表集合。
+     * <p>
+     * 与 {@link #syncAll()} 使用相同的失败容忍和一轮重试策略，
+     * 但不检查已同步的表，直接对传入的表执行同步。
+     *
+     * @param cargoTables 需要同步的 Cargo 表名集合
+     * @return 每张表的同步结果（Cargo表名 → SyncResult）
+     */
+    public Map<String, SyncResult> syncTables(Set<String> cargoTables) throws SQLException {
+        Map<String, SyncResult> results = new LinkedHashMap<>();
+        List<String> failedTables = new ArrayList<>();
+
+        for (String tableName : cargoTables) {
+            if (!TABLE_CONFIGS.containsKey(tableName)) {
+                log.warn("Unknown table '{}', skipping", tableName);
+                results.put(tableName, SyncResult.failed(tableName, "Unknown table"));
+                continue;
+            }
+            try {
+                results.put(tableName, syncTable(tableName));
+                sleep(interTableDelayMs);
+            } catch (Exception e) {
+                log.error("Sync failed for table '{}': {}", tableName, e.getMessage(), e);
+                results.put(tableName, SyncResult.failed(tableName, e.getMessage()));
+                failedTables.add(tableName);
+                sleep(failureDelayMs);
+            }
+        }
+
+        // 重试失败的表
+        if (!failedTables.isEmpty()) {
+            log.info("Retrying {} failed table(s)...", failedTables.size());
+            sleep(retryCooldownMs);
+
+            for (String tableName : failedTables) {
+                try {
+                    log.info("Retry syncing '{}'...", tableName);
+                    results.put(tableName, syncTable(tableName));
+                    sleep(interTableDelayMs);
+                } catch (Exception e) {
+                    log.error("Retry failed for table '{}': {}", tableName, e.getMessage());
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * 便捷方法：自动检测并仅同步过期的表。
+     * <p>
+     * 等价于 {@code syncTables(getOutOfSyncTables())}。
+     * 适用于"先全量同步，之后只增量拉取变化表"的场景。
+     *
+     * @return 每张表的同步结果（Cargo表名 → SyncResult）
+     */
+    public Map<String, SyncResult> syncOutOfSyncTables() throws SQLException {
+        Set<String> outOfSync = getOutOfSyncTables();
+        if (outOfSync.isEmpty()) {
+            log.info("All tables are up-to-date, nothing to sync");
+            return Collections.emptyMap();
+        }
+        log.info("Found {} out-of-sync table(s): {}", outOfSync.size(), outOfSync);
+        return syncTables(outOfSync);
+    }
+
     // ==================== 内部实现 ====================
 
     /**
      * 分批拉取 + 转换 + 事务写入。
+     * <p>
+     * 先拉取第一批数据验证 API 可用，成功后才清空旧表并写入。
+     * 如果首次 API 调用失败，旧数据得以保留，避免"清空后同步失败导致数据丢失"。
+     * <p>
+     * 支持两种分页模式：
+     * <ul>
+     *   <li><b>offset 分页</b>（默认）：通过 offset 参数逐批拉取</li>
+     *   <li><b>键值游标分页</b>（config.keyField 非空时）：
+     *       使用 {@code WHERE keyField >= lastKey ORDER BY keyField} 逐批拉取，
+     *       避免深度 offset 在大表上触发 Cargo MWException</li>
+     * </ul>
      */
     private int batchSync(String cargoTable, TableConfig config, int totalCount) throws SQLException {
         int totalSynced = 0;
 
         DataSource ds = dbManager.getDataSource();
         Object dao = createDao(ds, cargoTable);
+        boolean cleared = false;
 
-        // 先清空旧数据
-        clearTable(ds, config.sqliteTable);
+        if (config.keyField != null) {
+            // ---- 键值游标分页 ----
+            return batchSyncByKey(cargoTable, config, totalCount, ds, dao, cleared);
+        }
 
+        // ---- offset 分页（默认） ----
         for (int offset = 0; offset < totalCount; offset += config.batchSize) {
-            // 分批拉取
             String fields = config.fields;
             JsonNode root = wikiClient.queryCargoTable(cargoTable, fields, offset, config.batchSize);
             JsonNode rows = root.path("cargoquery");
@@ -549,11 +664,16 @@ public class DataSyncService {
             for (JsonNode row : rows) {
                 Object entity = converter.convert(row.path("title"));
                 if (entity != null) {
-                    // Cargo API 不支持 _pageID/_pageName 查询，为实体分配序列 ID
                     assignSequentialId(entity, offset + idx + 1);
                     batch.add(entity);
                     idx++;
                 }
+            }
+
+            // 首批数据拉取成功后才清空旧表（保护已有数据不被意外清空）
+            if (!cleared) {
+                clearTable(ds, config.sqliteTable);
+                cleared = true;
             }
 
             // 事务写入
@@ -568,6 +688,91 @@ public class DataSyncService {
                 Math.min(totalSynced, totalCount), totalCount));
 
             if (rows.size() < config.batchSize) break; // 最后一批
+        }
+
+        return totalSynced;
+    }
+
+    /**
+     * 键值游标分页同步。
+     * <p>
+     * 使用 {@code WHERE keyField >= lastKey ORDER BY keyField} 逐批拉取。
+     * 每批取最后一条记录的键值作为下一批的起点。
+     * 当同一键值行数超过 batchSize 时，自动降级为 {@code >} 跳过重复键。
+     */
+    private int batchSyncByKey(String cargoTable, TableConfig config, int totalCount,
+                                DataSource ds, Object dao, boolean cleared) throws SQLException {
+        int totalSynced = 0;
+        String keyField = config.keyField;
+        String lastKey = "";
+        boolean useGreaterThan = false;
+
+        while (true) {
+            JsonNode root;
+            if (useGreaterThan) {
+                root = wikiClient.queryCargoTableByKeyGt(
+                    cargoTable, config.fields, keyField, lastKey, config.batchSize);
+                useGreaterThan = false;
+            } else {
+                root = wikiClient.queryCargoTableByKey(
+                    cargoTable, config.fields, keyField, lastKey, config.batchSize);
+            }
+
+            JsonNode rows = root.path("cargoquery");
+            if (!rows.isArray() || rows.size() == 0) break;
+
+            int batchSize = rows.size();
+            List<Object> batch = new ArrayList<>(batchSize);
+            DataConverter<Object> converter = getConverter(cargoTable);
+
+            String firstRowKey = rows.get(0).path("title").path(keyField).asText();
+            String newLastKey = null;
+
+            for (int i = 0; i < batchSize; i++) {
+                JsonNode title = rows.get(i).path("title");
+                Object entity = converter.convert(title);
+                if (entity != null) {
+                    assignSequentialId(entity, totalSynced + batch.size() + 1);
+                    batch.add(entity);
+                }
+                if (i == batchSize - 1) {
+                    newLastKey = title.path(keyField).asText();
+                }
+            }
+
+            // 键值溢出检测：整批同一键值 + 满载 → 用 > 跳过剩余重复行
+            if (lastKey.equals(firstRowKey) && lastKey.equals(newLastKey)
+                    && batchSize == config.batchSize) {
+                log.warn("Key overflow for '{}' at '{}', using > to skip duplicates",
+                    cargoTable, lastKey);
+                useGreaterThan = true;
+                continue;
+            }
+
+            // 首批成功后才清空旧表
+            if (!cleared) {
+                clearTable(ds, config.sqliteTable);
+                cleared = true;
+            }
+
+            if (!batch.isEmpty()) {
+                batchInsert(dao, batch);
+            }
+
+            totalSynced += batch.size();
+
+            AppEventBus.postAsync(new DataSyncProgressEvent(cargoTable,
+                Math.min(totalSynced, totalCount), totalCount));
+
+            if (batchSize < config.batchSize) break;
+            if (totalSynced >= totalCount) break; // 已拉取足够数据
+
+            if (newLastKey == null || newLastKey.equals(lastKey)) {
+                log.warn("Key stalled for '{}' at '{}', stopping", cargoTable, lastKey);
+                break;
+            }
+
+            lastKey = newLastKey;
         }
 
         return totalSynced;
@@ -1231,15 +1436,25 @@ public class DataSyncService {
         final String sqliteTable;
         final String fields;
         final int batchSize;
+        /**
+         * 游标分页键字段。非空时使用 {@code WHERE keyField >= lastKey ORDER BY keyField}
+         * 替代 offset 分页，避免深度 offset 在大表上触发 Cargo MWException。
+         */
+        final String keyField;
 
         TableConfig(String sqliteTable, String fields) {
-            this(sqliteTable, fields, BATCH_SIZE);
+            this(sqliteTable, fields, BATCH_SIZE, null);
         }
 
         TableConfig(String sqliteTable, String fields, int batchSize) {
+            this(sqliteTable, fields, batchSize, null);
+        }
+
+        TableConfig(String sqliteTable, String fields, int batchSize, String keyField) {
             this.sqliteTable = sqliteTable;
             this.fields = fields;
             this.batchSize = batchSize;
+            this.keyField = keyField;
         }
     }
 }
