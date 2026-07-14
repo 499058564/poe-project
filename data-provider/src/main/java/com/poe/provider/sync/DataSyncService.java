@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import javax.sql.DataSource;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -46,320 +45,129 @@ public class DataSyncService {
     /** 每批拉取的最大记录数（Wiki API 上限 500）。 */
     private static final int BATCH_SIZE = 500;
 
-    /** 同步的表配置：Cargo表名 → (SQLite表名, DAO, Converter, Wiki字段) */
-    private static final Map<String, TableConfig> TABLE_CONFIGS = new LinkedHashMap<>();
+    /**
+     * 表元数据配置：Cargo表名 → (SQLite表名, batchSize, keyField)。
+     * <p>fields 不再硬编码，而是通过 {@link #initFromWiki()} 从 wiki API 动态获取，
+     * 避免因字段不存在触发 MWException。
+     */
+    private static final Map<String, TableMeta> TABLE_META = new LinkedHashMap<>();
     static {
-        TABLE_CONFIGS.put("items", new TableConfig("base_items",
-            // Full 78 fields from Wiki items Cargo table
-            // Uses key-based cursor pagination (WHERE name >= lastKey ORDER BY name)
-            // to avoid deep-offset MWException on this 11798-row composite table
-            "name,name_list,metadata_id,_pageName,"
-            + "class_id,class,frame_type,rarity,rarity_id,"
-            + "base_item,base_item_id,base_item_page,"
-            + "size_x,size_y,inventory_icon,"
-            + "required_level,required_level_base,"
-            + "required_dexterity,required_intelligence,required_strength,"
-            + "required_level_range_average,required_level_range_colour,required_level_range_maximum,required_level_range_minimum,required_level_range_text,"
-            + "required_dexterity_range_average,required_dexterity_range_colour,required_dexterity_range_maximum,required_dexterity_range_minimum,required_dexterity_range_text,"
-            + "required_intelligence_range_average,required_intelligence_range_colour,required_intelligence_range_maximum,required_intelligence_range_minimum,required_intelligence_range_text,"
-            + "required_strength_range_average,required_strength_range_colour,required_strength_range_maximum,required_strength_range_minimum,required_strength_range_text,"
-            + "required_level_html,required_dexterity_html,required_intelligence_html,required_strength_html,"
-            + "drop_enabled,drop_level,drop_level_maximum,"
-            + "is_account_bound,is_corrupted,is_drop_restricted,is_eater_of_worlds_item,is_fractured,is_in_game,is_replica,is_searing_exarch_item,is_synthesised,is_unmodifiable,is_veiled,"
-            + "stat_text,explicit_stat_text,implicit_stat_text,"
-            + "drop_text,drop_areas,drop_areas_html,drop_monsters,drop_rarity_ids,"
-            + "tags,acquisition_tags,influences,"
-            + "description,flavour_text,help_text,"
-            + "html,infobox_html,metabox_html,"
-            + "alternate_art_inventory_icons,"
-            + "quality,release_version,removal_version", 100, "name"));
-        TABLE_CONFIGS.put("skill_gems", new TableConfig("skill_gems",
-            "skill_id,gem_tags,primary_attribute,max_level,"
-            + "is_vaal_skill_gem,support_gem_letter,support_gem_letter_html,"
-            + "requires_intelligence,requires_dexterity,requires_strength,"
-            + "awakened_variant_id,regular_variant_id,vaal_variant_id,"
-            + "secondary_skill_id,ruthless_skill_id,ruthless_secondary_skill_id"));
-        TABLE_CONFIGS.put("passive_skills", new TableConfig("passive_skills",
-            "id,name,ascendancy_class,is_keystone,is_notable,"
-            + "is_jewel_socket,stat_text,connections,is_multiple_choice,"
-            + "is_multiple_choice_option,mastery_id,flavour_text,"
-            + "skill_points,buff_id"));
-        TABLE_CONFIGS.put("mods", new TableConfig("mods",
-            "id,name,domain,generation_type,mod_groups,stat_text,"
-            + "tags,required_level,mod_type,tier_text,"
-            + "granted_buff_id,granted_buff_value,granted_skill"));
-        TABLE_CONFIGS.put("weapons", new TableConfig("weapons",
-            "attack_speed,critical_strike_chance,weapon_range,"
-            + "physical_damage_min,physical_damage_max,"
-            + "fire_damage_min,fire_damage_max,cold_damage_min,cold_damage_max,"
-            + "lightning_damage_min,lightning_damage_max,chaos_damage_min,chaos_damage_max"));
-        TABLE_CONFIGS.put("armours", new TableConfig("armours",
-            "armour_min,armour_max,evasion_min,evasion_max,"
-            + "energy_shield_min,energy_shield_max,ward_min,ward_max,movement_speed"));
-        TABLE_CONFIGS.put("shields", new TableConfig("shields", "block"));
-        TABLE_CONFIGS.put("amulets", new TableConfig("amulets",
-            "is_talisman,talisman_tier"));
-        TABLE_CONFIGS.put("flasks", new TableConfig("flasks",
-            "charges_max,charges_per_use,duration,life,mana"));
-        TABLE_CONFIGS.put("jewels", new TableConfig("jewels",
-            "jewel_limit,radius_html"));
-        TABLE_CONFIGS.put("stackables", new TableConfig("stackables",
-            "stack_size,stack_size_currency_tab"));
-        TABLE_CONFIGS.put("maps", new TableConfig("maps",
-            "area_id,area_level,guild_character,series,tier,"
-            + "unique_area_id,unique_area_level,unique_guild_character"));
-        TABLE_CONFIGS.put("map_fragments", new TableConfig("map_fragments",
-            "map_fragment_limit"));
-        TABLE_CONFIGS.put("map_series", new TableConfig("map_series",
-            "id,name,ordinal"));
-        TABLE_CONFIGS.put("divination_cards", new TableConfig("divination_cards",
-            "card_art,card_background"));
-
+        TABLE_META.put("items", new TableMeta("base_items", 100, "name"));
+        TABLE_META.put("skill_gems", new TableMeta("skill_gems"));
+        TABLE_META.put("passive_skills", new TableMeta("passive_skills"));
+        TABLE_META.put("mods", new TableMeta("mods"));
+        TABLE_META.put("weapons", new TableMeta("weapons"));
+        TABLE_META.put("armours", new TableMeta("armours"));
+        TABLE_META.put("shields", new TableMeta("shields"));
+        TABLE_META.put("amulets", new TableMeta("amulets"));
+        TABLE_META.put("flasks", new TableMeta("flasks"));
+        TABLE_META.put("jewels", new TableMeta("jewels"));
+        TABLE_META.put("stackables", new TableMeta("stackables"));
+        TABLE_META.put("maps", new TableMeta("maps"));
+        TABLE_META.put("map_fragments", new TableMeta("map_fragments"));
+        TABLE_META.put("map_series", new TableMeta("map_series"));
+        TABLE_META.put("divination_cards", new TableMeta("divination_cards"));
         // ---- 怪物 ----
-        TABLE_CONFIGS.put("monsters", new TableConfig("monsters",
-            "attack_speed,critical_strike_chance,damage_multiplier,endgame_mod_ids,"
-            + "experience_multiplier,health_multiplier,is_boss,maximum_attack_distance,"
-            + "metadata_id,minimum_attack_distance,mod_ids,model_size_multiplier,"
-            + "monster_type_id,name,part1_mod_ids,part2_mod_ids,rarity,rarity_id,"
-            + "size,skill_ids,tags"));
-        TABLE_CONFIGS.put("monster_types", new TableConfig("monster_types",
-            "armour_multiplier,damage_spread,energy_shield_multiplier,"
-            + "evasion_multiplier,id,monster_resistance_id,tags"));
-        TABLE_CONFIGS.put("monster_base_stats", new TableConfig("monster_base_stats",
-            "accuracy,armour,damage,evasion,experience,level,life,summon_life"));
-        TABLE_CONFIGS.put("monster_life_scaling", new TableConfig("monster_life_scaling",
-            "level,magic,rare"));
-        TABLE_CONFIGS.put("monster_map_multipliers", new TableConfig("monster_map_multipliers",
-            "boss_damage,boss_item_quantity,boss_item_rarity,boss_life,damage,level,life"));
-        TABLE_CONFIGS.put("monster_resistances", new TableConfig("monster_resistances",
-            "id,maps_chaos,maps_cold,maps_fire,maps_lightning,"
-            + "part1_chaos,part1_cold,part1_fire,part1_lightning,"
-            + "part2_chaos,part2_cold,part2_fire,part2_lightning"));
+        TABLE_META.put("monsters", new TableMeta("monsters"));
+        TABLE_META.put("monster_types", new TableMeta("monster_types"));
+        TABLE_META.put("monster_base_stats", new TableMeta("monster_base_stats"));
+        TABLE_META.put("monster_life_scaling", new TableMeta("monster_life_scaling"));
+        TABLE_META.put("monster_map_multipliers", new TableMeta("monster_map_multipliers"));
+        TABLE_META.put("monster_resistances", new TableMeta("monster_resistances"));
         // ---- 区域 ----
-        TABLE_CONFIGS.put("areas", new TableConfig("areas",
-            "act,area_level,area_type_tags,boss_monster_ids,connection_ids,"
-            + "entry_npc,entry_text,flavour_text,has_waypoint,id,infobox_html,"
-            + "is_hideout_area,is_labyrinth_airlock_area,is_labyrinth_area,"
-            + "is_labyrinth_boss_area,is_legacy_map_area,is_map_area,is_town_area,"
-            + "is_unique_map_area,is_vaal_area,level_restriction_max,loading_screen,"
-            + "main_page,mainpage_categories,modifier_ids,monster_ids,name,"
-            + "parent_area_id,release_version,removal_version,screenshot,stat_text,"
-            + "strongbox_max_count,strongbox_spawn_chance,strongbox_weight_magic,"
-            + "strongbox_weight_normal,strongbox_weight_rare,strongbox_weight_unique,"
-            + "tags,vaal_area_ids,vaal_area_spawn_chance", 200));
+        TABLE_META.put("areas", new TableMeta("areas", 200));
         // ---- 异界图鉴 ----
-        TABLE_CONFIGS.put("atlas_nodes", new TableConfig("atlas_nodes",
-            "area_id,connections,div_cards,id,is_off_atlas,"
-            + "region_connections_0,region_connections_1,region_connections_2,"
-            + "region_connections_3,region_connections_4,region_id,region_minimum,"
-            + "series_id,tier_0,tier_1,tier_2,tier_3,tier_4"));
-
+        TABLE_META.put("atlas_nodes", new TableMeta("atlas_nodes"));
         // ---- Delve ----
-        TABLE_CONFIGS.put("delve_level_scaling", new TableConfig("delve_level_scaling",
-            "darkness_resistance,depth,light_radius,monster_damage,"
-            + "monster_level,monster_life,sulphite_cost"));
-        TABLE_CONFIGS.put("delve_resources_per_level", new TableConfig("delve_resources_per_level",
-            "area_level,sulphite"));
-        TABLE_CONFIGS.put("delve_upgrades", new TableConfig("delve_upgrades",
-            "cost,level,type"));
-        TABLE_CONFIGS.put("delve_upgrade_stats", new TableConfig("delve_upgrade_stats",
-            "id,level,type,value"));
-
+        TABLE_META.put("delve_level_scaling", new TableMeta("delve_level_scaling"));
+        TABLE_META.put("delve_resources_per_level", new TableMeta("delve_resources_per_level"));
+        TABLE_META.put("delve_upgrades", new TableMeta("delve_upgrades"));
+        TABLE_META.put("delve_upgrade_stats", new TableMeta("delve_upgrade_stats"));
         // ---- Heist ----
-        TABLE_CONFIGS.put("heist_areas", new TableConfig("heist_areas",
-            "area_ids,blueprint_id,contract_id,id,job_ids,reward_text"));
-        TABLE_CONFIGS.put("heist_jobs", new TableConfig("heist_jobs",
-            "id,name"));
-        TABLE_CONFIGS.put("heist_npcs", new TableConfig("heist_npcs",
-            "id,job_id,name,stat_text"));
-        TABLE_CONFIGS.put("heist_npc_skills", new TableConfig("heist_npc_skills",
-            "job_id,level,npc_id"));
-        TABLE_CONFIGS.put("heist_npc_stats", new TableConfig("heist_npc_stats",
-            "npc_id,stat_id,value"));
-        TABLE_CONFIGS.put("heist_equipment", new TableConfig("heist_equipment",
-            "required_job_id,required_job_level"));
-
+        TABLE_META.put("heist_areas", new TableMeta("heist_areas"));
+        TABLE_META.put("heist_jobs", new TableMeta("heist_jobs"));
+        TABLE_META.put("heist_npcs", new TableMeta("heist_npcs"));
+        TABLE_META.put("heist_npc_skills", new TableMeta("heist_npc_skills"));
+        TABLE_META.put("heist_npc_stats", new TableMeta("heist_npc_stats"));
+        TABLE_META.put("heist_equipment", new TableMeta("heist_equipment"));
         // ---- Blight ----
-        TABLE_CONFIGS.put("blight_crafting_recipes", new TableConfig("blight_crafting_recipes",
-            "id,modifier_id,passive_id,type"));
-        TABLE_CONFIGS.put("blight_crafting_recipes_items", new TableConfig("blight_crafting_recipes_items",
-            "item_id,ordinal,recipe_id"));
-        TABLE_CONFIGS.put("blight_items", new TableConfig("blight_items",
-            "tier"));
-        TABLE_CONFIGS.put("blight_towers", new TableConfig("blight_towers",
-            "cost,description,icon,id,name,radius,tier"));
-
+        TABLE_META.put("blight_crafting_recipes", new TableMeta("blight_crafting_recipes"));
+        TABLE_META.put("blight_crafting_recipes_items", new TableMeta("blight_crafting_recipes_items"));
+        TABLE_META.put("blight_items", new TableMeta("blight_items"));
+        TABLE_META.put("blight_towers", new TableMeta("blight_towers"));
         // ---- Harvest ----
-        TABLE_CONFIGS.put("harvest_crafting_options", new TableConfig("harvest_crafting_options",
-            "cost_primal,cost_rancour,cost_sacred,cost_vivid,cost_wild,"
-            + "effect,effect_html,id,ordinal"));
-        TABLE_CONFIGS.put("harvest_plant_boosters", new TableConfig("harvest_plant_boosters",
-            "additional_crafting_options,extra_chances,lifeforce,radius"));
-        TABLE_CONFIGS.put("harvest_seeds", new TableConfig("harvest_seeds",
-            "consumed_primal_lifeforce_percentage,consumed_vivid_lifeforce_percentage,"
-            + "consumed_wild_lifeforce_percentage,effect,granted_craft_option_ids,"
-            + "growth_cycles,required_nearby_seed_amount,required_nearby_seed_tier,"
-            + "tier,type,type_id"));
-
+        TABLE_META.put("harvest_crafting_options", new TableMeta("harvest_crafting_options"));
+        TABLE_META.put("harvest_plant_boosters", new TableMeta("harvest_plant_boosters"));
+        TABLE_META.put("harvest_seeds", new TableMeta("harvest_seeds"));
         // ---- Synthesis ----
-        TABLE_CONFIGS.put("synthesis_areas", new TableConfig("synthesis_areas",
-            "id,max_level,min_level,name,size,weight"));
-        TABLE_CONFIGS.put("synthesis_corrupted_mods", new TableConfig("synthesis_corrupted_mods",
-            "item_class_id,mod_ids"));
-        TABLE_CONFIGS.put("synthesis_global_mods", new TableConfig("synthesis_global_mods",
-            "max_level,min_level,mod_id,weight"));
-        TABLE_CONFIGS.put("synthesis_mods", new TableConfig("synthesis_mods",
-            "item_class_ids,mod_ids,stat_id,stat_text,stat_value"));
-
+        TABLE_META.put("synthesis_areas", new TableMeta("synthesis_areas"));
+        TABLE_META.put("synthesis_corrupted_mods", new TableMeta("synthesis_corrupted_mods"));
+        TABLE_META.put("synthesis_global_mods", new TableMeta("synthesis_global_mods"));
+        TABLE_META.put("synthesis_mods", new TableMeta("synthesis_mods"));
         // ---- Bestiary ----
-        TABLE_CONFIGS.put("bestiary_recipes", new TableConfig("bestiary_recipes",
-            "game_mode,header,id,notes,subheader"));
-        TABLE_CONFIGS.put("bestiary_recipe_components", new TableConfig("bestiary_recipe_components",
-            "amount,component_id,recipe_id"));
-
+        TABLE_META.put("bestiary_recipes", new TableMeta("bestiary_recipes"));
+        TABLE_META.put("bestiary_recipe_components", new TableMeta("bestiary_recipe_components"));
         // ---- Incursion ----
-        TABLE_CONFIGS.put("incursion_rooms", new TableConfig("incursion_rooms",
-            "architect_metadata_id,architect_name,description,flavour_text,"
-            + "icon,id,min_level,modifier_ids,name,stat_text,tier,upgrade_room_id"));
-
+        TABLE_META.put("incursion_rooms", new TableMeta("incursion_rooms"));
         // ---- Pantheon ----
-        TABLE_CONFIGS.put("pantheon", new TableConfig("pantheon",
-            "id,is_major_god"));
-        TABLE_CONFIGS.put("pantheon_souls", new TableConfig("pantheon_souls",
-            "id,item_id,name,ordinal,stat_text,target_area_id,target_monster_id"));
-        TABLE_CONFIGS.put("pantheon_stats", new TableConfig("pantheon_stats",
-            "id,ordinal,pantheon_id,pantheon_ordinal,value"));
-
+        TABLE_META.put("pantheon", new TableMeta("pantheon"));
+        TABLE_META.put("pantheon_souls", new TableMeta("pantheon_souls"));
+        TABLE_META.put("pantheon_stats", new TableMeta("pantheon_stats"));
         // ---- 词缀子表 ----
-        TABLE_CONFIGS.put("mod_stats", new TableConfig("mod_stats",
-            "id,min,max"));
-        TABLE_CONFIGS.put("mod_spawn_weights", new TableConfig("mod_spawn_weights",
-            "ordinal,tag,value"));
-        TABLE_CONFIGS.put("mod_generation_weights", new TableConfig("mod_generation_weights",
-            "ordinal,tag,value"));
-        TABLE_CONFIGS.put("mod_sell_prices", new TableConfig("mod_sell_prices",
-            "amount,name"));
-
+        TABLE_META.put("mod_stats", new TableMeta("mod_stats"));
+        TABLE_META.put("mod_spawn_weights", new TableMeta("mod_spawn_weights"));
+        TABLE_META.put("mod_generation_weights", new TableMeta("mod_generation_weights"));
+        TABLE_META.put("mod_sell_prices", new TableMeta("mod_sell_prices"));
         // ---- 物品-词缀关联 ----
-        TABLE_CONFIGS.put("item_mods", new TableConfig("item_mods",
-            "id,is_explicit,is_implicit,is_map_fragment_bonus,is_random,text"));
-        TABLE_CONFIGS.put("item_stats", new TableConfig("item_stats",
-            "avg,id,max,min,mod_id"));
-        TABLE_CONFIGS.put("item_buffs", new TableConfig("item_buffs",
-            "buff_values,icon,id,stat_text"));
-
+        TABLE_META.put("item_mods", new TableMeta("item_mods"));
+        TABLE_META.put("item_stats", new TableMeta("item_stats"));
+        TABLE_META.put("item_buffs", new TableMeta("item_buffs"));
         // ---- 工艺/配方 ----
-        TABLE_CONFIGS.put("crafting_bench_options", new TableConfig("crafting_bench_options",
-            "id,name,affix_type,mod_id,mod_group,rank,required_level,npc,description,"
-            + "recipe_unlock_location,crafting_bench_unlock_category,"
-            + "crafting_bench_unlock_category_description,item_class_categories,"
-            + "item_classes,item_classes_ids,links,ordinal,socket_colours,sockets,"
-            + "unveils_required"));
-        TABLE_CONFIGS.put("crafting_bench_options_costs", new TableConfig("crafting_bench_options_costs",
-            "amount,name,option_id"));
-        TABLE_CONFIGS.put("essences", new TableConfig("essences",
-            "category,level,level_restriction,type"));
-        TABLE_CONFIGS.put("fossils", new TableConfig("fossils",
-            "added_modifier_ids,allowed_tags,base_item_id,can_enchant,can_mirror,"
-            + "can_quality,can_roll_white_sockets,corrupted_essence_chance,"
-            + "forbidden_tags,forced_modifier_ids,is_lucky,sell_price_modifier_ids"));
-        TABLE_CONFIGS.put("fossil_weights", new TableConfig("fossil_weights",
-            "base_item_id,ordinal,tag,type,weight"));
-
+        TABLE_META.put("crafting_bench_options", new TableMeta("crafting_bench_options"));
+        TABLE_META.put("crafting_bench_options_costs", new TableMeta("crafting_bench_options_costs"));
+        TABLE_META.put("essences", new TableMeta("essences"));
+        TABLE_META.put("fossils", new TableMeta("fossils"));
+        TABLE_META.put("fossil_weights", new TableMeta("fossil_weights"));
         // ---- 经济数据 ----
-        TABLE_CONFIGS.put("vendor_rewards", new TableConfig("vendor_rewards",
-            "act,class_ids,classes,npc,quest,quest_id"));
-        TABLE_CONFIGS.put("item_sell_prices", new TableConfig("item_sell_prices",
-            "amount,name"));
-        TABLE_CONFIGS.put("item_purchase_costs", new TableConfig("item_purchase_costs",
-            "amount,name,rarity"));
-
+        TABLE_META.put("vendor_rewards", new TableMeta("vendor_rewards"));
+        TABLE_META.put("item_sell_prices", new TableMeta("item_sell_prices"));
+        TABLE_META.put("item_purchase_costs", new TableMeta("item_purchase_costs"));
         // ---- 技能详细数据 ----
-        TABLE_CONFIGS.put("skill", new TableConfig("skills",
-            "active_skill_name,cast_time,description,is_support,"
-            + "item_class_id_restriction,item_class_restriction,"
-            + "max_level,skill_id,stat_text"));
-        TABLE_CONFIGS.put("skill_levels", new TableConfig("skill_levels",
-            "attack_speed_multiplier,attack_time,cooldown,cost_amounts,"
-            + "cost_multiplier,cost_types,critical_strike_chance,"
-            + "damage_effectiveness,damage_multiplier,dexterity_requirement,"
-            + "duration,experience,intelligence_requirement,level,"
-            + "level_requirement,life_reservation_flat,life_reservation_percent,"
-            + "mana_reservation_flat,mana_reservation_percent,skill_level,"
-            + "stat_text,stored_uses,strength_requirement,"
-            + "vaal_soul_gain_prevention_time,vaal_souls_requirement,vaal_stored_uses"));
-        TABLE_CONFIGS.put("skill_stats_per_level", new TableConfig("skill_stats_per_level",
-            "id,level,value"));
-        TABLE_CONFIGS.put("skill_quality", new TableConfig("skill_quality",
-            "set_id,stat_text"));
-        TABLE_CONFIGS.put("skill_quality_stats", new TableConfig("skill_quality_stats",
-            "id,set_id,value"));
-        TABLE_CONFIGS.put("gem_levels", new TableConfig("gem_levels",
-            "experience,level,required_dexterity,"
-            + "required_intelligence,required_level,required_strength"));
-
+        TABLE_META.put("skill", new TableMeta("skills"));
+        TABLE_META.put("skill_levels", new TableMeta("skill_levels"));
+        TABLE_META.put("skill_stats_per_level", new TableMeta("skill_stats_per_level"));
+        TABLE_META.put("skill_quality", new TableMeta("skill_quality"));
+        TABLE_META.put("skill_quality_stats", new TableMeta("skill_quality_stats"));
+        TABLE_META.put("gem_levels", new TableMeta("gem_levels"));
         // ---- 天赋详细数据 ----
-        TABLE_CONFIGS.put("passive_skill_connections", new TableConfig("passive_skill_connections",
-            "node_ids,tree_id"));
-        TABLE_CONFIGS.put("mastery_effects", new TableConfig("mastery_effects",
-            "id,stat_ids,stat_text,stat_text_raw,stat_values"));
-        TABLE_CONFIGS.put("mastery_groups", new TableConfig("mastery_groups",
-            "icon,id,name"));
-
+        TABLE_META.put("passive_skill_connections", new TableMeta("passive_skill_connections"));
+        TABLE_META.put("mastery_effects", new TableMeta("mastery_effects"));
+        TABLE_META.put("mastery_groups", new TableMeta("mastery_groups"));
         // ---- 职业数据 ----
-        TABLE_CONFIGS.put("character_classes", new TableConfig("character_classes",
-            "dexterity,flavour_text,id,intelligence,name,str_id,strength"));
-        TABLE_CONFIGS.put("ascendancy_classes", new TableConfig("ascendancy_classes",
-            "character_class,character_id,flavour_text,id,name"));
-
+        TABLE_META.put("character_classes", new TableMeta("character_classes"));
+        TABLE_META.put("ascendancy_classes", new TableMeta("ascendancy_classes"));
         // ---- 杂项与历史数据 ----
-        TABLE_CONFIGS.put("versions", new TableConfig("versions",
-            "after,major_part,minor_part,patch_part,previous,release_date,revision_part,version"));
-        TABLE_CONFIGS.put("legacy_variants", new TableConfig("legacy_variants",
-            "removal_version,implicit_stat_text,explicit_stat_text,stat_text,base_item,required_level"));
-        TABLE_CONFIGS.put("prophecies", new TableConfig("prophecies",
-            "objective,prediction_text,prophecy_id,reward,seal_cost"));
-        TABLE_CONFIGS.put("quest_rewards", new TableConfig("quest_rewards",
-            "act,class_ids,classes,item_level,notes,quest,quest_id,rarity,sockets"));
-        TABLE_CONFIGS.put("spawn_weights", new TableConfig("spawn_weights",
-            "ordinal,tag,weight"));
-        TABLE_CONFIGS.put("generic_stats", new TableConfig("generic_stats",
-            "id,name,stat_text,value"));
-
+        TABLE_META.put("versions", new TableMeta("versions"));
+        TABLE_META.put("legacy_variants", new TableMeta("legacy_variants"));
+        TABLE_META.put("prophecies", new TableMeta("prophecies"));
+        TABLE_META.put("quest_rewards", new TableMeta("quest_rewards"));
+        TABLE_META.put("spawn_weights", new TableMeta("spawn_weights"));
+        TABLE_META.put("generic_stats", new TableMeta("generic_stats"));
         // ---- 赛季特有物品 ----
-        TABLE_CONFIGS.put("tattoos", new TableConfig("tattoos",
-            "max_adjacent,min_adjacent,skill_id,target,tattoo_limit,tribe"));
-        TABLE_CONFIGS.put("tinctures", new TableConfig("tinctures",
-            "cooldown,cooldown_html,cooldown_range_average,cooldown_range_colour,"
-            + "cooldown_range_maximum,cooldown_range_minimum,cooldown_range_text,"
-            + "debuff_interval,debuff_interval_html,debuff_interval_range_average,"
-            + "debuff_interval_range_colour,debuff_interval_range_maximum,"
-            + "debuff_interval_range_minimum,debuff_interval_range_text"));
-        TABLE_CONFIGS.put("sentinels", new TableConfig("sentinels",
-            "charge,charge_html,charge_range_average,charge_range_colour,"
-            + "charge_range_maximum,charge_range_minimum,charge_range_text,"
-            + "duration,duration_html,duration_range_average,duration_range_colour,"
-            + "duration_range_maximum,duration_range_minimum,duration_range_text,"
-            + "empowerment,empowerment_html,empowerment_range_average,empowerment_range_colour,"
-            + "empowerment_range_maximum,empowerment_range_minimum,empowerment_range_text,"
-            + "empowers,empowers_html,empowers_range_average,empowers_range_colour,"
-            + "empowers_range_maximum,empowers_range_minimum,empowers_range_text,"
-            + "monster,monster_level"));
-        TABLE_CONFIGS.put("idols", new TableConfig("idols",
-            "idol_limit"));
-        TABLE_CONFIGS.put("grafts", new TableConfig("grafts",
-            "skill_id"));
-        TABLE_CONFIGS.put("corpse_items", new TableConfig("corpse_items",
-            "monster_abilities,monster_category,monster_category_html,tier"));
-
+        TABLE_META.put("tattoos", new TableMeta("tattoos"));
+        TABLE_META.put("tinctures", new TableMeta("tinctures"));
+        TABLE_META.put("sentinels", new TableMeta("sentinels"));
+        TABLE_META.put("idols", new TableMeta("idols"));
+        TABLE_META.put("grafts", new TableMeta("grafts"));
+        TABLE_META.put("corpse_items", new TableMeta("corpse_items"));
         // ---- 杂项低优先级 ----
-        TABLE_CONFIGS.put("cosmetic_items", new TableConfig("cosmetic_items",
-            "cosmetic_type,target,theme"));
-        TABLE_CONFIGS.put("hideout_doodads", new TableConfig("hideout_doodads",
-            "is_master_doodad,variation_count"));
-        TABLE_CONFIGS.put("guides", new TableConfig("guides",
-            "date,subject,version"));
+        TABLE_META.put("cosmetic_items", new TableMeta("cosmetic_items"));
+        TABLE_META.put("hideout_doodads", new TableMeta("hideout_doodads"));
+        TABLE_META.put("guides", new TableMeta("guides"));
     }
+
+    /** 运行时表配置：由 {@link #initFromWiki()} 填充，合并 TABLE_META + wiki 发现字段。 */
+    private final Map<String, TableConfig> tableConfigs = new LinkedHashMap<>();
 
     private final WikiApiClient wikiClient;
     private final DatabaseManager dbManager;
@@ -376,6 +184,65 @@ public class DataSyncService {
     public DataSyncService(WikiApiClient wikiClient, DatabaseManager dbManager) {
         this.wikiClient = wikiClient;
         this.dbManager = dbManager;
+    }
+
+    /**
+     * 从 Wiki API 动态获取所有 Cargo 表的字段定义，构建运行时 tableConfigs。
+     * <p>
+     * 必须在使用 {@link #syncTable} / {@link #syncAll} 之前调用。
+     * 对于 TABLE_META 中注册的表，使用 wiki 返回的真实字段列表；
+     * 对于未注册的表，跳过（无 Converter/DAO 支持）。
+     * <p>
+     * 为减少 Cloudflare 限流，表间有 1 秒延迟。
+     *
+     * @throws DataSyncException 无法连接 Wiki API 时抛出
+     */
+    public void initFromWiki() {
+        log.info("Discovering table fields from Wiki API...");
+        tableConfigs.clear();
+
+        int discovered = 0;
+        for (Map.Entry<String, TableMeta> entry : TABLE_META.entrySet()) {
+            String cargoTable = entry.getKey();
+            discovered++;
+            initTableFromWiki(cargoTable);
+            if (discovered % 10 == 0) {
+                sleep(2000); // 每 10 张表加 2s 冷却，缓解 Cloudflare 限流
+            }
+        }
+        log.info("Initialized {} table configs from Wiki", tableConfigs.size());
+    }
+
+    /**
+     * 从 Wiki API 获取单张表的字段定义并注册到 tableConfigs。
+     * <p>
+     * 适合只同步单表的场景，避免全量 discovery 导致的 Cloudflare 限流。
+     *
+     * @param cargoTable Cargo 表名
+     */
+    public void initTableFromWiki(String cargoTable) {
+        TableMeta meta = TABLE_META.get(cargoTable);
+        if (meta == null) {
+            log.warn("No TABLE_META entry for '{}', skipping field discovery", cargoTable);
+            return;
+        }
+        try {
+            List<WikiApiClient.CargoField> fields = wikiClient.queryCargoFields(cargoTable);
+            if (fields.isEmpty()) {
+                log.warn("No fields returned for '{}', skipping", cargoTable);
+                return;
+            }
+            String fieldsStr = fields.stream()
+                .map(WikiApiClient.CargoField::name)
+                .reduce((a, b) -> a + "," + b)
+                .orElse("");
+            tableConfigs.put(cargoTable, new TableConfig(
+                meta.sqliteTable, fieldsStr, meta.batchSize, meta.keyField));
+            log.info("Discovered '{}': {} fields (sqlite={})",
+                cargoTable, fields.size(), meta.sqliteTable);
+        } catch (Exception e) {
+            log.error("Failed to discover fields for '{}': {}", cargoTable, e.getMessage());
+        }
     }
 
     /** 设置表间间隔（毫秒），0 表示无延迟。供测试使用。 */
@@ -413,7 +280,7 @@ public class DataSyncService {
         List<String> failedTables = new ArrayList<>();
 
         // 第一轮：顺序同步全部表，表间冷却避免 Cloudflare 累积限流
-        for (String tableName : TABLE_CONFIGS.keySet()) {
+        for (String tableName : tableConfigs.keySet()) {
             try {
                 results.put(tableName, syncTable(tableName));
                 sleep(interTableDelayMs);
@@ -453,7 +320,7 @@ public class DataSyncService {
      * @throws IllegalArgumentException 表名未在配置中
      */
     public SyncResult syncTable(String cargoTable) throws SQLException {
-        TableConfig config = TABLE_CONFIGS.get(cargoTable);
+        TableConfig config = tableConfigs.get(cargoTable);
         if (config == null) {
             throw new IllegalArgumentException("Unknown table: " + cargoTable);
         }
@@ -509,7 +376,7 @@ public class DataSyncService {
      */
     public boolean hasUpdates() {
         try (Connection conn = dbManager.getConnection()) {
-            for (Map.Entry<String, TableConfig> entry : TABLE_CONFIGS.entrySet()) {
+            for (Map.Entry<String, TableConfig> entry : tableConfigs.entrySet()) {
                 int remote = wikiClient.queryCargoTableCount(entry.getKey());
                 int local = getLocalRecordCount(conn, entry.getValue().sqliteTable);
                 if (remote > 0 && remote != local) {
@@ -533,7 +400,7 @@ public class DataSyncService {
     public Set<String> getOutOfSyncTables() {
         Set<String> outOfSync = new LinkedHashSet<>();
         try (Connection conn = dbManager.getConnection()) {
-            for (Map.Entry<String, TableConfig> entry : TABLE_CONFIGS.entrySet()) {
+            for (Map.Entry<String, TableConfig> entry : tableConfigs.entrySet()) {
                 String cargoTable = entry.getKey();
                 try {
                     int remote = wikiClient.queryCargoTableCount(cargoTable);
@@ -568,7 +435,7 @@ public class DataSyncService {
         List<String> failedTables = new ArrayList<>();
 
         for (String tableName : cargoTables) {
-            if (!TABLE_CONFIGS.containsKey(tableName)) {
+            if (!tableConfigs.containsKey(tableName)) {
                 log.warn("Unknown table '{}', skipping", tableName);
                 results.put(tableName, SyncResult.failed(tableName, "Unknown table"));
                 continue;
@@ -1432,6 +1299,28 @@ public class DataSyncService {
     // ==================== 内部类型 ====================
 
     /** 单个表的同步配置。 */
+    /** 表元数据（不含 fields，fields 从 wiki 动态获取）。 */
+    static class TableMeta {
+        final String sqliteTable;
+        final int batchSize;
+        final String keyField;
+
+        TableMeta(String sqliteTable) {
+            this(sqliteTable, BATCH_SIZE, null);
+        }
+
+        TableMeta(String sqliteTable, int batchSize) {
+            this(sqliteTable, batchSize, null);
+        }
+
+        TableMeta(String sqliteTable, int batchSize, String keyField) {
+            this.sqliteTable = sqliteTable;
+            this.batchSize = batchSize;
+            this.keyField = keyField;
+        }
+    }
+
+    /** 运行时表配置：sqliteTable + 动态 fields + batchSize + keyField。 */
     static class TableConfig {
         final String sqliteTable;
         final String fields;
@@ -1441,14 +1330,6 @@ public class DataSyncService {
          * 替代 offset 分页，避免深度 offset 在大表上触发 Cargo MWException。
          */
         final String keyField;
-
-        TableConfig(String sqliteTable, String fields) {
-            this(sqliteTable, fields, BATCH_SIZE, null);
-        }
-
-        TableConfig(String sqliteTable, String fields, int batchSize) {
-            this(sqliteTable, fields, batchSize, null);
-        }
 
         TableConfig(String sqliteTable, String fields, int batchSize, String keyField) {
             this.sqliteTable = sqliteTable;

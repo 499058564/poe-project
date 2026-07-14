@@ -10,6 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * PoE Wiki Cargo 数据 API 的 HTTP 客户端。
@@ -34,7 +38,10 @@ public class WikiApiClient {
     private static final Logger log = LoggerFactory.getLogger(WikiApiClient.class);
 
     /** PoE Wiki API 基础地址。 */
-    static final String WIKI_API = "https://www.poewiki.net/w/api.php";
+    public static final String WIKI_API = "https://www.poewiki.net/w/api.php";
+
+    /** User-Agent，模拟浏览器避免 Cloudflare 拦截。 */
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) PoEProject/1.0";
 
     /** 最大重试次数。 */
     private static final int MAX_RETRIES = 3;
@@ -88,6 +95,85 @@ public class WikiApiClient {
         this.objectMapper = new ObjectMapper();
         this.baseUrl = baseUrl;
     }
+
+    // ==================== 表与字段发现 ====================
+
+    /**
+     * 获取 Wiki 上所有可用的 Cargo 表名。
+     *
+     * @return Cargo 表名集合
+     * @throws DataSyncException 网络错误或 API 返回错误时抛出
+     */
+    public Set<String> queryCargoTables() {
+        HttpUrl url = HttpUrl.parse(baseUrl).newBuilder()
+            .addQueryParameter("action", "cargotables")
+            .addQueryParameter("format", "json")
+            .build();
+
+        Request request = new Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .build();
+
+        rateLimiter.acquire();
+        String json = executeWithRetry(request);
+        JsonNode root = parseAndCheckError(json);
+
+        Set<String> tables = new LinkedHashSet<>();
+        JsonNode cargoTables = root.path("cargotables");
+        if (cargoTables.isArray()) {
+            for (JsonNode node : cargoTables) {
+                tables.add(node.asText());
+            }
+        }
+        return tables;
+    }
+
+    /**
+     * 获取指定 Cargo 表的字段定义。
+     * <p>
+     * 返回字段名列表，可直接用于构建 cargoquery 的 {@code fields} 参数，
+     * 避免因硬编码不存在字段而触发 MWException。
+     *
+     * @param table Cargo 表名（如 "items"）
+     * @return 字段名列表（按 wiki 返回顺序）
+     * @throws DataSyncException 网络错误或 API 返回错误时抛出
+     */
+    public List<CargoField> queryCargoFields(String table) {
+        HttpUrl url = HttpUrl.parse(baseUrl).newBuilder()
+            .addQueryParameter("action", "cargofields")
+            .addQueryParameter("format", "json")
+            .addQueryParameter("table", table)
+            .build();
+
+        Request request = new Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .build();
+
+        rateLimiter.acquire();
+        String json = executeWithRetry(request);
+        JsonNode root = parseAndCheckError(json);
+
+        List<CargoField> fields = new ArrayList<>();
+        JsonNode cargoFields = root.path("cargofields");
+        // cargofields 返回 JSON 对象 {fieldName: {type: "String", ...}}，不是数组
+        if (cargoFields.isObject()) {
+            var it = cargoFields.fields();
+            while (it.hasNext()) {
+                var entry = it.next();
+                String name = entry.getKey();
+                String type = entry.getValue().path("type").asText("");
+                fields.add(new CargoField(name, type));
+            }
+        }
+        return fields;
+    }
+
+    /**
+     * Cargo 字段定义（名称 + 类型）。
+     */
+    public record CargoField(String name, String type) {}
 
     // ==================== 公开方法 ====================
 
@@ -179,7 +265,7 @@ public class WikiApiClient {
     private JsonNode executeCargoQuery(HttpUrl url) {
         Request request = new Request.Builder()
             .url(url)
-            .header("User-Agent", "PoEProject/1.0 (poe-tool)")
+            .header("User-Agent", USER_AGENT)
             .build();
 
         String json = executeWithRetry(request);
@@ -228,7 +314,7 @@ public class WikiApiClient {
 
         Request request = new Request.Builder()
             .url(url)
-            .header("User-Agent", "PoEProject/1.0 (poe-tool)")
+            .header("User-Agent", USER_AGENT)
             .build();
 
         String json = executeWithRetry(request);
@@ -363,5 +449,10 @@ public class WikiApiClient {
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             throw new DataSyncException("Failed to parse Wiki API response", e);
         }
+    }
+
+
+    public static void main(String[] args) {
+        //TODO yzy 测试拉取数据
     }
 }
