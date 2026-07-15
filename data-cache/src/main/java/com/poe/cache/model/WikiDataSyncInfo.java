@@ -4,16 +4,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * wiki_data_sync_info — Wiki 数据同步状态表。
+ * wiki_data_sync_info — 自动生成的模型类。
  */
 public class WikiDataSyncInfo {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    /** 同步状态常量 */
-    public static final String STATUS_PENDING = "0";
-    public static final String STATUS_SYNCING = "1";
-    public static final String STATUS_DONE = "2";
 
     private Integer id;
     private Integer wikiTableInfoId;
@@ -27,13 +22,13 @@ public class WikiDataSyncInfo {
 
     public WikiDataSyncInfo() {}
 
-    public WikiDataSyncInfo(Integer wikiTableInfoId, String wikiTableName) {
+    public WikiDataSyncInfo(Integer wikiTableInfoId, String wikiTableName, Integer syncOffset, String syncStatus, Integer recordsSynced, Integer recordsTotal) {
         this.wikiTableInfoId = wikiTableInfoId;
         this.wikiTableName = wikiTableName;
-        this.syncOffset = 0;
-        this.syncStatus = STATUS_PENDING;
-        this.recordsSynced = 0;
-        this.recordsTotal = 0;
+        this.syncOffset = syncOffset;
+        this.syncStatus = syncStatus;
+        this.recordsSynced = recordsSynced;
+        this.recordsTotal = recordsTotal;
         String now = FMT.format(LocalDateTime.now());
         this.createTime = now;
         this.updateTime = now;
@@ -43,27 +38,27 @@ public class WikiDataSyncInfo {
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
-    /** 关联 wiki_table_info.id */
+    /** wiki_table_info主键 */
     public Integer getWikiTableInfoId() { return wikiTableInfoId; }
     public void setWikiTableInfoId(Integer wikiTableInfoId) { this.wikiTableInfoId = wikiTableInfoId; }
 
-    /** Wiki 表名 */
+    /** wiki_table名称 */
     public String getWikiTableName() { return wikiTableName; }
     public void setWikiTableName(String wikiTableName) { this.wikiTableName = wikiTableName; }
 
-    /** 同步偏移量 */
+    /** sync偏移量 */
     public Integer getSyncOffset() { return syncOffset; }
     public void setSyncOffset(Integer syncOffset) { this.syncOffset = syncOffset; }
 
-    /** 同步状态：0-未同步 1-同步中 2-同步完成 */
+    /** sync状态 */
     public String getSyncStatus() { return syncStatus; }
     public void setSyncStatus(String syncStatus) { this.syncStatus = syncStatus; }
 
-    /** 已同步记录数 */
+    /** records已同步 */
     public Integer getRecordsSynced() { return recordsSynced; }
     public void setRecordsSynced(Integer recordsSynced) { this.recordsSynced = recordsSynced; }
 
-    /** 总记录数 */
+    /** records总数 */
     public Integer getRecordsTotal() { return recordsTotal; }
     public void setRecordsTotal(Integer recordsTotal) { this.recordsTotal = recordsTotal; }
 
@@ -74,4 +69,5 @@ public class WikiDataSyncInfo {
     /** 更新时间 */
     public String getUpdateTime() { return updateTime; }
     public void setUpdateTime(String updateTime) { this.updateTime = updateTime; }
+
 }

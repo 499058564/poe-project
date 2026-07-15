@@ -29,6 +29,14 @@ dependencies {
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
+// 代码生成：从 SQLite 数据库生成 Model + DAO
+tasks.register<JavaExec>("generateModelDao") {
+    group = "codegen"
+    description = "根据 SQLite 数据库结构自动生成 Model 和 DAO 类"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.poe.provider.ModelDaoGeneratorMain")
+}
+
 // 构建种子数据库的 Gradle 任务
 tasks.register<JavaExec>("buildSeedDb") {
     group = "data"

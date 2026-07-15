@@ -4,9 +4,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * poecharm2_translate_info — PoeCharm2 翻译数据表。
+ * poecharm2_translate_info — 自动生成的模型类。
  */
-public class PoeCharm2TranslateInfo {
+public class Poecharm2TranslateInfo {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -17,9 +17,9 @@ public class PoeCharm2TranslateInfo {
     private String createTime;
     private String updateTime;
 
-    public PoeCharm2TranslateInfo() {}
+    public Poecharm2TranslateInfo() {}
 
-    public PoeCharm2TranslateInfo(String englishName, String chineseName, String cnCsvFileName) {
+    public Poecharm2TranslateInfo(String englishName, String chineseName, String cnCsvFileName) {
         this.englishName = englishName;
         this.chineseName = chineseName;
         this.cnCsvFileName = cnCsvFileName;
@@ -32,15 +32,15 @@ public class PoeCharm2TranslateInfo {
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
-    /** 英文名 */
+    /** english名称 */
     public String getEnglishName() { return englishName; }
     public void setEnglishName(String englishName) { this.englishName = englishName; }
 
-    /** 中文名 */
+    /** chinese名称 */
     public String getChineseName() { return chineseName; }
     public void setChineseName(String chineseName) { this.chineseName = chineseName; }
 
-    /** 中文 CSV 文件名 */
+    /** cn_csv_file名称 */
     public String getCnCsvFileName() { return cnCsvFileName; }
     public void setCnCsvFileName(String cnCsvFileName) { this.cnCsvFileName = cnCsvFileName; }
 
@@ -51,4 +51,5 @@ public class PoeCharm2TranslateInfo {
     /** 更新时间 */
     public String getUpdateTime() { return updateTime; }
     public void setUpdateTime(String updateTime) { this.updateTime = updateTime; }
+
 }

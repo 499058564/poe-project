@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * wiki_table_info — Wiki 表元信息。
+ * wiki_table_info — 自动生成的模型类。
  */
 public class WikiTableInfo {
 
@@ -18,9 +18,8 @@ public class WikiTableInfo {
 
     public WikiTableInfo() {}
 
-    public WikiTableInfo(String wikiTableName, String tableDesc) {
+    public WikiTableInfo(String wikiTableName) {
         this.wikiTableName = wikiTableName;
-        this.tableDesc = tableDesc;
         String now = FMT.format(LocalDateTime.now());
         this.createTime = now;
         this.updateTime = now;
@@ -30,11 +29,11 @@ public class WikiTableInfo {
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
-    /** Wiki 表名 */
+    /** wiki_table名称 */
     public String getWikiTableName() { return wikiTableName; }
     public void setWikiTableName(String wikiTableName) { this.wikiTableName = wikiTableName; }
 
-    /** 表描述 */
+    /** table描述 */
     public String getTableDesc() { return tableDesc; }
     public void setTableDesc(String tableDesc) { this.tableDesc = tableDesc; }
 
@@ -45,4 +44,5 @@ public class WikiTableInfo {
     /** 更新时间 */
     public String getUpdateTime() { return updateTime; }
     public void setUpdateTime(String updateTime) { this.updateTime = updateTime; }
+
 }

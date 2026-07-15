@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * poe_project_sys_config — 系统配置表。
+ * poe_project_sys_config — 自动生成的模型类。
  */
 public class PoeProjectSysConfig {
 
@@ -35,27 +35,27 @@ public class PoeProjectSysConfig {
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
-    /** 配置键 */
+    /** config键 */
     public String getConfigKey() { return configKey; }
     public void setConfigKey(String configKey) { this.configKey = configKey; }
 
-    /** 配置值 */
+    /** config值 */
     public String getConfigValue() { return configValue; }
     public void setConfigValue(String configValue) { this.configValue = configValue; }
 
-    /** 配置类型：string / date / number */
+    /** field类型 */
     public String getFieldType() { return fieldType; }
     public void setFieldType(String fieldType) { this.fieldType = fieldType; }
 
-    /** 日期类型格式 */
+    /** date_type格式 */
     public String getDateTypeFormat() { return dateTypeFormat; }
     public void setDateTypeFormat(String dateTypeFormat) { this.dateTypeFormat = dateTypeFormat; }
 
-    /** 数字类型小数位，0 表示整数 */
+    /** number_type小数位 */
     public String getNumberTypeScale() { return numberTypeScale; }
     public void setNumberTypeScale(String numberTypeScale) { this.numberTypeScale = numberTypeScale; }
 
-    /** 配置描述 */
+    /** config描述 */
     public String getConfigDesc() { return configDesc; }
     public void setConfigDesc(String configDesc) { this.configDesc = configDesc; }
 
@@ -66,4 +66,5 @@ public class PoeProjectSysConfig {
     /** 更新时间 */
     public String getUpdateTime() { return updateTime; }
     public void setUpdateTime(String updateTime) { this.updateTime = updateTime; }
+
 }

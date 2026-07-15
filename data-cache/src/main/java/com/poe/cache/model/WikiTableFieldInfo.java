@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * wiki_table_field_info — Wiki 表字段元信息。
+ * wiki_table_field_info — 自动生成的模型类。
  */
 public class WikiTableFieldInfo {
 
@@ -23,8 +23,7 @@ public class WikiTableFieldInfo {
 
     public WikiTableFieldInfo() {}
 
-    public WikiTableFieldInfo(Integer wikiTableInfoId, String wikiTableName,
-                               String fieldName, String fieldType) {
+    public WikiTableFieldInfo(Integer wikiTableInfoId, String wikiTableName, String fieldName, String fieldType) {
         this.wikiTableInfoId = wikiTableInfoId;
         this.wikiTableName = wikiTableName;
         this.fieldName = fieldName;
@@ -38,23 +37,23 @@ public class WikiTableFieldInfo {
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
-    /** 关联 wiki_table_info.id */
+    /** wiki_table_info主键 */
     public Integer getWikiTableInfoId() { return wikiTableInfoId; }
     public void setWikiTableInfoId(Integer wikiTableInfoId) { this.wikiTableInfoId = wikiTableInfoId; }
 
-    /** Wiki 表名 */
+    /** wiki_table名称 */
     public String getWikiTableName() { return wikiTableName; }
     public void setWikiTableName(String wikiTableName) { this.wikiTableName = wikiTableName; }
 
-    /** 字段名 */
+    /** field名称 */
     public String getFieldName() { return fieldName; }
     public void setFieldName(String fieldName) { this.fieldName = fieldName; }
 
-    /** 字段类型 */
+    /** field类型 */
     public String getFieldType() { return fieldType; }
     public void setFieldType(String fieldType) { this.fieldType = fieldType; }
 
-    /** 字段是否为列表 */
+    /** is_list */
     public String getIsList() { return isList; }
     public void setIsList(String isList) { this.isList = isList; }
 
@@ -62,7 +61,7 @@ public class WikiTableFieldInfo {
     public String getDelimiter() { return delimiter; }
     public void setDelimiter(String delimiter) { this.delimiter = delimiter; }
 
-    /** 字段描述 */
+    /** field描述 */
     public String getFieldDesc() { return fieldDesc; }
     public void setFieldDesc(String fieldDesc) { this.fieldDesc = fieldDesc; }
 
@@ -73,4 +72,5 @@ public class WikiTableFieldInfo {
     /** 更新时间 */
     public String getUpdateTime() { return updateTime; }
     public void setUpdateTime(String updateTime) { this.updateTime = updateTime; }
+
 }
