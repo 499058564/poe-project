@@ -7,19 +7,20 @@ import com.poe.provider.sync.SyncResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.file.*;
 import java.sql.Connection;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 种子数据库构建工具（离线/本地构建流程）。
  *
  * <p>由 Gradle {@code buildSeedDb} 任务调用，构建预置的 seed.db：
  * <ol>
- *   <li>创建临时 SQLite 库</li>
+ *   <li>直接在 outputPath 上建库（不存在则创建，存在则执行 DDL）</li>
  *   <li>导入 PoeCharm2 中文翻译</li>
  *   <li>从 Wiki 同步核心数据（限时，最多 10 分钟）</li>
  *   <li>VACUUM 清理</li>
@@ -69,35 +70,25 @@ public class SeedDbBuilder {
         // 确保输出目录存在
         Files.createDirectories(outputPath.getParent());
 
-        // 不需要持久化在 ~/.poe-tool 中，直接创建临时文件
-        Path tempDb = Files.createTempFile("seed-build-", ".db");
-        try {
-            buildInternal(tempDb);
-            log.info("Build completed. Copying to output: {}", outputPath);
-            Files.copy(tempDb, outputPath, StandardCopyOption.REPLACE_EXISTING);
-            log.info("Seed database written: {} ({} bytes)",
-                    outputPath, Files.size(outputPath));
-        } finally {
-            try {
-                Files.deleteIfExists(tempDb);
-            } catch (IOException ignored) {
-            }
-        }
+        boolean dbExists = Files.exists(outputPath);
+        log.info("Database {} {}", outputPath, dbExists ? "exists, will execute DDL" : "not found, will create");
+
+        buildInternal();
+
+        log.info("Seed database ready: {} ({} bytes)",
+                outputPath, Files.exists(outputPath) ? Files.size(outputPath) : 0);
     }
 
     /**
-     * 构建临时种子数据库。
-     * @param dbPath 临时数据库路径
+     * 直接在 outputPath 上执行建库和初始化。
      * @throws Exception
      */
-    private void buildInternal(Path dbPath) throws Exception {
-        // 1. 初始化临时库
-        DatabaseManager dbm = new DatabaseManager(dbPath.toString());
+    private void buildInternal() throws Exception {
+        // 直接在 outputPath 上操作：不存在自动创建，存在则执行 DDL（IF NOT EXISTS 确保幂等）
+        DatabaseManager dbm = new DatabaseManager(outputPath.toString());
         dbm.forceInit();
-        //TODO yzy 执行初始化表
-        log.info("SeedDbBuilder|buildInternal|开始执行初始化表");
-        dbm.getConnection().createStatement().execute(INIT_DB_SQL_PATH);
-        log.info("SeedDbBuilder|buildInternal|执行初始化表结束");
+        //初始化数据库
+        initDb(dbm);
 
         // 2. 导入 PoeCharm2 翻译
         /*TranslationService ts = new TranslationService(dbm.getDataSource());
@@ -117,6 +108,24 @@ public class SeedDbBuilder {
         }
 
         dbm.shutdown();
+    }
+
+    private void initDb(DatabaseManager dbm) throws Exception {
+        log.info("SeedDbBuilder|buildInternal|开始执行初始化表");
+        String ddl = Files.readString(Path.of(INIT_DB_SQL_PATH));
+        try (Statement stmt = dbm.getConnection().createStatement()) {
+            for (String sql : ddl.split(";")) {
+                // 只剔除独立的注释行，保留行内注释（SQLite 能正确解析）
+                String cleaned = Arrays.stream(sql.split("\n"))
+                        .map(String::strip)
+                        .filter(line -> !line.isEmpty() && !line.startsWith("--"))
+                        .collect(Collectors.joining("\n"));
+                if (!cleaned.isBlank()) {
+                    stmt.execute(cleaned);
+                }
+            }
+        }
+        log.info("SeedDbBuilder|buildInternal|执行初始化表结束");
     }
 
     /**
@@ -163,8 +172,11 @@ public class SeedDbBuilder {
                 successCount, failCount, elapsed);
     }
 
-    // ============== 命令行解析 ==============
-
+    /**
+     * 命令行参数解析
+     * @param args 命令行参数
+     * @return SeedDbBuilder 实例
+     */
     public static SeedDbBuilder parse(String[] args) {
         Path output = null;
         Path poeCharm2 = detectPoeCharm2();
@@ -218,6 +230,10 @@ public class SeedDbBuilder {
         )));
     }
 
+    /**
+     * 自动检测 poecharm2 路径
+     * @return poecharm2 路径
+     */
     private static Path detectPoeCharm2() {
         // 从当前工作目录向上查找
         Path dir = Paths.get("").toAbsolutePath();
