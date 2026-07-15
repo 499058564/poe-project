@@ -1,7 +1,5 @@
 package com.poe.ui.page;
 
-import com.poe.cache.model.ItemSummary;
-import com.poe.core.model.ItemDetail;
 import com.poe.core.model.SearchResult;
 import com.poe.core.service.ItemSearchService;
 import com.poe.ui.constants.StyleClasses;
@@ -11,7 +9,6 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
@@ -19,9 +16,7 @@ import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -74,9 +69,6 @@ public class ItemSearchView extends BorderPane {
     private final ListView<ItemSummary> resultList;
     private final ObservableList<ItemSummary> resultItems = FXCollections.observableArrayList();
 
-    // Detail panel
-    private final ItemDetailPanel detailPanel;
-
     // Pagination
     private final Label paginationLabel;
     private final Button prevBtn;
@@ -124,19 +116,13 @@ public class ItemSearchView extends BorderPane {
         resultList.setCellFactory(lv -> new ItemResultCell());
         resultList.setPlaceholder(createPlaceholderLabel(""));
 
-        detailPanel = new ItemDetailPanel();
-
-        SplitPane splitPane = new SplitPane(resultList, detailPanel);
-        splitPane.setOrientation(Orientation.HORIZONTAL);
-        splitPane.setDividerPosition(0, 0.4);
-
         // 加载覆盖层
         loadingIndicator = new ProgressIndicator();
         loadingIndicator.getStyleClass().add(StyleClasses.SEARCH_LOADING);
         loadingIndicator.setVisible(false);
         loadingIndicator.setMaxSize(48, 48);
 
-        centerPane = new StackPane(splitPane, loadingIndicator);
+        centerPane = new StackPane(resultList, loadingIndicator);
         StackPane.setAlignment(loadingIndicator, javafx.geometry.Pos.CENTER);
         setCenter(centerPane);
 
@@ -178,13 +164,6 @@ public class ItemSearchView extends BorderPane {
 
         // Category change triggers search
         categoryCombo.setOnAction(e -> doSearch());
-
-        // Result list selection → load detail
-        resultList.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
-            if (selected != null) {
-                loadItemDetail(selected.getId());
-            }
-        });
 
         // Pagination
         prevBtn.setOnAction(e -> {
@@ -271,24 +250,7 @@ public class ItemSearchView extends BorderPane {
         // Auto-select first item
         if (!items.isEmpty()) {
             resultList.getSelectionModel().selectFirst();
-        } else {
-            detailPanel.clear();
         }
-    }
-
-    /** Load item detail asynchronously. */
-    private void loadItemDetail(int itemId) {
-        detailPanel.showLoading();
-        executor.submit(() -> {
-            ItemDetail detail = searchService.getItemDetail(itemId);
-            Platform.runLater(() -> {
-                if (detail != null) {
-                    detailPanel.display(detail);
-                } else {
-                    detailPanel.clear();
-                }
-            });
-        });
     }
 
     /** Update pagination bar state. */
@@ -372,152 +334,6 @@ public class ItemSearchView extends BorderPane {
             if (lower.contains("magic") || lower.contains("魔法")) return "result-name-magic";
             if (lower.contains("rare") || lower.contains("稀有")) return "result-name-rare";
             return "result-name-normal";
-        }
-    }
-
-    // ── Detail Panel ──
-
-    /** Right-side panel showing item details. */
-    private static class ItemDetailPanel extends VBox {
-
-        private final Label titleLabel = new Label();
-        private final Label classLabel = new Label();
-        private final VBox requirementsBox = new VBox(4);
-        private final Label requirementsTitle = new Label();
-        private final VBox implicitsBox = new VBox(2);
-        private final Label implicitsTitle = new Label();
-        private final Label flavourLabel = new Label();
-        private final ProgressIndicator loadingIndicator = new ProgressIndicator(24);
-
-        ItemDetailPanel() {
-            getStyleClass().add(StyleClasses.DETAIL_PANEL);
-            setFillWidth(true);
-
-            titleLabel.getStyleClass().add(StyleClasses.DETAIL_TITLE);
-            classLabel.getStyleClass().add("detail-class");
-
-            requirementsTitle.getStyleClass().add("detail-section-title");
-            implicitsTitle.getStyleClass().add("detail-section-title");
-            flavourLabel.getStyleClass().add("detail-flavour");
-            flavourLabel.setWrapText(true);
-
-            loadingIndicator.setVisible(false);
-            loadingIndicator.getStyleClass().add(StyleClasses.SEARCH_LOADING);
-
-            getChildren().setAll(titleLabel, classLabel, loadingIndicator,
-                requirementsTitle, requirementsBox, implicitsTitle, implicitsBox, flavourLabel);
-            setVisible(false);
-        }
-
-        void showLoading() {
-            setVisible(true);
-            loadingIndicator.setVisible(true);
-            titleLabel.setText(Messages.get(SearchKeys.LOADING));
-        }
-
-        void display(ItemDetail detail) {
-            setVisible(true);
-            loadingIndicator.setVisible(false);
-
-            ItemSummary summary = detail.getSummary();
-
-            // Title with rarity color
-            String name = summary.getNameZh() != null && !summary.getNameZh().isEmpty()
-                ? summary.getName() + "  " + summary.getNameZh()
-                : summary.getName();
-            titleLabel.setText(name);
-            titleLabel.getStyleClass().removeAll(
-                "detail-title-normal", "detail-title-magic",
-                "detail-title-rare", "detail-title-unique"
-            );
-            titleLabel.getStyleClass().add(getDetailRarityClass(summary.getItemClass()));
-
-            // Class + drop level
-            String classText = Messages.fmt(SearchKeys.DETAIL_CLASS, summary.getItemClass() != null ? summary.getItemClass() : "-");
-            String dropText = Messages.fmt(SearchKeys.DETAIL_DROP_LEVEL, summary.getDropLevel());
-            classLabel.setText(classText + "  |  " + dropText);
-
-            // Requirements section
-            Map<String, Integer> reqs = detail.getRequirements();
-            if (!reqs.isEmpty()) {
-                requirementsTitle.setText(Messages.get(SearchKeys.DETAIL_REQUIREMENTS));
-                requirementsTitle.setVisible(true);
-                requirementsBox.getChildren().clear();
-                if (reqs.containsKey("level")) {
-                    addReqRow(Messages.get(SearchKeys.DETAIL_LEVEL), reqs.get("level"));
-                }
-                if (reqs.containsKey("str")) {
-                    addReqRow(Messages.get(SearchKeys.DETAIL_STR), reqs.get("str"));
-                }
-                if (reqs.containsKey("dex")) {
-                    addReqRow(Messages.get(SearchKeys.DETAIL_DEX), reqs.get("dex"));
-                }
-                if (reqs.containsKey("int")) {
-                    addReqRow(Messages.get(SearchKeys.DETAIL_INT), reqs.get("int"));
-                }
-                requirementsBox.setVisible(true);
-            } else {
-                requirementsBox.setVisible(false);
-                requirementsTitle.setVisible(false);
-            }
-
-            // Implicits section
-            List<String> implicits = detail.getImplicits();
-            if (!implicits.isEmpty()) {
-                implicitsTitle.setText(Messages.get(SearchKeys.DETAIL_IMPLICITS));
-                implicitsTitle.setVisible(true);
-                implicitsBox.getChildren().clear();
-                for (String imp : implicits) {
-                    Label impLabel = new Label(imp);
-                    impLabel.getStyleClass().add("detail-implicit");
-                    implicitsBox.getChildren().add(impLabel);
-                }
-                implicitsBox.setVisible(true);
-            } else {
-                implicitsBox.setVisible(false);
-                implicitsTitle.setVisible(false);
-            }
-
-            // Flavour text
-            String flavour = detail.getFlavourText();
-            if (flavour != null && !flavour.isEmpty()) {
-                flavourLabel.setText(flavour);
-                flavourLabel.setVisible(true);
-            } else {
-                flavourLabel.setVisible(false);
-            }
-        }
-
-        void clear() {
-            setVisible(false);
-            titleLabel.setText("");
-            classLabel.setText("");
-            requirementsBox.getChildren().clear();
-            requirementsBox.setVisible(false);
-            requirementsTitle.setVisible(false);
-            implicitsBox.getChildren().clear();
-            implicitsBox.setVisible(false);
-            implicitsTitle.setVisible(false);
-            flavourLabel.setVisible(false);
-        }
-
-        private void addReqRow(String label, Integer value) {
-            HBox row = new HBox(16);
-            Label keyLabel = new Label(label);
-            keyLabel.getStyleClass().add("detail-req-label");
-            Label valLabel = new Label(String.valueOf(value));
-            valLabel.getStyleClass().add("detail-req-value");
-            row.getChildren().addAll(keyLabel, valLabel);
-            requirementsBox.getChildren().add(row);
-        }
-
-        private static String getDetailRarityClass(String itemClass) {
-            if (itemClass == null) return "detail-title-normal";
-            String lower = itemClass.toLowerCase();
-            if (lower.contains("unique") || lower.contains("传奇")) return "detail-title-unique";
-            if (lower.contains("magic") || lower.contains("魔法")) return "detail-title-magic";
-            if (lower.contains("rare") || lower.contains("稀有")) return "detail-title-rare";
-            return "detail-title-normal";
         }
     }
 }

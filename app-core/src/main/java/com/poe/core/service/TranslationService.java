@@ -2,14 +2,10 @@ package com.poe.core.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.poe.cache.dao.TranslationDao;
 import com.poe.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,38 +32,38 @@ import java.util.stream.Stream;
  */
 public class TranslationService {
 
-    private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
+    /*private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    /** PoeCharm2 子模块相对路径 */
+    *//** PoeCharm2 子模块相对路径 *//*
     private static final String POECHARM2_PATH = "poecharm2";
 
     private final TranslationDao translationDao;
 
-    /** 用户自定义翻译，领域 → (源文本 → 翻译) */
+    *//** 用户自定义翻译，领域 → (源文本 → 翻译) *//*
     private final Map<String, Map<String, String>> customTranslations = new ConcurrentHashMap<>();
 
-    /** 缺失翻译记录（source → domain 集合），用于日志和后续补充 */
+    *//** 缺失翻译记录（source → domain 集合），用于日志和后续补充 *//*
     private final Set<String> missingTranslations = ConcurrentHashMap.newKeySet();
 
     public TranslationService(DataSource dataSource) {
         this.translationDao = new TranslationDao(dataSource);
     }
 
-    /**
+    *//**
      * 直接注入 TranslationDao（用于测试）。
-     */
+     *//*
     public TranslationService(TranslationDao translationDao) {
         this.translationDao = translationDao;
     }
 
-    /**
+    *//**
      * 单条翻译。优先级：自定义翻译 → DB → 原文。
      *
      * @param source 英文原文
      * @param domain 翻译领域（item/skill/passive/mod/map）
      * @return 中文翻译，未找到时返回原文
-     */
+     *//*
     public String translate(String source, String domain) {
         if (source == null || source.isEmpty()) {
             return source;
@@ -87,13 +83,13 @@ public class TranslationService {
         return source;
     }
 
-    /**
+    *//**
      * 批量翻译。自定义翻译覆盖 DB 结果。
      *
      * @param sources 源文本列表
      * @param domain  领域
      * @return 源文本 → 翻译文本 的映射，仅包含找到翻译的条目
-     */
+     *//*
     public Map<String, String> batchTranslate(List<String> sources, String domain) {
         if (sources == null || sources.isEmpty()) {
             return Collections.emptyMap();
@@ -122,7 +118,7 @@ public class TranslationService {
 
     // ── 自定义翻译管理 ──
 
-    /**
+    *//**
      * 添加用户自定义翻译（内存运行时，优先级高于 DB）。
      * <p>
      * 自定义翻译仅保存在内存中，不写入 DB，以保证与内置翻译数据隔离。
@@ -131,7 +127,7 @@ public class TranslationService {
      * @param source 英文原文
      * @param target 中文翻译
      * @param domain 领域
-     */
+     *//*
     public void addCustomTranslation(String source, String target, String domain) {
         if (StringUtils.isBlank(source) || StringUtils.isBlank(target) || StringUtils.isBlank(domain)) {
             return;
@@ -142,12 +138,12 @@ public class TranslationService {
         log.debug("Custom translation added: [{}] {} -> {}", domain, source, target);
     }
 
-    /**
+    *//**
      * 移除用户自定义翻译。
      *
      * @param source 英文原文
      * @param domain 领域
-     */
+     *//*
     public void removeCustomTranslation(String source, String domain) {
         Map<String, String> domainCustom = customTranslations.get(domain);
         if (domainCustom != null) {
@@ -156,17 +152,17 @@ public class TranslationService {
         }
     }
 
-    /**
+    *//**
      * 获取指定领域的自定义翻译数量。
-     */
+     *//*
     public int getCustomTranslationCount(String domain) {
         Map<String, String> domainCustom = customTranslations.get(domain);
         return domainCustom != null ? domainCustom.size() : 0;
     }
 
-    /**
+    *//**
      * 清空指定领域的自定义翻译。
-     */
+     *//*
     public void clearCustomTranslations(String domain) {
         Map<String, String> domainCustom = customTranslations.get(domain);
         if (domainCustom != null) {
@@ -176,12 +172,12 @@ public class TranslationService {
 
     // ── 数据导入 ──
 
-    /**
+    *//**
      * 导入翻译数据（直接写入 DB，不覆盖运行时自定义翻译）。
      *
      * @param translations 源文本 → 翻译文本 的映射
      * @param domain       领域
-     */
+     *//*
     public void importTranslations(Map<String, String> translations, String domain) {
         if (translations == null || translations.isEmpty()) {
             return;
@@ -190,7 +186,7 @@ public class TranslationService {
         log.info("Imported {} translations for domain {}", translations.size(), domain);
     }
 
-    /**
+    *//**
      * 导入社区翻译包（JSON 格式）。
      * <pre>
      * {
@@ -205,7 +201,7 @@ public class TranslationService {
      *
      * @param jsonContent JSON 字符串
      * @return 导入条目数，格式无效时返回 0
-     */
+     *//*
     public int importTranslationPack(String jsonContent) {
         if (StringUtils.isBlank(jsonContent)) {
             return 0;
@@ -243,12 +239,12 @@ public class TranslationService {
         }
     }
 
-    /**
+    *//**
      * 导入翻译包文件。
      *
      * @param filePath JSON 文件路径
      * @return 导入条目数
-     */
+     *//*
     public int importTranslationPackFile(String filePath) {
         try {
             String content = Files.readString(Path.of(filePath), StandardCharsets.UTF_8);
@@ -259,25 +255,25 @@ public class TranslationService {
         }
     }
 
-    /**
+    *//**
      * 从 PoeCharm2 子模块导入基础翻译数据（默认路径）。
      * <p>
      * 扫描 {@code poecharm2/Data/Translate/zh-rCN/} 目录下的 CSV 翻译文件，
      * 解析 {@code "English",中文} 格式，按文件名映射到翻译领域并导入 translations 表。
      *
      * @return 导入的总条目数
-     */
+     *//*
     public int importFromPoeCharm2() {
         Path translateDir = Paths.get(POECHARM2_PATH, "Data", "Translate", "zh-rCN");
         return importFromPoeCharm2(translateDir);
     }
 
-    /**
+    *//**
      * 从 PoeCharm2 翻译目录导入基础翻译数据（可指定路径，便于测试）。
      *
      * @param translateDir PoeCharm2 zh-rCN 翻译数据目录
      * @return 导入的总条目数
-     */
+     *//*
     public int importFromPoeCharm2(Path translateDir) {
         if (!Files.exists(translateDir) || !Files.isDirectory(translateDir)) {
             log.info("PoeCharm2 translate directory not found: {}", translateDir.toAbsolutePath());
@@ -313,7 +309,7 @@ public class TranslationService {
         return total;
     }
 
-    /**
+    *//**
      * 解析 PoeCharm2 CSV 翻译文件。
      * <p>
      * CSV 格式：{@code "English Name",中文译名} 或 {@code EnglishName,中文译名}。
@@ -321,7 +317,7 @@ public class TranslationService {
      *
      * @param csvFile CSV 文件路径
      * @return 英文 → 中文 翻译映射
-     */
+     *//*
     static Map<String, String> parsePoeCharm2Csv(Path csvFile) {
         Map<String, String> result = new LinkedHashMap<>();
         try {
@@ -348,7 +344,7 @@ public class TranslationService {
         return result;
     }
 
-    /**
+    *//**
      * 解析单行 CSV：处理引号包裹的字段。
      * <p>
      * 支持格式：
@@ -360,7 +356,7 @@ public class TranslationService {
      *
      * @param line 原始行
      * @return [source, target] 或 null
-     */
+     *//*
     private static String[] parseCsvLine(String line) {
         // 引号包裹的字段（如 "Blue Pearl Amulet",碧珠护身符）
         if (line.startsWith("\"")) {
@@ -388,7 +384,7 @@ public class TranslationService {
         return new String[]{source, target};
     }
 
-    /** 查找闭合引号的位置，处理转义引号 "" */
+    *//** 查找闭合引号的位置，处理转义引号 "" *//*
     private static int findClosingQuote(String line, int start) {
         for (int i = start; i < line.length(); i++) {
             if (line.charAt(i) == '"') {
@@ -403,7 +399,7 @@ public class TranslationService {
         return -1;
     }
 
-    /** 去除首尾引号 */
+    *//** 去除首尾引号 *//*
     private static String stripQuotes(String s) {
         if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
             return s.substring(1, s.length() - 1);
@@ -411,10 +407,10 @@ public class TranslationService {
         return s;
     }
 
-    /**
+    *//**
      * 根据 PoeCharm2 CSV 文件名映射到翻译领域。
      * <p>按具体程度从高到低匹配，避免 {@code items_*} 通配过早命中。
-     */
+     *//*
     static String mapFilenameToDomain(String filename) {
         String lower = filename.toLowerCase();
         // 技能宝石
@@ -441,41 +437,41 @@ public class TranslationService {
 
     // ── 缺失翻译跟踪 ──
 
-    /**
+    *//**
      * 获取缺失翻译的源文本列表。
      *
      * @return 不可变的缺失翻译列表
-     */
+     *//*
     public List<String> getMissingTranslations() {
         return List.copyOf(missingTranslations);
     }
 
-    /**
+    *//**
      * 清空缺失翻译记录。
-     */
+     *//*
     public void clearMissingTranslations() {
         missingTranslations.clear();
     }
 
     // ── 内部辅助方法 ──
 
-    /**
+    *//**
      * 从自定义翻译 Map 中查找指定领域下指定源文本的翻译。
      *
      * @return 翻译文本，未找到时返回 null
-     */
+     *//*
     private String getCustomTranslation(String source, String domain) {
         Map<String, String> domainCustom = customTranslations.get(domain);
         return domainCustom != null ? domainCustom.get(source) : null;
     }
 
-    /**
+    *//**
      * 记录缺失翻译（source||domain 作为 key 去重）。
-     */
+     *//*
     private void recordMissing(String source, String domain) {
         String key = domain + "||" + source;
         if (missingTranslations.add(key)) {
             log.info("Translation missing: [{}] {}", domain, source);
         }
-    }
+    }*/
 }

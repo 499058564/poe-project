@@ -2,6 +2,7 @@ package com.poe.provider;
 
 import com.google.common.util.concurrent.RateLimiter;
 import com.poe.cache.manager.DatabaseManager;
+import com.poe.provider.client.WikiApiClient;
 import com.poe.provider.sync.DataSyncService;
 import com.poe.provider.sync.SyncResult;
 import okhttp3.OkHttpClient;

@@ -1,15 +1,12 @@
 package com.poe.provider.sync;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.poe.cache.dao.*;
 import com.poe.cache.manager.DatabaseManager;
-import com.poe.cache.model.*;
 import com.poe.core.event.AppEventBus;
 import com.poe.core.event.DataSyncCompleteEvent;
 import com.poe.core.event.DataSyncProgressEvent;
 import com.poe.core.event.DataSyncStartEvent;
-import com.poe.provider.WikiApiClient;
-import com.poe.provider.converter.*;
+import com.poe.provider.client.WikiApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -508,7 +505,8 @@ public class DataSyncService {
         int totalSynced = 0;
 
         DataSource ds = dbManager.getDataSource();
-        Object dao = createDao(ds, cargoTable);
+        //Object dao = createDao(ds, cargoTable);
+        Object dao = null;
         boolean cleared = false;
 
         if (config.keyField != null) {
@@ -523,15 +521,13 @@ public class DataSyncService {
             JsonNode rows = root.path("cargoquery");
             if (!rows.isArray()) break;
 
-            // 转换
+            // 转换 — converter classes have been removed, using raw JsonNode
             int batchSize = rows.size();
             List<Object> batch = new ArrayList<>(batchSize);
-            DataConverter<Object> converter = getConverter(cargoTable);
             int idx = 0;
             for (JsonNode row : rows) {
-                Object entity = converter.convert(row.path("title"));
-                if (entity != null) {
-                    assignSequentialId(entity, offset + idx + 1);
+                JsonNode entity = row.path("title");
+                if (!entity.isMissingNode() && !entity.isNull()) {
                     batch.add(entity);
                     idx++;
                 }
@@ -545,7 +541,7 @@ public class DataSyncService {
 
             // 事务写入
             if (!batch.isEmpty()) {
-                batchInsert(dao, batch);
+                //batchInsert(dao, batch);
             }
 
             totalSynced += batch.size();
@@ -590,17 +586,14 @@ public class DataSyncService {
 
             int batchSize = rows.size();
             List<Object> batch = new ArrayList<>(batchSize);
-            DataConverter<Object> converter = getConverter(cargoTable);
 
             String firstRowKey = rows.get(0).path("title").path(keyField).asText();
             String newLastKey = null;
 
             for (int i = 0; i < batchSize; i++) {
                 JsonNode title = rows.get(i).path("title");
-                Object entity = converter.convert(title);
-                if (entity != null) {
-                    assignSequentialId(entity, totalSynced + batch.size() + 1);
-                    batch.add(entity);
+                if (!title.isMissingNode() && !title.isNull()) {
+                    batch.add(title);
                 }
                 if (i == batchSize - 1) {
                     newLastKey = title.path(keyField).asText();
@@ -623,7 +616,7 @@ public class DataSyncService {
             }
 
             if (!batch.isEmpty()) {
-                batchInsert(dao, batch);
+                //batchInsert(dao, batch);
             }
 
             totalSynced += batch.size();
@@ -678,196 +671,6 @@ public class DataSyncService {
         }
     }
 
-    /** 根据 DAO 类型分发批量插入调用。 */
-    @SuppressWarnings("unchecked")
-    private void batchInsert(Object dao, List<Object> entities) throws SQLException {
-        if (dao instanceof ItemDao) {
-            ((ItemDao) dao).batchInsert((List<Item>) (List<?>) entities);
-        } else if (dao instanceof SkillGemDao) {
-            ((SkillGemDao) dao).batchInsert((List<SkillGem>) (List<?>) entities);
-        } else if (dao instanceof PassiveSkillDao) {
-            ((PassiveSkillDao) dao).batchInsert((List<PassiveSkill>) (List<?>) entities);
-        } else if (dao instanceof ModDao) {
-            ((ModDao) dao).batchInsert((List<Mod>) (List<?>) entities);
-        } else if (dao instanceof WeaponDao) {
-            ((WeaponDao) dao).batchInsert((List<Weapon>) (List<?>) entities);
-        } else if (dao instanceof ArmourDao) {
-            ((ArmourDao) dao).batchInsert((List<Armour>) (List<?>) entities);
-        } else if (dao instanceof ShieldDao) {
-            ((ShieldDao) dao).batchInsert((List<Shield>) (List<?>) entities);
-        } else if (dao instanceof AmuletDao) {
-            ((AmuletDao) dao).batchInsert((List<Amulet>) (List<?>) entities);
-        } else if (dao instanceof FlaskDao) {
-            ((FlaskDao) dao).batchInsert((List<Flask>) (List<?>) entities);
-        } else if (dao instanceof JewelDao) {
-            ((JewelDao) dao).batchInsert((List<Jewel>) (List<?>) entities);
-        } else if (dao instanceof StackableDao) {
-            ((StackableDao) dao).batchInsert((List<Stackable>) (List<?>) entities);
-        } else if (dao instanceof MapDao) {
-            ((MapDao) dao).batchInsert((List<GameMap>) (List<?>) entities);
-        } else if (dao instanceof MapFragmentDao) {
-            ((MapFragmentDao) dao).batchInsert((List<MapFragment>) (List<?>) entities);
-        } else if (dao instanceof MapSeriesDao) {
-            ((MapSeriesDao) dao).batchInsert((List<MapSeries>) (List<?>) entities);
-        } else if (dao instanceof DivinationCardDao) {
-            ((DivinationCardDao) dao).batchInsert((List<DivinationCard>) (List<?>) entities);
-        } else if (dao instanceof ModStatDao) {
-            ((ModStatDao) dao).batchInsert((List<ModStat>) (List<?>) entities);
-        } else if (dao instanceof ModSpawnWeightDao) {
-            ((ModSpawnWeightDao) dao).batchInsert((List<ModSpawnWeight>) (List<?>) entities);
-        } else if (dao instanceof ModGenerationWeightDao) {
-            ((ModGenerationWeightDao) dao).batchInsert((List<ModGenerationWeight>) (List<?>) entities);
-        } else if (dao instanceof ModSellPriceDao) {
-            ((ModSellPriceDao) dao).batchInsert((List<ModSellPrice>) (List<?>) entities);
-        } else if (dao instanceof ItemModDao) {
-            ((ItemModDao) dao).batchInsert((List<ItemMod>) (List<?>) entities);
-        } else if (dao instanceof ItemStatDao) {
-            ((ItemStatDao) dao).batchInsert((List<ItemStat>) (List<?>) entities);
-        } else if (dao instanceof ItemBuffDao) {
-            ((ItemBuffDao) dao).batchInsert((List<ItemBuff>) (List<?>) entities);
-        } else if (dao instanceof CraftingBenchOptionDao) {
-            ((CraftingBenchOptionDao) dao).batchInsert((List<CraftingBenchOption>) (List<?>) entities);
-        } else if (dao instanceof CraftingBenchOptionCostDao) {
-            ((CraftingBenchOptionCostDao) dao).batchInsert((List<CraftingBenchOptionCost>) (List<?>) entities);
-        } else if (dao instanceof EssenceDao) {
-            ((EssenceDao) dao).batchInsert((List<Essence>) (List<?>) entities);
-        } else if (dao instanceof FossilDao) {
-            ((FossilDao) dao).batchInsert((List<Fossil>) (List<?>) entities);
-        } else if (dao instanceof FossilWeightDao) {
-            ((FossilWeightDao) dao).batchInsert((List<FossilWeight>) (List<?>) entities);
-        } else if (dao instanceof VendorRewardDao) {
-            ((VendorRewardDao) dao).batchInsert((List<VendorReward>) (List<?>) entities);
-        } else if (dao instanceof ItemSellPriceDao) {
-            ((ItemSellPriceDao) dao).batchInsert((List<ItemSellPrice>) (List<?>) entities);
-        } else if (dao instanceof ItemPurchaseCostDao) {
-            ((ItemPurchaseCostDao) dao).batchInsert((List<ItemPurchaseCost>) (List<?>) entities);
-        } else if (dao instanceof SkillDao) {
-            ((SkillDao) dao).batchInsert((List<Skill>) (List<?>) entities);
-        } else if (dao instanceof SkillLevelDao) {
-            ((SkillLevelDao) dao).batchInsert((List<SkillLevel>) (List<?>) entities);
-        } else if (dao instanceof SkillStatsPerLevelDao) {
-            ((SkillStatsPerLevelDao) dao).batchInsert((List<SkillStatsPerLevel>) (List<?>) entities);
-        } else if (dao instanceof SkillQualityDao) {
-            ((SkillQualityDao) dao).batchInsert((List<SkillQuality>) (List<?>) entities);
-        } else if (dao instanceof SkillQualityStatsDao) {
-            ((SkillQualityStatsDao) dao).batchInsert((List<SkillQualityStats>) (List<?>) entities);
-        } else if (dao instanceof GemLevelDao) {
-            ((GemLevelDao) dao).batchInsert((List<GemLevel>) (List<?>) entities);
-        } else if (dao instanceof PassiveSkillConnectionDao) {
-            ((PassiveSkillConnectionDao) dao).batchInsert((List<PassiveSkillConnection>) (List<?>) entities);
-        } else if (dao instanceof MasteryEffectDao) {
-            ((MasteryEffectDao) dao).batchInsert((List<MasteryEffect>) (List<?>) entities);
-        } else if (dao instanceof MasteryGroupDao) {
-            ((MasteryGroupDao) dao).batchInsert((List<MasteryGroup>) (List<?>) entities);
-        } else if (dao instanceof CharacterClassDao) {
-            ((CharacterClassDao) dao).batchInsert((List<CharacterClass>) (List<?>) entities);
-        } else if (dao instanceof AscendancyClassDao) {
-            ((AscendancyClassDao) dao).batchInsert((List<AscendancyClass>) (List<?>) entities);
-        } else if (dao instanceof MonsterDao) {
-            ((MonsterDao) dao).batchInsert((List<Monster>) (List<?>) entities);
-        } else if (dao instanceof MonsterTypeDao) {
-            ((MonsterTypeDao) dao).batchInsert((List<MonsterType>) (List<?>) entities);
-        } else if (dao instanceof MonsterBaseStatDao) {
-            ((MonsterBaseStatDao) dao).batchInsert((List<MonsterBaseStat>) (List<?>) entities);
-        } else if (dao instanceof MonsterLifeScalingDao) {
-            ((MonsterLifeScalingDao) dao).batchInsert((List<MonsterLifeScaling>) (List<?>) entities);
-        } else if (dao instanceof MonsterMapMultiplierDao) {
-            ((MonsterMapMultiplierDao) dao).batchInsert((List<MonsterMapMultiplier>) (List<?>) entities);
-        } else if (dao instanceof MonsterResistanceDao) {
-            ((MonsterResistanceDao) dao).batchInsert((List<MonsterResistance>) (List<?>) entities);
-        } else if (dao instanceof AreaDao) {
-            ((AreaDao) dao).batchInsert((List<Area>) (List<?>) entities);
-        } else if (dao instanceof AtlasNodeDao) {
-            ((AtlasNodeDao) dao).batchInsert((List<AtlasNode>) (List<?>) entities);
-        } else if (dao instanceof DelveLevelScalingDao) {
-            ((DelveLevelScalingDao) dao).batchInsert((List<DelveLevelScaling>) (List<?>) entities);
-        } else if (dao instanceof DelveResourcesPerLevelDao) {
-            ((DelveResourcesPerLevelDao) dao).batchInsert((List<DelveResourcesPerLevel>) (List<?>) entities);
-        } else if (dao instanceof DelveUpgradesDao) {
-            ((DelveUpgradesDao) dao).batchInsert((List<DelveUpgrades>) (List<?>) entities);
-        } else if (dao instanceof DelveUpgradeStatsDao) {
-            ((DelveUpgradeStatsDao) dao).batchInsert((List<DelveUpgradeStats>) (List<?>) entities);
-        } else if (dao instanceof HeistAreasDao) {
-            ((HeistAreasDao) dao).batchInsert((List<HeistAreas>) (List<?>) entities);
-        } else if (dao instanceof HeistJobsDao) {
-            ((HeistJobsDao) dao).batchInsert((List<HeistJobs>) (List<?>) entities);
-        } else if (dao instanceof HeistNpcsDao) {
-            ((HeistNpcsDao) dao).batchInsert((List<HeistNpcs>) (List<?>) entities);
-        } else if (dao instanceof HeistNpcSkillsDao) {
-            ((HeistNpcSkillsDao) dao).batchInsert((List<HeistNpcSkills>) (List<?>) entities);
-        } else if (dao instanceof HeistNpcStatsDao) {
-            ((HeistNpcStatsDao) dao).batchInsert((List<HeistNpcStats>) (List<?>) entities);
-        } else if (dao instanceof HeistEquipmentDao) {
-            ((HeistEquipmentDao) dao).batchInsert((List<HeistEquipment>) (List<?>) entities);
-        } else if (dao instanceof BlightCraftingRecipesDao) {
-            ((BlightCraftingRecipesDao) dao).batchInsert((List<BlightCraftingRecipes>) (List<?>) entities);
-        } else if (dao instanceof BlightCraftingRecipesItemsDao) {
-            ((BlightCraftingRecipesItemsDao) dao).batchInsert((List<BlightCraftingRecipesItems>) (List<?>) entities);
-        } else if (dao instanceof BlightItemsDao) {
-            ((BlightItemsDao) dao).batchInsert((List<BlightItems>) (List<?>) entities);
-        } else if (dao instanceof BlightTowersDao) {
-            ((BlightTowersDao) dao).batchInsert((List<BlightTowers>) (List<?>) entities);
-        } else if (dao instanceof HarvestCraftingOptionsDao) {
-            ((HarvestCraftingOptionsDao) dao).batchInsert((List<HarvestCraftingOptions>) (List<?>) entities);
-        } else if (dao instanceof HarvestPlantBoostersDao) {
-            ((HarvestPlantBoostersDao) dao).batchInsert((List<HarvestPlantBoosters>) (List<?>) entities);
-        } else if (dao instanceof HarvestSeedsDao) {
-            ((HarvestSeedsDao) dao).batchInsert((List<HarvestSeeds>) (List<?>) entities);
-        } else if (dao instanceof SynthesisAreasDao) {
-            ((SynthesisAreasDao) dao).batchInsert((List<SynthesisAreas>) (List<?>) entities);
-        } else if (dao instanceof SynthesisCorruptedModsDao) {
-            ((SynthesisCorruptedModsDao) dao).batchInsert((List<SynthesisCorruptedMods>) (List<?>) entities);
-        } else if (dao instanceof SynthesisGlobalModsDao) {
-            ((SynthesisGlobalModsDao) dao).batchInsert((List<SynthesisGlobalMods>) (List<?>) entities);
-        } else if (dao instanceof SynthesisModsDao) {
-            ((SynthesisModsDao) dao).batchInsert((List<SynthesisMods>) (List<?>) entities);
-        } else if (dao instanceof BestiaryRecipesDao) {
-            ((BestiaryRecipesDao) dao).batchInsert((List<BestiaryRecipes>) (List<?>) entities);
-        } else if (dao instanceof BestiaryRecipeComponentsDao) {
-            ((BestiaryRecipeComponentsDao) dao).batchInsert((List<BestiaryRecipeComponents>) (List<?>) entities);
-        } else if (dao instanceof IncursionRoomsDao) {
-            ((IncursionRoomsDao) dao).batchInsert((List<IncursionRooms>) (List<?>) entities);
-        } else if (dao instanceof PantheonDao) {
-            ((PantheonDao) dao).batchInsert((List<Pantheon>) (List<?>) entities);
-        } else if (dao instanceof PantheonSoulsDao) {
-            ((PantheonSoulsDao) dao).batchInsert((List<PantheonSouls>) (List<?>) entities);
-        } else if (dao instanceof PantheonStatsDao) {
-            ((PantheonStatsDao) dao).batchInsert((List<PantheonStats>) (List<?>) entities);
-        } else if (dao instanceof VersionDao) {
-            ((VersionDao) dao).batchInsert((List<Version>) (List<?>) entities);
-        } else if (dao instanceof LegacyVariantDao) {
-            ((LegacyVariantDao) dao).batchInsert((List<LegacyVariant>) (List<?>) entities);
-        } else if (dao instanceof ProphecyDao) {
-            ((ProphecyDao) dao).batchInsert((List<Prophecy>) (List<?>) entities);
-        } else if (dao instanceof QuestRewardDao) {
-            ((QuestRewardDao) dao).batchInsert((List<QuestReward>) (List<?>) entities);
-        } else if (dao instanceof SpawnWeightDao) {
-            ((SpawnWeightDao) dao).batchInsert((List<SpawnWeight>) (List<?>) entities);
-        } else if (dao instanceof GenericStatDao) {
-            ((GenericStatDao) dao).batchInsert((List<GenericStat>) (List<?>) entities);
-        } else if (dao instanceof TattooDao) {
-            ((TattooDao) dao).batchInsert((List<Tattoo>) (List<?>) entities);
-        } else if (dao instanceof TinctureDao) {
-            ((TinctureDao) dao).batchInsert((List<Tincture>) (List<?>) entities);
-        } else if (dao instanceof SentinelDao) {
-            ((SentinelDao) dao).batchInsert((List<Sentinel>) (List<?>) entities);
-        } else if (dao instanceof IdolDao) {
-            ((IdolDao) dao).batchInsert((List<Idol>) (List<?>) entities);
-        } else if (dao instanceof GraftDao) {
-            ((GraftDao) dao).batchInsert((List<Graft>) (List<?>) entities);
-        } else if (dao instanceof CorpseItemDao) {
-            ((CorpseItemDao) dao).batchInsert((List<CorpseItem>) (List<?>) entities);
-        } else if (dao instanceof CosmeticItemDao) {
-            ((CosmeticItemDao) dao).batchInsert((List<CosmeticItem>) (List<?>) entities);
-        } else if (dao instanceof HideoutDoodadDao) {
-            ((HideoutDoodadDao) dao).batchInsert((List<HideoutDoodad>) (List<?>) entities);
-        } else if (dao instanceof GuideDao) {
-            ((GuideDao) dao).batchInsert((List<Guide>) (List<?>) entities);
-        } else {
-            throw new IllegalArgumentException("Unknown DAO: " + dao.getClass());
-        }
-    }
-
     /** 查询本地表记录数，失败返回 -1（触发强制同步）。 */
     private int getLocalRecordCount(String tableName) {
         try (Connection conn = dbManager.getConnection()) {
@@ -915,385 +718,6 @@ public class DataSyncService {
         } catch (SQLException e) {
             log.error("Failed to rebuild FTS index", e);
         }
-    }
-
-    // ---- DAO / Converter 工厂 ----
-
-    /** 根据 Cargo 表名返回对应的 Converter 实例。 */
-    @SuppressWarnings("unchecked")
-    private static DataConverter<Object> getConverter(String cargoTable) {
-        if ("items".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ItemConverter();
-        } else if ("skill_gems".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SkillGemConverter();
-        } else if ("passive_skills".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new PassiveSkillConverter();
-        } else if ("mods".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ModConverter();
-        } else if ("weapons".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new WeaponConverter();
-        } else if ("armours".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ArmourConverter();
-        } else if ("shields".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ShieldConverter();
-        } else if ("amulets".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new AmuletConverter();
-        } else if ("flasks".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new FlaskConverter();
-        } else if ("jewels".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new JewelConverter();
-        } else if ("stackables".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new StackableConverter();
-        } else if ("maps".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MapConverter();
-        } else if ("map_fragments".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MapFragmentConverter();
-        } else if ("map_series".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MapSeriesConverter();
-        } else if ("divination_cards".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new DivinationCardConverter();
-        } else if ("mod_stats".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ModStatConverter();
-        } else if ("mod_spawn_weights".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ModSpawnWeightConverter();
-        } else if ("mod_generation_weights".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ModGenerationWeightConverter();
-        } else if ("mod_sell_prices".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ModSellPriceConverter();
-        } else if ("item_mods".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ItemModConverter();
-        } else if ("item_stats".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ItemStatConverter();
-        } else if ("item_buffs".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ItemBuffConverter();
-        } else if ("crafting_bench_options".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new CraftingBenchOptionConverter();
-        } else if ("crafting_bench_options_costs".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new CraftingBenchOptionCostConverter();
-        } else if ("essences".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new EssenceConverter();
-        } else if ("fossils".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new FossilConverter();
-        } else if ("fossil_weights".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new FossilWeightConverter();
-        } else if ("vendor_rewards".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new VendorRewardConverter();
-        } else if ("item_sell_prices".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ItemSellPriceConverter();
-        } else if ("item_purchase_costs".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ItemPurchaseCostConverter();
-        } else if ("skill".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SkillConverter();
-        } else if ("skill_levels".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SkillLevelConverter();
-        } else if ("skill_stats_per_level".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SkillStatsPerLevelConverter();
-        } else if ("skill_quality".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SkillQualityConverter();
-        } else if ("skill_quality_stats".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SkillQualityStatsConverter();
-        } else if ("gem_levels".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new GemLevelConverter();
-        } else if ("passive_skill_connections".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new PassiveSkillConnectionConverter();
-        } else if ("mastery_effects".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MasteryEffectConverter();
-        } else if ("mastery_groups".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MasteryGroupConverter();
-        } else if ("character_classes".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new CharacterClassConverter();
-        } else if ("ascendancy_classes".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new AscendancyClassConverter();
-        } else if ("monsters".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MonsterConverter();
-        } else if ("monster_types".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MonsterTypeConverter();
-        } else if ("monster_base_stats".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MonsterBaseStatConverter();
-        } else if ("monster_life_scaling".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MonsterLifeScalingConverter();
-        } else if ("monster_map_multipliers".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MonsterMapMultiplierConverter();
-        } else if ("monster_resistances".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new MonsterResistanceConverter();
-        } else if ("areas".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new AreaConverter();
-        } else if ("atlas_nodes".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new AtlasNodeConverter();
-        } else if ("delve_level_scaling".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new DelveLevelScalingConverter();
-        } else if ("delve_resources_per_level".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new DelveResourcesPerLevelConverter();
-        } else if ("delve_upgrades".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new DelveUpgradesConverter();
-        } else if ("delve_upgrade_stats".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new DelveUpgradeStatsConverter();
-        } else if ("heist_areas".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HeistAreasConverter();
-        } else if ("heist_jobs".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HeistJobsConverter();
-        } else if ("heist_npcs".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HeistNpcsConverter();
-        } else if ("heist_npc_skills".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HeistNpcSkillsConverter();
-        } else if ("heist_npc_stats".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HeistNpcStatsConverter();
-        } else if ("heist_equipment".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HeistEquipmentConverter();
-        } else if ("blight_crafting_recipes".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new BlightCraftingRecipesConverter();
-        } else if ("blight_crafting_recipes_items".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new BlightCraftingRecipesItemsConverter();
-        } else if ("blight_items".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new BlightItemsConverter();
-        } else if ("blight_towers".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new BlightTowersConverter();
-        } else if ("harvest_crafting_options".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HarvestCraftingOptionsConverter();
-        } else if ("harvest_plant_boosters".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HarvestPlantBoostersConverter();
-        } else if ("harvest_seeds".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HarvestSeedsConverter();
-        } else if ("synthesis_areas".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SynthesisAreasConverter();
-        } else if ("synthesis_corrupted_mods".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SynthesisCorruptedModsConverter();
-        } else if ("synthesis_global_mods".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SynthesisGlobalModsConverter();
-        } else if ("synthesis_mods".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SynthesisModsConverter();
-        } else if ("bestiary_recipes".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new BestiaryRecipesConverter();
-        } else if ("bestiary_recipe_components".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new BestiaryRecipeComponentsConverter();
-        } else if ("incursion_rooms".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new IncursionRoomsConverter();
-        } else if ("pantheon".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new PantheonConverter();
-        } else if ("pantheon_souls".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new PantheonSoulsConverter();
-        } else if ("pantheon_stats".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new PantheonStatsConverter();
-        } else if ("versions".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new VersionConverter();
-        } else if ("legacy_variants".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new LegacyVariantConverter();
-        } else if ("prophecies".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new ProphecyConverter();
-        } else if ("quest_rewards".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new QuestRewardConverter();
-        } else if ("spawn_weights".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SpawnWeightConverter();
-        } else if ("generic_stats".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new GenericStatConverter();
-        } else if ("tattoos".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new TattooConverter();
-        } else if ("tinctures".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new TinctureConverter();
-        } else if ("sentinels".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new SentinelConverter();
-        } else if ("idols".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new IdolConverter();
-        } else if ("grafts".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new GraftConverter();
-        } else if ("corpse_items".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new CorpseItemConverter();
-        } else if ("cosmetic_items".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new CosmeticItemConverter();
-        } else if ("hideout_doodads".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new HideoutDoodadConverter();
-        } else if ("guides".equals(cargoTable)) {
-            return (DataConverter<Object>) (DataConverter<?>) new GuideConverter();
-        }
-        throw new IllegalArgumentException("No converter for: " + cargoTable);
-    }
-
-    /** 根据 Cargo 表名创建对应的 DAO 实例。 */
-    private static Object createDao(DataSource ds, String cargoTable) {
-        if ("items".equals(cargoTable)) {
-            return new ItemDao(ds);
-        } else if ("skill_gems".equals(cargoTable)) {
-            return new SkillGemDao(ds);
-        } else if ("passive_skills".equals(cargoTable)) {
-            return new PassiveSkillDao(ds);
-        } else if ("mods".equals(cargoTable)) {
-            return new ModDao(ds);
-        } else if ("weapons".equals(cargoTable)) {
-            return new WeaponDao(ds);
-        } else if ("armours".equals(cargoTable)) {
-            return new ArmourDao(ds);
-        } else if ("shields".equals(cargoTable)) {
-            return new ShieldDao(ds);
-        } else if ("amulets".equals(cargoTable)) {
-            return new AmuletDao(ds);
-        } else if ("flasks".equals(cargoTable)) {
-            return new FlaskDao(ds);
-        } else if ("jewels".equals(cargoTable)) {
-            return new JewelDao(ds);
-        } else if ("stackables".equals(cargoTable)) {
-            return new StackableDao(ds);
-        } else if ("maps".equals(cargoTable)) {
-            return new MapDao(ds);
-        } else if ("map_fragments".equals(cargoTable)) {
-            return new MapFragmentDao(ds);
-        } else if ("map_series".equals(cargoTable)) {
-            return new MapSeriesDao(ds);
-        } else if ("divination_cards".equals(cargoTable)) {
-            return new DivinationCardDao(ds);
-        } else if ("mod_stats".equals(cargoTable)) {
-            return new ModStatDao(ds);
-        } else if ("mod_spawn_weights".equals(cargoTable)) {
-            return new ModSpawnWeightDao(ds);
-        } else if ("mod_generation_weights".equals(cargoTable)) {
-            return new ModGenerationWeightDao(ds);
-        } else if ("mod_sell_prices".equals(cargoTable)) {
-            return new ModSellPriceDao(ds);
-        } else if ("item_mods".equals(cargoTable)) {
-            return new ItemModDao(ds);
-        } else if ("item_stats".equals(cargoTable)) {
-            return new ItemStatDao(ds);
-        } else if ("item_buffs".equals(cargoTable)) {
-            return new ItemBuffDao(ds);
-        } else if ("crafting_bench_options".equals(cargoTable)) {
-            return new CraftingBenchOptionDao(ds);
-        } else if ("crafting_bench_options_costs".equals(cargoTable)) {
-            return new CraftingBenchOptionCostDao(ds);
-        } else if ("essences".equals(cargoTable)) {
-            return new EssenceDao(ds);
-        } else if ("fossils".equals(cargoTable)) {
-            return new FossilDao(ds);
-        } else if ("fossil_weights".equals(cargoTable)) {
-            return new FossilWeightDao(ds);
-        } else if ("vendor_rewards".equals(cargoTable)) {
-            return new VendorRewardDao(ds);
-        } else if ("item_sell_prices".equals(cargoTable)) {
-            return new ItemSellPriceDao(ds);
-        } else if ("item_purchase_costs".equals(cargoTable)) {
-            return new ItemPurchaseCostDao(ds);
-        } else if ("skill".equals(cargoTable)) {
-            return new SkillDao(ds);
-        } else if ("skill_levels".equals(cargoTable)) {
-            return new SkillLevelDao(ds);
-        } else if ("skill_stats_per_level".equals(cargoTable)) {
-            return new SkillStatsPerLevelDao(ds);
-        } else if ("skill_quality".equals(cargoTable)) {
-            return new SkillQualityDao(ds);
-        } else if ("skill_quality_stats".equals(cargoTable)) {
-            return new SkillQualityStatsDao(ds);
-        } else if ("gem_levels".equals(cargoTable)) {
-            return new GemLevelDao(ds);
-        } else if ("passive_skill_connections".equals(cargoTable)) {
-            return new PassiveSkillConnectionDao(ds);
-        } else if ("mastery_effects".equals(cargoTable)) {
-            return new MasteryEffectDao(ds);
-        } else if ("mastery_groups".equals(cargoTable)) {
-            return new MasteryGroupDao(ds);
-        } else if ("character_classes".equals(cargoTable)) {
-            return new CharacterClassDao(ds);
-        } else if ("ascendancy_classes".equals(cargoTable)) {
-            return new AscendancyClassDao(ds);
-        } else if ("monsters".equals(cargoTable)) {
-            return new MonsterDao(ds);
-        } else if ("monster_types".equals(cargoTable)) {
-            return new MonsterTypeDao(ds);
-        } else if ("monster_base_stats".equals(cargoTable)) {
-            return new MonsterBaseStatDao(ds);
-        } else if ("monster_life_scaling".equals(cargoTable)) {
-            return new MonsterLifeScalingDao(ds);
-        } else if ("monster_map_multipliers".equals(cargoTable)) {
-            return new MonsterMapMultiplierDao(ds);
-        } else if ("monster_resistances".equals(cargoTable)) {
-            return new MonsterResistanceDao(ds);
-        } else if ("areas".equals(cargoTable)) {
-            return new AreaDao(ds);
-        } else if ("atlas_nodes".equals(cargoTable)) {
-            return new AtlasNodeDao(ds);
-        } else if ("delve_level_scaling".equals(cargoTable)) {
-            return new DelveLevelScalingDao(ds);
-        } else if ("delve_resources_per_level".equals(cargoTable)) {
-            return new DelveResourcesPerLevelDao(ds);
-        } else if ("delve_upgrades".equals(cargoTable)) {
-            return new DelveUpgradesDao(ds);
-        } else if ("delve_upgrade_stats".equals(cargoTable)) {
-            return new DelveUpgradeStatsDao(ds);
-        } else if ("heist_areas".equals(cargoTable)) {
-            return new HeistAreasDao(ds);
-        } else if ("heist_jobs".equals(cargoTable)) {
-            return new HeistJobsDao(ds);
-        } else if ("heist_npcs".equals(cargoTable)) {
-            return new HeistNpcsDao(ds);
-        } else if ("heist_npc_skills".equals(cargoTable)) {
-            return new HeistNpcSkillsDao(ds);
-        } else if ("heist_npc_stats".equals(cargoTable)) {
-            return new HeistNpcStatsDao(ds);
-        } else if ("heist_equipment".equals(cargoTable)) {
-            return new HeistEquipmentDao(ds);
-        } else if ("blight_crafting_recipes".equals(cargoTable)) {
-            return new BlightCraftingRecipesDao(ds);
-        } else if ("blight_crafting_recipes_items".equals(cargoTable)) {
-            return new BlightCraftingRecipesItemsDao(ds);
-        } else if ("blight_items".equals(cargoTable)) {
-            return new BlightItemsDao(ds);
-        } else if ("blight_towers".equals(cargoTable)) {
-            return new BlightTowersDao(ds);
-        } else if ("harvest_crafting_options".equals(cargoTable)) {
-            return new HarvestCraftingOptionsDao(ds);
-        } else if ("harvest_plant_boosters".equals(cargoTable)) {
-            return new HarvestPlantBoostersDao(ds);
-        } else if ("harvest_seeds".equals(cargoTable)) {
-            return new HarvestSeedsDao(ds);
-        } else if ("synthesis_areas".equals(cargoTable)) {
-            return new SynthesisAreasDao(ds);
-        } else if ("synthesis_corrupted_mods".equals(cargoTable)) {
-            return new SynthesisCorruptedModsDao(ds);
-        } else if ("synthesis_global_mods".equals(cargoTable)) {
-            return new SynthesisGlobalModsDao(ds);
-        } else if ("synthesis_mods".equals(cargoTable)) {
-            return new SynthesisModsDao(ds);
-        } else if ("bestiary_recipes".equals(cargoTable)) {
-            return new BestiaryRecipesDao(ds);
-        } else if ("bestiary_recipe_components".equals(cargoTable)) {
-            return new BestiaryRecipeComponentsDao(ds);
-        } else if ("incursion_rooms".equals(cargoTable)) {
-            return new IncursionRoomsDao(ds);
-        } else if ("pantheon".equals(cargoTable)) {
-            return new PantheonDao(ds);
-        } else if ("pantheon_souls".equals(cargoTable)) {
-            return new PantheonSoulsDao(ds);
-        } else if ("pantheon_stats".equals(cargoTable)) {
-            return new PantheonStatsDao(ds);
-        } else if ("versions".equals(cargoTable)) {
-            return new VersionDao(ds);
-        } else if ("legacy_variants".equals(cargoTable)) {
-            return new LegacyVariantDao(ds);
-        } else if ("prophecies".equals(cargoTable)) {
-            return new ProphecyDao(ds);
-        } else if ("quest_rewards".equals(cargoTable)) {
-            return new QuestRewardDao(ds);
-        } else if ("spawn_weights".equals(cargoTable)) {
-            return new SpawnWeightDao(ds);
-        } else if ("generic_stats".equals(cargoTable)) {
-            return new GenericStatDao(ds);
-        } else if ("tattoos".equals(cargoTable)) {
-            return new TattooDao(ds);
-        } else if ("tinctures".equals(cargoTable)) {
-            return new TinctureDao(ds);
-        } else if ("sentinels".equals(cargoTable)) {
-            return new SentinelDao(ds);
-        } else if ("idols".equals(cargoTable)) {
-            return new IdolDao(ds);
-        } else if ("grafts".equals(cargoTable)) {
-            return new GraftDao(ds);
-        } else if ("corpse_items".equals(cargoTable)) {
-            return new CorpseItemDao(ds);
-        } else if ("cosmetic_items".equals(cargoTable)) {
-            return new CosmeticItemDao(ds);
-        } else if ("hideout_doodads".equals(cargoTable)) {
-            return new HideoutDoodadDao(ds);
-        } else if ("guides".equals(cargoTable)) {
-            return new GuideDao(ds);
-        }
-        throw new IllegalArgumentException("No DAO for: " + cargoTable);
     }
 
     // ==================== 内部类型 ====================

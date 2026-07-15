@@ -10,7 +10,7 @@ import java.sql.SQLException;
 /**
  * SQLite 数据库管理器（线程安全单例，HikariCP 连接池）。
  * <p>
- * 负责连接池生命周期管理和迁移脚本执行。
+ * 负责连接池生命周期管理。
  * 数据库文件位于 {@code ~/.poe-tool/data/poe.db}。
  * <p>
  * 连接池配置：最大 5 个连接，WAL 模式，支持并发读。
@@ -68,9 +68,8 @@ public class DatabaseManager {
     }
 
     /**
-     * 从连接池获取数据库连接，首次调用自动执行迁移脚本初始化表结构。
+     * 从连接池获取数据库连接。
      * <p>调用方 <b>必须</b>在使用完毕后调用 {@link Connection#close()} 归还连接到池中。
-     * <p>调用方应确保数据库文件已就绪（通过 DatabaseInitializer）。
      *
      * @return 池化连接
      */
@@ -80,7 +79,7 @@ public class DatabaseManager {
 
     /**
      * 获取连接池 {@link DataSource}，供 DAO 层按需借还连接。
-     * <p>首次调用自动初始化连接池并执行迁移。
+     * <p>首次调用自动初始化连接池。
      *
      * @return HikariCP 数据源
      */
@@ -120,16 +119,6 @@ public class DatabaseManager {
         HikariDataSource pool = new HikariDataSource(config);
         dataSource = SqlLoggingDataSource.wrap(pool);
         poolClosed = false;
-
-        // 使用池中首个连接执行迁移（仅一次）
-        try (Connection conn = dataSource.getConnection()) {
-            new MigrationManager(conn).migrate();
-        } catch (RuntimeException e) {
-            pool.close();
-            dataSource = null;
-            poolClosed = true;
-            throw new RuntimeException("Failed to run migrations", e);
-        }
     }
 
     /**
@@ -186,9 +175,8 @@ public class DatabaseManager {
     }
 
     /**
-     * 通过 {@link MigrationManager} 执行版本化迁移。
+     * 初始化数据库连接池。
      * 仅在连接池尚未初始化时触发；已初始化时幂等跳过。
-     * 仅执行未运行过的脚本，支持幂等重复调用。
      */
     public void init() {
         if (dataSource == null || poolClosed) {
@@ -205,7 +193,7 @@ public class DatabaseManager {
     }
 
     /**
-     * 强制初始化：关闭旧连接池 + 重新创建 + 运行迁移（用于 SeedDbBuilder 首次构建新库）。
+     * 强制初始化：关闭旧连接池 + 重新创建（用于 SeedDbBuilder 首次构建新库）。
      */
     public void forceInit() throws SQLException {
         close();

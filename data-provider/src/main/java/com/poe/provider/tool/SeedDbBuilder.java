@@ -1,9 +1,7 @@
 package com.poe.provider.tool;
 
 import com.poe.cache.manager.DatabaseManager;
-import com.poe.cache.manager.MigrationManager;
-import com.poe.core.service.TranslationService;
-import com.poe.provider.WikiApiClient;
+import com.poe.provider.client.WikiApiClient;
 import com.poe.provider.sync.DataSyncService;
 import com.poe.provider.sync.SyncResult;
 import org.slf4j.Logger;
@@ -12,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.*;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +20,6 @@ import java.util.concurrent.TimeUnit;
  * <p>由 Gradle {@code buildSeedDb} 任务调用，构建预置的 seed.db：
  * <ol>
  *   <li>创建临时 SQLite 库</li>
- *   <li>运行迁移脚本</li>
  *   <li>导入 PoeCharm2 中文翻译</li>
  *   <li>从 Wiki 同步核心数据（限时，最多 10 分钟）</li>
  *   <li>VACUUM 清理</li>
@@ -44,15 +40,9 @@ public class SeedDbBuilder {
 
     private static final int DEFAULT_WIKI_TIMEOUT_SECONDS = 600;
 
-    public static void main(String[] args) {
-        try {
-            SeedDbBuilder builder = SeedDbBuilder.parse(args);
-            builder.build();
-        } catch (Exception e) {
-            log.error("SeedDbBuilder failed: {}", e.getMessage(), e);
-            System.exit(1);
-        }
-    }
+    private static final String DEFAULT_OUTPUT_PATH = "data-provider/src/main/resources/seed.db";
+
+    private static final String INIT_DB_SQL_PATH = "data-provider/src/main/resources/db/init_ddl.sql";
 
     private final Path outputPath;
     private final Path poeCharm2Path;
@@ -66,7 +56,11 @@ public class SeedDbBuilder {
         this.wikiTimeoutSeconds = wikiTimeoutSeconds;
     }
 
-    void build() throws Exception {
+    /**
+     * 构建种子数据库。
+     * @throws Exception
+     */
+    public void build() throws Exception {
         log.info("=== SeedDbBuilder started ===");
         log.info("Output: {}", outputPath.toAbsolutePath());
         log.info("PoeCharm2: {}", poeCharm2Path.toAbsolutePath());
@@ -91,21 +85,30 @@ public class SeedDbBuilder {
         }
     }
 
+    /**
+     * 构建临时种子数据库。
+     * @param dbPath 临时数据库路径
+     * @throws Exception
+     */
     private void buildInternal(Path dbPath) throws Exception {
         // 1. 初始化临时库
         DatabaseManager dbm = new DatabaseManager(dbPath.toString());
-        dbm.forceInit(); // 运行迁移
+        dbm.forceInit();
+        //TODO yzy 执行初始化表
+        log.info("SeedDbBuilder|buildInternal|开始执行初始化表");
+        dbm.getConnection().createStatement().execute(INIT_DB_SQL_PATH);
+        log.info("SeedDbBuilder|buildInternal|执行初始化表结束");
 
         // 2. 导入 PoeCharm2 翻译
-        TranslationService ts = new TranslationService(dbm.getDataSource());
+        /*TranslationService ts = new TranslationService(dbm.getDataSource());
         Path translateDir = poeCharm2Path.resolve("Data/Translate/zh-rCN");
         int count = ts.importFromPoeCharm2(translateDir);
-        log.info("PoeCharm2 translations imported: {} entries", count);
+        log.info("PoeCharm2 translations imported: {} entries", count);*/
 
         // 3. 从 Wiki 同步数据（可选）
-        if (!skipWiki) {
+        /*if (!skipWiki) {
             syncWikiData(dbm);
-        }
+        }*/
 
         // 4. VACUUM
         try (Connection conn = dbm.getConnection()) {
@@ -116,7 +119,20 @@ public class SeedDbBuilder {
         dbm.shutdown();
     }
 
+    /**
+     * 同步wiki数据
+     * @param dbm 数据库管理器
+     * @throws Exception
+     */
     private void syncWikiData(DatabaseManager dbm) throws Exception {
+        //TODO yzy 数据同步
+        // 1. 先拉取表名入库
+        // 2. 再拉取表字段入库
+        // 3. 根据表名和字段,生成建表语句
+        // 4. 执行建表语句
+        // 5. 拉取数据
+
+
         WikiApiClient wikiClient = new WikiApiClient();
         DataSyncService syncService = new DataSyncService(wikiClient, dbm);
 
@@ -149,7 +165,7 @@ public class SeedDbBuilder {
 
     // ============== 命令行解析 ==============
 
-    static SeedDbBuilder parse(String[] args) {
+    public static SeedDbBuilder parse(String[] args) {
         Path output = null;
         Path poeCharm2 = detectPoeCharm2();
         boolean skipWiki = false;

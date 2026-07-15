@@ -1,5 +1,6 @@
 package com.poe.provider;
 
+import com.poe.provider.client.PobDataExtractor;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 

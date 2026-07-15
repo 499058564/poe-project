@@ -3,7 +3,7 @@ package com.poe.provider.sync;
 import com.google.common.eventbus.Subscribe;
 import com.poe.cache.manager.DatabaseManager;
 import com.poe.core.event.*;
-import com.poe.provider.WikiApiClient;
+import com.poe.provider.client.WikiApiClient;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;

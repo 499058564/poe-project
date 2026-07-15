@@ -2,15 +2,8 @@ package com.poe.core.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.poe.cache.dao.ItemDao;
-import com.poe.cache.dao.SearchDao;
-import com.poe.cache.dao.TranslationDao;
 import com.poe.cache.manager.DatabaseManager;
-import com.poe.cache.model.Item;
-import com.poe.cache.model.ItemSummary;
 import com.poe.common.util.StringUtils;
-import com.poe.core.model.ItemDetail;
-import com.poe.core.model.ModLine;
 import com.poe.core.model.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,20 +24,19 @@ import java.util.stream.StreamSupport;
  *   <li>封装为 {@link SearchResult} 返回</li>
  * </ol>
  * <p>
- * 详情查询从 {@link ItemDao} 获取完整物品数据，并解析 JSON 字段
- * 返回结构化的 {@link ItemDetail}。
+ * 详情查询从 {@link ItemDao} 获取完整物品数据。 * 类图中对应负责详情查询的UI组件。
  */
 public class ItemSearchService {
 
-    private static final Logger log = LoggerFactory.getLogger(ItemSearchService.class);
-    /** 共享 JSON 解析器实例 */
+    /*private static final Logger log = LoggerFactory.getLogger(ItemSearchService.class);
+    *//** 共享 JSON 解析器实例 *//*
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    /** FTS5 全文搜索 DAO */
+    *//** FTS5 全文搜索 DAO *//*
     private final SearchDao searchDao;
-    /** 物品数据访问对象 */
+    *//** 物品数据访问对象 *//*
     private final ItemDao itemDao;
-    /** 翻译服务，用于详情页翻译 */
+    *//** 翻译服务，用于详情页翻译 *//*
     private final TranslationService translationService;
 
     public ItemSearchService() throws SQLException {
@@ -56,16 +48,16 @@ public class ItemSearchService {
         log.info("MainWindow|initializeServices|successfully");
     }
 
-    /**
+    *//**
      * 直接注入 DAO 和 TranslationService（用于测试）。
-     */
+     *//*
     public ItemSearchService(SearchDao searchDao, ItemDao itemDao, TranslationService translationService) {
         this.searchDao = searchDao;
         this.itemDao = itemDao;
         this.translationService = translationService;
     }
 
-    /**
+    *//**
      * 搜索物品。
      *
      * @param keyword   搜索关键词（中英文均可），为 null 或空白时返回空结果
@@ -73,7 +65,7 @@ public class ItemSearchService {
      * @param page      页码（从 1 开始）
      * @param pageSize  每页数量
      * @return 分页搜索结果
-     */
+     *//*
     public SearchResult<ItemSummary> search(String keyword, String itemClass,
                                              int page, int pageSize) {
         if (StringUtils.isBlank(keyword)) {
@@ -99,24 +91,24 @@ public class ItemSearchService {
         return new SearchResult<>(items, total, page, pageSize);
     }
 
-    /**
+    *//**
      * 搜索物品（无类别过滤）。便捷方法。
      *
      * @param keyword  搜索关键词
      * @param page     页码（从 1 开始）
      * @param pageSize 每页数量
      * @return 分页搜索结果
-     */
+     *//*
     public SearchResult<ItemSummary> search(String keyword, int page, int pageSize) {
         return search(keyword, null, page, pageSize);
     }
 
-    /**
+    *//**
      * 获取物品完整详情。
      *
      * @param itemId 物品 ID
      * @return 物品详情，物品不存在时返回 null
-     */
+     *//*
     public ItemDetail getItemDetail(int itemId) {
         Optional<Item> opt = itemDao.findById(itemId);
         if (opt.isEmpty()) {
@@ -159,13 +151,13 @@ public class ItemSearchService {
         return reqs;
     }
 
-    /**
+    *//**
      * 解析 implicits JSON 字段为字符串列表。
      * JSON 格式：[{"text":"+20 to maximum Life"}, ...]
      *
      * @param implicitsJson 基底词缀 JSON 字符串
      * @return 词缀文本列表，JSON 无效时返回空列表
-     */
+     *//*
     List<String> parseImplicits(String implicitsJson) {
         if (StringUtils.isBlank(implicitsJson)) {
             return Collections.emptyList();
@@ -185,13 +177,13 @@ public class ItemSearchService {
         }
     }
 
-    /**
+    *//**
      * 解析 requirements JSON 字段为属性名→值的映射。
      * JSON 格式：[{"name":"str","values":[["100"]]}, ...]
      *
      * @param requirementsJson 属性需求 JSON 字符串
      * @return 属性名（str/dex/int）→ 需求值的映射，JSON 无效时返回空 Map
-     */
+     *//*
     Map<String, Integer> parseRequirements(String requirementsJson) {
         if (StringUtils.isBlank(requirementsJson)) {
             return Collections.emptyMap();
@@ -224,5 +216,5 @@ public class ItemSearchService {
             log.warn("Failed to parse requirements JSON: {}", e.getMessage());
             return Collections.emptyMap();
         }
-    }
+    }*/
 }

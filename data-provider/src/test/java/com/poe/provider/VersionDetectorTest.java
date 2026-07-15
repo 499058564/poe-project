@@ -3,6 +3,8 @@ package com.poe.provider;
 import com.google.common.util.concurrent.RateLimiter;
 import com.poe.cache.manager.DatabaseManager;
 import com.poe.core.version.GameVersion;
+import com.poe.provider.client.GggApiClient;
+import com.poe.provider.client.VersionDetector;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;

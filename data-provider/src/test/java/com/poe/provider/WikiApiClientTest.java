@@ -3,6 +3,7 @@ package com.poe.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.RateLimiter;
 import com.poe.common.exception.DataSyncException;
+import com.poe.provider.client.WikiApiClient;
 import okhttp3.*;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
